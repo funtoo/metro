@@ -1,0 +1,424 @@
+#!/usr/bin/python -OO
+
+import os,sys,imp,string,getopt
+import pdb
+
+__maintainer__="Daniel Robbins <drobbins@funtoo.org>"
+__version__="2.0.5"
+
+conf_values={}
+
+def usage():
+	print "Usage catalyst [options] [-C variable=value...] [ -s identifier]"
+	print " -a --clear-autoresume	clear autoresume flags"
+	print " -c --config		use specified configuration file"
+	print " -C --cli		catalyst commandline (MUST BE LAST OPTION)"
+	print " -d --debug		enable debugging"
+	print " -f --file		read specfile"
+	print " -F --fetchonly		fetch files only"
+	print " -h --help		print this help message"
+	print " -p --purge		clear tmp dirs,package cache and autoresume flags"
+	print " -s --snapshot		generate a release snapshot"
+	print " -V --version		display version information"
+	print " -v --verbose		verbose output"
+	print
+	print "Usage examples:"
+	print
+	print "Using the commandline option (-C, --cli) to build a Portage snapshot:"
+	print "catalyst -C target=snapshot version_stamp=my_date"
+	print
+	print "Using the snapshot option (-s, --snapshot) to build a release snapshot:"
+	print "catalyst -s 20071121"
+	print
+	print "Using the specfile option (-f, --file) to build a stage target:"
+	print "catalyst -f stage1-specfile.spec"
+
+def version():
+	print "Catalyst, version "+__version__
+	print "Copyright 2003-2007 Gentoo Foundation"
+	print "Distributed under the GNU General Public License version 2\n"
+
+def parse_config(myconfig):
+	# search a couple of different areas for the main config file
+	myconf={}
+	config_file=""
+
+	confdefaults={ "storedir":"/var/tmp/catalyst",\
+		"sharedir":"/usr/share/catalyst","distdir":"/usr/portage/distfiles",\
+		"portdir":"/usr/portage","options":"",\
+		"snapshot_cache":"/var/tmp/catalyst/snapshot_cache",\
+		"hash_function":"crc32"}
+		
+	# first, try the one passed (presumably from the cmdline)
+	if myconfig:
+		if os.path.exists(myconfig):
+			print "Using command line specified Catalyst configuration file, "+myconfig
+			config_file=myconfig
+
+		else:
+			print "!!! catalyst: Could not use specified configuration file "+\
+				myconfig
+			sys.exit(1)
+	
+	# next, try the default location
+	elif os.path.exists("/etc/catalyst/catalyst.conf"):
+		print "Using default Catalyst configuration file, /etc/catalyst/catalyst.conf"
+		config_file="/etc/catalyst/catalyst.conf"
+	
+	# can't find a config file (we are screwed), so bail out
+	else:
+		print "!!! catalyst: Could not find a suitable configuration file"
+		sys.exit(1)
+
+	# now, try and parse the config file "config_file"
+	try:
+		execfile(config_file, myconf, myconf)
+	
+	except:
+		print "!!! catalyst: Unable to parse configuration file, "+myconfig
+		sys.exit(1)
+	
+	# now, load up the values into conf_values so that we can use them
+	for x in confdefaults.keys():
+		if myconf.has_key(x):
+			print "Setting",x,"to config file value \""+myconf[x]+"\""
+			conf_values[x]=myconf[x]
+		else:
+			print "Setting",x,"to default value \""+confdefaults[x]+"\""
+			conf_values[x]=confdefaults[x]
+
+	# parse out the rest of the options from the config file
+	if "autoresume" in string.split(conf_values["options"]):
+		print "Autoresuming support enabled."
+		conf_values["AUTORESUME"]="1"
+
+	if "ccache" in string.split(conf_values["options"]):
+		print "Compiler cache support enabled."
+		conf_values["CCACHE"]="1"
+
+	if "clear-autoresume" in string.split(conf_values["options"]):
+		print "Cleaning autoresume flags support enabled."
+		conf_values["CLEAR_AUTORESUME"]="1"
+
+#	if "compress" in string.split(conf_values["options"]):
+#		print "Compression enabled."
+#		conf_values["COMPRESS"]="1"
+
+	if "distcc" in string.split(conf_values["options"]):
+		print "Distcc support enabled."
+		conf_values["DISTCC"]="1"
+
+	if "icecream" in string.split(conf_values["options"]):
+		print "Icecream compiler cluster support enabled."
+		conf_values["ICECREAM"]="1"
+
+	if "kerncache" in string.split(conf_values["options"]):
+		print "Kernel cache support enabled."
+		conf_values["KERNCACHE"]="1"
+
+	if "pkgcache" in string.split(conf_values["options"]):
+		print "Package cache support enabled."
+		conf_values["PKGCACHE"]="1"
+
+	if "purge" in string.split(conf_values["options"]):
+		print "Purge support enabled."
+		conf_values["PURGE"]="1"
+
+	if "seedcache" in string.split(conf_values["options"]):
+		print "Seed cache support enabled."
+		conf_values["SEEDCACHE"]="1"
+
+	if "snapcache" in string.split(conf_values["options"]):
+		print "Snapshot cache support enabled."
+		conf_values["SNAPCACHE"]="1"
+
+	if "metadata_overlay" in conf_values["options"].split():
+		print "Use of metadata_overlay module for portage enabled."
+		conf_values["METADATA_OVERLAY"]="1"
+
+#	if "tarball" in string.split(conf_values["options"]):
+#		print "Tarball creation enabled."
+#		conf_values["TARBALL"]="1"
+
+	if myconf.has_key("digests"):
+		conf_values["digests"]=myconf["digests"]
+
+	if myconf.has_key("envscript"):
+		print "Envscript support enabled."
+		conf_values["ENVSCRIPT"]=myconf["envscript"]
+
+def import_modules():
+	# import catalyst's own modules (i.e. catalyst_support and the arch modules)
+	targetmap={}
+
+	try:
+		for x in required_build_targets:
+			try:
+				fh=open(conf_values["sharedir"]+"/modules/"+x+".py")
+				module=imp.load_module(x,fh,"modules/"+x+".py",(".py","r",imp.PY_SOURCE))
+				fh.close()
+        	
+			except IOError:
+				raise CatalystError,"Can't find "+x+".py plugin in "+\
+					conf_values.settings["sharedir"]+"/modules/"
+
+		for x in valid_build_targets:
+			try:
+				fh=open(conf_values["sharedir"]+"/modules/"+x+".py")
+				module=imp.load_module(x,fh,"modules/"+x+".py",(".py","r",imp.PY_SOURCE))
+				module.register(targetmap)
+				fh.close()
+        	
+			except IOError:
+				raise CatalystError,"Can't find "+x+".py plugin in "+\
+					conf_values.settings["sharedir"]+"/modules/"
+
+	except ImportError:
+		print "!!! catalyst: Python modules not found in "+\
+			conf_values["sharedir"]+"/modules; exiting."
+		sys.exit(1)
+
+	return targetmap
+
+def do_spec(myspecfile):
+	try:
+		addlargs=read_spec(myspecfile)
+	except:
+		sys.exit(1)
+		
+	return addlargs
+
+def do_cli(cmdline):
+	try:
+		return arg_parse(cmdline)
+	
+	except CatalystError:
+		print "!!! catalyst: Could not parse commandline, exiting."
+		sys.exit(1)
+	
+def build_target(addlargs, targetmap):
+	try:
+		if not targetmap.has_key(addlargs["target"]):
+			raise CatalystError,"Target \""+addlargs["target"]+"\" not available."
+		
+		mytarget=targetmap[addlargs["target"]](conf_values, addlargs)
+	
+		mytarget.run()
+
+	except:
+		# TODO: Capture traceback, so we can display this error after printing of the traceback
+		print "!!! catalyst: Error encountered during run of target " + addlargs["target"]
+		raise
+
+if __name__ == "__main__":
+	targetmap={}
+	
+	version()
+	if os.getuid() != 0:
+		# catalyst cannot be run as a normal user due to chroots, mounts, etc
+		print "!!! catalyst: This script requires root privileges to operate"
+		sys.exit(2)
+
+	# we need some options in order to work correctly
+	if len(sys.argv) < 2:
+		usage()
+		sys.exit(2)
+
+	# parse out the command line arguments
+	try:
+		opts,args = getopt.getopt(sys.argv[1:], "aphvdc:C:f:FVs:", ["purge","help", "version", "debug",\
+			"clear-autoresume", "config=", "cli=", "file=", "fetch", "verbose","snapshot="])
+	
+	except getopt.GetoptError:
+		usage()
+		sys.exit(2)
+	
+	# defaults for commandline opts
+	debug=False
+	verbose=False
+	fetch=False
+	myconfig=""
+	myspecfile=""
+	mycmdline=[]
+	myopts=[]
+
+	# check preconditions
+	if len(opts) == 0:
+		print "!!! catalyst: please specify one of either -f or -C\n"
+		usage()
+		sys.exit(2)
+	run=0	
+	for o, a in opts:
+		if o in ("-h", "--help"):
+			usage()
+			sys.exit(1)
+		
+		if o in ("-V", "--version"):
+			print "Catalyst version "+__version__
+			sys.exit(1)
+
+		if o in ("-d", "--debug"):
+			if len(sys.argv) < 3:
+				print "!!! catalyst: please specify one of either -f or -C\n"
+				usage()
+				sys.exit(2)
+			else:
+				conf_values["DEBUG"]="1"
+
+		if o in ("-c", "--config"):
+			if len(sys.argv) < 3:
+				print "!!! catalyst: please specify one of either -f or -C\n"
+				usage()
+				sys.exit(2)
+			else:
+				myconfig=a
+
+		if o in ("-C", "--cli"):
+			run=1	
+			x=sys.argv.index(o)+1
+			while x < len(sys.argv):
+				mycmdline.append(sys.argv[x])
+				x=x+1
+			
+		if o in ("-f", "--file"):
+			run=1	
+			myspecfile=a
+
+		if o in ("-F", "--fetchonly"):
+			if len(sys.argv) < 3:
+				print "!!! catalyst: please specify one of either -f or -C\n"
+				usage()
+				sys.exit(2)
+			else:
+				conf_values["FETCH"]="1"
+			
+		if o in ("-v", "--verbose"):
+			if len(sys.argv) < 3:
+				print "!!! catalyst: please specify one of either -f or -C\n"
+				usage()
+				sys.exit(2)
+			else:
+				conf_values["VERBOSE"]="1"
+
+		if o in ("-s", "--snapshot"):
+			if len(sys.argv) < 3:
+				print "!!! catalyst: missing snapshot identifier\n"
+				usage()
+				sys.exit(2)
+			else:
+				run=1
+				mycmdline.append("target=snapshot")
+				mycmdline.append("version_stamp="+a)
+		
+		if o in ("-p", "--purge"):
+			if len(sys.argv) < 3:
+				print "!!! catalyst: please specify one of either -f or -C\n"
+				usage()
+				sys.exit(2)
+			else:
+				conf_values["PURGE"]="1"
+		if o in ("-a", "--clear-autoresume"):
+			if len(sys.argv) < 3:
+				print "!!! catalyst: please specify one of either -f or -C\n"
+				usage()
+				sys.exit(2)
+			else:
+				conf_values["CLEAR_AUTORESUME"]="1"
+	if run != 1:
+		print "!!! catalyst: please specify one of either -f or -C\n"
+		usage()
+		sys.exit(2)
+
+	# import configuration file and import our main module using those settings
+	parse_config(myconfig)
+	sys.path.append(conf_values["sharedir"]+"/modules")
+	from catalyst_support import *
+	
+	# Start checking that digests are valid now that the hash_map was imported from catalyst_support
+	if conf_values.has_key("digests"):
+		for i in conf_values["digests"].split():
+			if not hash_map.has_key(i):
+				print
+				print i+" is not a valid digest entry"
+				print "Valid digest entries:"
+				print hash_map.keys()
+				print
+				print "Catalyst aborting...."
+				sys.exit(2)
+			if find_binary(hash_map[i][1]) == None:
+				print
+				print "digest="+i
+				print "\tThe "+hash_map[i][1]+\
+					" binary was not found. It needs to be in your system path"
+				print
+				print "Catalyst aborting...."
+				sys.exit(2)
+	if conf_values.has_key("hash_function"):
+		if not hash_map.has_key(conf_values["hash_function"]):
+			print
+			print conf_values["hash_function"]+" is not a valid hash_function entry"
+			print "Valid hash_function entries:"
+			print hash_map.keys()
+			print
+			print "Catalyst aborting...."
+			sys.exit(2)
+		if find_binary(hash_map[conf_values["hash_function"]][1]) == None:
+			print
+			print "hash_function="+conf_values["hash_function"]
+			print "\tThe "+hash_map[conf_values["hash_function"]][1]+\
+				" binary was not found. It needs to be in your system path"
+			print
+			print "Catalyst aborting...."
+			sys.exit(2)
+
+	# import the rest of the catalyst modules
+	targetmap=import_modules()
+
+	addlargs={}
+	
+	if myspecfile:
+		addlargs.update(do_spec(myspecfile))
+	
+	if mycmdline:
+		addlargs.update(do_cli(mycmdline))
+	
+	if not addlargs.has_key("target"):
+		raise CatalystError, "Required value \"target\" not specified."
+
+	# everything is setup, so the build is a go
+	try:
+		build_target(addlargs, targetmap)
+			
+	except CatalystError:
+		print
+		print "Catalyst aborting...."
+		sys.exit(2)
+	except KeyboardInterrupt:
+		print "\nCatalyst build aborted due to user interrupt ( Ctrl-C )"
+		print
+		print "Catalyst aborting...."
+		sys.exit(2)
+	except LockInUse:
+		print "Catalyst aborting...."
+		sys.exit(2)
+	except:
+		print "Catalyst aborting...."
+		raise
+		sys.exit(2)
+
+	#except CatalystError:
+	#	print
+	#	print "Catalyst aborting...."
+	#	sys.exit(2)
+	#except KeyError:
+	#	print "\nproblem with command line or spec file ( Key Error )"
+	#	print "Key: "+str(sys.exc_value)+" was not found"
+	#	print "Catalyst aborting...."
+	#	sys.exit(2)
+	#except UnboundLocalError:
+	#	print
+	#	print "UnboundLocalError: "+str(sys.exc_value)+" was not found"
+	#	raise
+	#	print
+	#	print "Catalyst aborting...."
+	#	sys.exit(2)

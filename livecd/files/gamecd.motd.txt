@@ -1,0 +1,8 @@
+
+To (re)start ##GAME_NAME, please type "startx" at the prompt below.
+
+Please report any bugs you find to http://bugs.gentoo.org. Be sure to include
+detailed information about how to reproduce the bug you are reporting.
+
+Thank you for using Gentoo Linux!
+
