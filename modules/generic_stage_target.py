@@ -866,10 +866,15 @@ class generic_stage_target(generic_target):
 		self.override_ldflags()	
 		# drobbins add - envscript doesn't work all the time. This appears to fix it
 		print "Writing out proxy settings... (drobbins)"
-		a=open(self.settings["chroot_path"]+"/etc/env.d/99zzcatalyst","w")
+		try:
+			a=open(self.settings["chroot_path"]+"/etc/env.d/99zzcatalyst","w")
+		except:
+			raise CatalystError,"Couldn't open "+self.settings["chroot_path"]+"/etc/env.d/99zzcatalyst for writing"
 		for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
 			if os.environ.has_key(x):
 				a.write(x+"=\""+os.environ[x]+"\"\n")
+			else:
+				a.write("# "+x+" is not set")
 		a.close()
 		if self.settings.has_key("AUTORESUME") \
 			and os.path.exists(self.settings["autoresume_path"]+"chroot_setup"):
