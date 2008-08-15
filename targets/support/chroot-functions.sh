@@ -63,31 +63,21 @@ get_libdir() {
 
 setup_myfeatures(){
 	setup_myemergeopts
-	if [ -n "${clst_CCACHE}" ] && [ "${clst_target}" != "stage1" ]
+	if [ -n "${clst_CCACHE}" ] 
+	# drobbins - enable ccache on stage1 for fun
+	#&& [ "${clst_target}" != "stage1" ]
 	# don't emerge something on stage1 - CHOST may not match
 	then
 		export clst_myfeatures="${clst_myfeatures} ccache"
 		echo "DEBUG: http_proxy: $http_proxy"
-		#if [ "${clst_AUTORESUME}" = "1" -a -e /tmp/.clst_ccache ]
-		#then
-		#	echo "CCACHE Autoresume point found not emerging ccache"
-		#else
-			clst_root_path=/ run_emerge --oneshot --nodeps ccache || exit 1
-		#	touch /tmp/.clst_ccache
-		#fi
+		clst_root_path=/ run_emerge --oneshot --nodeps ccache || exit 1
 	fi
 
 	if [ -n "${clst_DISTCC}" ] && [ "${clst_target}" != "stage1" ]
 	then
 		export clst_myfeatures="${clst_myfeatures} distcc"
 		export DISTCC_HOSTS="${clst_distcc_hosts}"
-		#if [ "${clst_AUTORESUME}" = "1" -a -e /tmp/.clst_distcc ]
-		#then
-		#	echo "DISTCC Autoresume point found not emerging distcc"
-		#else
-			USE="-gtk -gnome" clst_root_path=/ run_emerge --oneshot --nodeps distcc || exit 1
-			#touch /tmp/.clst_distcc
-		#fi
+		USE="-gtk -gnome" clst_root_path=/ run_emerge --oneshot --nodeps distcc || exit 1
 		mkdir -p /etc/distcc
 		echo "${clst_distcc_hosts}" > /etc/distcc/hosts
 
@@ -142,13 +132,7 @@ setup_myemergeopts(){
 setup_portage(){
 	# portage needs to be merged manually with USE="build" set to avoid frying
 	# our make.conf. emerge system could merge it otherwise.
-#	if [ "${clst_AUTORESUME}" = "1" -a -e /tmp/.clst_portage ]
-#	then
-#		echo "Portage Autoresume point found not emerging portage"
-#	else
-		[ "$clst_target" != "stage1" ] && USE="build" run_emerge --oneshot --nodeps portage
-#		touch /tmp/.clst_portage || exit 1
-#	fi
+	[ "$clst_target" != "stage1" ] && USE="build" run_emerge --oneshot --nodeps portage
 }
 
 setup_gcc(){

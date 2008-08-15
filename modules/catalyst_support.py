@@ -62,69 +62,6 @@ def hexify(str):
 	return r
 # hexify()
 
-def generate_hash(file,hash_function="crc32",verbose=False):
-	try:
-		return hash_map[hash_function][0](file,hash_map[hash_function][1],hash_map[hash_function][2],\
-			hash_map[hash_function][3],verbose)
-	except:
-		raise CatalystError,"Error generating hash, is appropriate utility installed on your system?"
-
-def calc_hash(file,cmd,cmd_args,id_string="MD5",verbose=False):
-	a=os.popen(cmd+" "+cmd_args+" "+file)
-	mylines=a.readlines()
-	a.close()
-	mylines=mylines[0].split()
-	result=mylines[0]
-	if verbose:
-		print id_string+" (%s) = %s" % (file, result)
-	return result
-
-def calc_hash2(file,cmd,cmd_args,id_string="MD5",verbose=False):
-	a=os.popen(cmd+" "+cmd_args+" "+file)
-	header=a.readline()
-	mylines=a.readline().split()
-	hash=mylines[0]
-	short_file=os.path.split(mylines[1])[1]
-	a.close()
-	result=header+hash+"  "+short_file+"\n"
-	if verbose:
-		print header+" (%s) = %s" % (short_file, result)
-	return result
-
-# This has map must be defined after the function calc_hash
-# It is possible to call different functions from this but they must be defined
-# before hash_map
-# Key,function,cmd,cmd_args,Print string
-hash_map={
-	 "adler32":[calc_hash2,"shash","-a ADLER32","ADLER32"],\
-	 "crc32":[calc_hash2,"shash","-a CRC32","CRC32"],\
-	 "crc32b":[calc_hash2,"shash","-a CRC32B","CRC32B"],\
-	 "gost":[calc_hash2,"shash","-a GOST","GOST"],\
-	 "haval128":[calc_hash2,"shash","-a HAVAL128","HAVAL128"],\
-	 "haval160":[calc_hash2,"shash","-a HAVAL160","HAVAL160"],\
-	 "haval192":[calc_hash2,"shash","-a HAVAL192","HAVAL192"],\
-	 "haval224":[calc_hash2,"shash","-a HAVAL224","HAVAL224"],\
-	 "haval256":[calc_hash2,"shash","-a HAVAL256","HAVAL256"],\
-	 "md2":[calc_hash2,"shash","-a MD2","MD2"],\
-	 "md4":[calc_hash2,"shash","-a MD4","MD4"],\
-	 "md5":[calc_hash2,"shash","-a MD5","MD5"],\
-	 "ripemd128":[calc_hash2,"shash","-a RIPEMD128","RIPEMD128"],\
-	 "ripemd160":[calc_hash2,"shash","-a RIPEMD160","RIPEMD160"],\
-	 "ripemd256":[calc_hash2,"shash","-a RIPEMD256","RIPEMD256"],\
-	 "ripemd320":[calc_hash2,"shash","-a RIPEMD320","RIPEMD320"],\
-	 "sha1":[calc_hash2,"shash","-a SHA1","SHA1"],\
-	 "sha224":[calc_hash2,"shash","-a SHA224","SHA224"],\
-	 "sha256":[calc_hash2,"shash","-a SHA256","SHA256"],\
-	 "sha384":[calc_hash2,"shash","-a SHA384","SHA384"],\
-	 "sha512":[calc_hash2,"shash","-a SHA512","SHA512"],\
-	 "snefru128":[calc_hash2,"shash","-a SNEFRU128","SNEFRU128"],\
-	 "snefru256":[calc_hash2,"shash","-a SNEFRU256","SNEFRU256"],\
-	 "tiger":[calc_hash2,"shash","-a TIGER","TIGER"],\
-	 "tiger128":[calc_hash2,"shash","-a TIGER128","TIGER128"],\
-	 "tiger160":[calc_hash2,"shash","-a TIGER160","TIGER160"],\
-	 "whirlpool":[calc_hash2,"shash","-a WHIRLPOOL","WHIRLPOOL"],\
-	 }
-
 def read_from_clst(file):
 	line = ''
 	myline = ''
@@ -156,9 +93,7 @@ valid_config_file_values.append("CCACHE")
 valid_config_file_values.append("DISTCC")
 valid_config_file_values.append("ICECREAM")
 valid_config_file_values.append("ENVSCRIPT")
-valid_config_file_values.append("AUTORESUME")
 valid_config_file_values.append("FETCH")
-valid_config_file_values.append("CLEAR_AUTORESUME")
 valid_config_file_values.append("options")
 valid_config_file_values.append("DEBUG")
 valid_config_file_values.append("VERBOSE")

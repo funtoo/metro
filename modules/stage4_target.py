@@ -32,7 +32,6 @@ class stage4_target(generic_stage_target):
 #			not self.settings.has_key("FETCH"):
 		if not self.settings.has_key("FETCH"):
 			self.settings["action_sequence"].append("capture")
-		self.settings["action_sequence"].append("clear_autoresume")
 
 def register(foo):
 	foo.update({"stage4":stage4_target})

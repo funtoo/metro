@@ -33,18 +33,8 @@ class grp_target(generic_stage_target):
 
 	def set_target_path(self):
 		self.settings["target_path"]=normpath(self.settings["storedir"]+"/builds/"+self.settings["target_subpath"]+"/")
-		if self.settings.has_key("AUTORESUME") \
-			and os.path.exists(self.settings["autoresume_path"]+"setup_target_path"):
-			print "Resume point detected, skipping target path setup operation..."
-		else:
-			# first clean up any existing target stuff
-			#if os.path.isdir(self.settings["target_path"]):
-				#cmd("rm -rf "+self.settings["target_path"],
-				#"Could not remove existing directory: "+self.settings["target_path"],env=self.env)
-			if not os.path.exists(self.settings["target_path"]):
-				os.makedirs(self.settings["target_path"])
-
-			touch(self.settings["autoresume_path"]+"setup_target_path")
+		if not os.path.exists(self.settings["target_path"]):
+			os.makedirs(self.settings["target_path"])
 
 	def run_local(self):
 		for pkgset in self.settings["grp"]:
@@ -105,7 +95,7 @@ class grp_target(generic_stage_target):
 	    self.settings["action_sequence"]=["unpack","unpack_snapshot",\
 					    "config_profile_link","setup_confdir","portage_overlay","bind","chroot_setup",\
 	    				    "setup_environment","run_local","unbind",\
-					    "generate_digests","clear_autoresume"]
+					    "generate_digests"]
 
 def register(foo):
 	foo.update({"grp":grp_target})

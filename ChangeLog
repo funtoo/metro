@@ -1,6 +1,14 @@
 # Copyright 2002-2008 Gentoo Foundation; Distributed under the GPL v2
 # $Id: $
 
+  15 Aug 2000; Daniel Robbins <drobbins@funtoo.org>
+  many files:
+  totally removed AUTORESUME and digest support. This is beta and there are
+  likely still digest issues/bugs in the code that I haven't hit yet. Once it
+  is all removed, we should have jettisoned about 200 or so lines of code?
+  Makes it a lot simpler. Want to have an external program do digests rather
+  than have it so integrated.
+
   15 Aug 2008; Daniel Robbins <drobbins@funtoo.org>
   modules/generic_stage_target.py,
   modules/snapshot_target.py,

@@ -125,7 +125,7 @@ class netboot_target(generic_stage_target):
 	    				"config_profile_link","setup_confdir","bind","chroot_setup",\
 						"setup_environment","build_packages","build_busybox",\
 						"build_kernel","copy_files_to_image",\
-						"clean","create_netboot_files","unbind","clear_autoresume"]
+						"clean","create_netboot_files","unbind"]
 
 def register(foo):
 	foo.update({"netboot":netboot_target})

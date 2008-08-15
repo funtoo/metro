@@ -10,14 +10,13 @@ conf_values={}
 
 def usage():
 	print "Usage catalyst [options] [-C variable=value...] [ -s identifier]"
-	print " -a --clear-autoresume	clear autoresume flags"
 	print " -c --config		use specified configuration file"
 	print " -C --cli		catalyst commandline (MUST BE LAST OPTION)"
 	print " -d --debug		enable debugging"
 	print " -f --file		read specfile"
 	print " -F --fetchonly		fetch files only"
 	print " -h --help		print this help message"
-	print " -p --purge		clear tmp dirs,package cache and autoresume flags"
+	print " -p --purge		clear tmp dirs and package cache"
 	print " -s --snapshot		generate a release snapshot"
 	print " -V --version		display version information"
 	print " -v --verbose		verbose output"
@@ -43,7 +42,7 @@ def parse_config(myconfig):
 	myconf={}
 	config_file=""
 
-	confdefaults={ "storedir":"/var/tmp/catalyst",\
+	confdefaults={ "storedir":"/var/tmp/catalyst", "workdir":"/var/tmp/catalyst",\
 		"sharedir":"/usr/share/catalyst","distdir":"/usr/portage/distfiles",\
 		"portdir":"/usr/portage","portname":"portage","options":"",\
 		"snapshot_cache":"/var/tmp/catalyst/snapshot_cache",\
@@ -87,22 +86,9 @@ def parse_config(myconfig):
 			print "Setting",x,"to default value \""+confdefaults[x]+"\""
 			conf_values[x]=confdefaults[x]
 
-	# parse out the rest of the options from the config file
-	if "autoresume" in string.split(conf_values["options"]):
-		print "Autoresuming support enabled."
-		conf_values["AUTORESUME"]="1"
-
 	if "ccache" in string.split(conf_values["options"]):
 		print "Compiler cache support enabled."
 		conf_values["CCACHE"]="1"
-
-	if "clear-autoresume" in string.split(conf_values["options"]):
-		print "Cleaning autoresume flags support enabled."
-		conf_values["CLEAR_AUTORESUME"]="1"
-
-#	if "compress" in string.split(conf_values["options"]):
-#		print "Compression enabled."
-#		conf_values["COMPRESS"]="1"
 
 	if "distcc" in string.split(conf_values["options"]):
 		print "Distcc support enabled."
@@ -139,9 +125,6 @@ def parse_config(myconfig):
 #	if "tarball" in string.split(conf_values["options"]):
 #		print "Tarball creation enabled."
 #		conf_values["TARBALL"]="1"
-
-	if myconf.has_key("digests"):
-		conf_values["digests"]=myconf["digests"]
 
 	if myconf.has_key("envscript"):
 		print "Envscript support enabled."
@@ -226,8 +209,8 @@ if __name__ == "__main__":
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "aphvdc:C:f:FVs:", ["purge","help", "version", "debug",\
-			"clear-autoresume", "config=", "cli=", "file=", "fetch", "verbose","snapshot="])
+		opts,args = getopt.getopt(sys.argv[1:], "phvdc:C:f:FVs:", ["purge","help", "version", "debug",\
+			"config=", "cli=", "file=", "fetch", "verbose","snapshot="])
 	
 	except getopt.GetoptError:
 		usage()
@@ -317,13 +300,6 @@ if __name__ == "__main__":
 				sys.exit(2)
 			else:
 				conf_values["PURGE"]="1"
-		if o in ("-a", "--clear-autoresume"):
-			if len(sys.argv) < 3:
-				print "!!! catalyst: please specify one of either -f or -C\n"
-				usage()
-				sys.exit(2)
-			else:
-				conf_values["CLEAR_AUTORESUME"]="1"
 	if run != 1:
 		print "!!! catalyst: please specify one of either -f or -C\n"
 		usage()
@@ -334,43 +310,6 @@ if __name__ == "__main__":
 	sys.path.append(conf_values["sharedir"]+"/modules")
 	from catalyst_support import *
 	
-	# Start checking that digests are valid now that the hash_map was imported from catalyst_support
-	if conf_values.has_key("digests"):
-		for i in conf_values["digests"].split():
-			if not hash_map.has_key(i):
-				print
-				print i+" is not a valid digest entry"
-				print "Valid digest entries:"
-				print hash_map.keys()
-				print
-				print "Catalyst aborting...."
-				sys.exit(2)
-			if find_binary(hash_map[i][1]) == None:
-				print
-				print "digest="+i
-				print "\tThe "+hash_map[i][1]+\
-					" binary was not found. It needs to be in your system path"
-				print
-				print "Catalyst aborting...."
-				sys.exit(2)
-	if conf_values.has_key("hash_function"):
-		if not hash_map.has_key(conf_values["hash_function"]):
-			print
-			print conf_values["hash_function"]+" is not a valid hash_function entry"
-			print "Valid hash_function entries:"
-			print hash_map.keys()
-			print
-			print "Catalyst aborting...."
-			sys.exit(2)
-		if find_binary(hash_map[conf_values["hash_function"]][1]) == None:
-			print
-			print "hash_function="+conf_values["hash_function"]
-			print "\tThe "+hash_map[conf_values["hash_function"]][1]+\
-				" binary was not found. It needs to be in your system path"
-			print
-			print "Catalyst aborting...."
-			sys.exit(2)
-
 	# import the rest of the catalyst modules
 	targetmap=import_modules()
 
