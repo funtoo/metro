@@ -17,632 +17,6 @@
   Added core32 and core64 subarchitectures - synced with upstream as much
   as possible while preserving funtoo "core32" and "core64" extensions.
 
-  14 Mar 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/kmerge.sh:
-  Clean up package.provided after the kernel build
-
-  13 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/kmerge.sh:
-  It helps if I put things in the correct order so they'll actually execute,
-  rather than getting a nice error from emerge.
-
-  13 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/kmerge.sh:
-  Change upgrade to update.
-
-  13 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/kmerge.sh:
-  Add back in the package.provided code that *should* skip the kernel sources
-  merge for call back and subsequent runs.
-
-  13 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/kmerge.sh:
-  We don't really need to use binary packages for the kernel sources, since it
-  doesn't gain us anything. Also, we need to delete the /usr/src/linux symlink
-  when we're not using kerncache.
-
-  13 Mar 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/kmerge.sh:
-  Remove 'symlink' from USE, since it's not needed and screws up kerncache
-
-  13 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  targets/livecd-stage2/livecd-stage2-controller.sh:
-  OK, we run our find outside the chroot, so we don't want to use absolute
-  paths unless we want to wipe out *.a *.la *.pyc and *.pyo from our host
-  system. Oops. Due to this bug, I'm making this 2.0.6_pre15 for testing
-  immediately.
-
-  13 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  targets/livecd-stage2/livecd-stage2-controller.sh,
-  targets/stage1/stage1-controller.sh:
-  Cleanup the clean section for stage1 and add an updated clean section for
-  livecd-stage2 when we're a minimal, universal, or game CD. This is
-  2.0.6_pre14 for testing.
-
-  11 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/kmerge.sh:
-  We should be using --newuse when merging our packages in callback.
-
-  11 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/grp/grp-chroot.sh:
-  We should only use --noreplace when building a pkgset, everything else
-  should be a fetch.
-
-  11 Mar 2008; Andrew Gaffney <agaffney@gentoo.org>
-  modules/catalyst_support.py, modules/generic_stage_target.py,
-  modules/grp_target.py:
-  Apply additional patches from bug #207862 for CONTENTS generation.
-
-  10 Mar 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/grp/grp-chroot.sh:
-  Call setup_myemergeopts after changing clst_FETCH.
-
-  10 Mar 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/netboot2/netboot2-pkg.sh:
-  Remove a bit of unnecessary code.
-
-  10 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/generic_stage_target.py, targets/grp/grp-chroot.sh,
-  targets/support/chroot-functions.sh:
-  Fix some spacing on the -* warning, revert Andrew's last change, since it
-  didn't do anything, and clean up the GRP chroot code so it works smarter and
-  set clst_FETCH when clst_grp_type is something other than pkgset.
-
-  10 Mar 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/chroot-functions.sh:
-  Don't set --usepkg and --buildpkg when fetching.
-
-  07 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/generic_stage_target.py:
-  Change the warning thrown into make.conf when someone uses LDFLAGS so it is
-  less confusing.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/generic_stage_target.py:
-  Merged ChangeLog.old and ChangeLog and added a note for myself to fix up the
-  boot/kernel/${kname}/config copying code in generic_stage_target.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/kmerge.sh:
-  Make sure we don't give genkernel a --kernel-config if it isn't set in the
-  spec.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  modules/generic_stage_target.py, targets/support/kmerge.sh,
-  targets/support/pre-kmerge.sh:
-  Changed boot/kernel/${kname}/config and boot/kernel/${kname}/sources to be
-  valid, rather than required, changed clst_ksource to default to
-  virtual/linux-sources if boot/kernel/${kname}/sources is unset, moved
-  removal of USE to after the kernel build so the modules get the correct USE,
-  and did some minor cleanup on pre-kmerge. This is 2.0.6_pre13 for testing.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/kmerge.sh:
-  We should run the default functions for kmerge.sh, too.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  -livecd/cdtar/aboot-0.9-r1-cdtar.tar.bz2,
-  +livecd/cdtar/aboot-1.0_pre20040408-r2-cdtar.tar.bz2:
-  Updated aboot cdtar with a newer version to support newer kernels.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh, targets/support/chroot-functions.sh:
-  Updated make_destpath so it writes out to make.conf as well as exporting
-  ROOT to the environment, added a make_destpath call to cleanup_stages, and
-  adding make_destpath /tmp/stage1root to stage1.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org> README, catalyst:
-  Updated README a bit and rolling 2.0.6_pre12 for testing.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/create-iso.sh:
-  Removed any further checks for clst_fstype and making sure everybody is
-  using ${mkisofs_zisofs_opts}.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/livecdfs-update.sh:
-  The default theme for GNOME is now Clearlooks, so we can remove the theme
-  code, but we still want to set the font size.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/livecdfs-update.sh:
-  We need to put quotes around ${user_comment} or useradd gets confused.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/chroot-functions.sh:
-  Changed make_destpath to write out ROOT to make.conf, rather than (ab)using
-  the environment.
-
-  05 Mar 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  targets/support/kmerge.sh:
-  Added an additional make_destpath call to kmerge.sh so it'll export ROOT=/
-  prior to running genkernel. This is catalyst 2.0.6_pre11 for testing.
-
-  04 Mar 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/create-iso.sh:
-  Bash fscking sucks, so we have to compromise on this code reduction solution
-  a bit. It's still far better than it was
-
-  03 Mar 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/create-iso.sh:
-  Don't escape quotes when actually running the command
-
-  02 Mar 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/kmerge.sh:
-  Pass clst_root_path instead of ROOT to run_merge, since it overrides ROOT
-
-  29 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/kmerge.sh:
-  Use -L instead of -l in test for symlink
-
-  29 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-controller.sh:
-  Remove code for gcc-config/binutils-config since it should be getting done
-  in the preclean script, anyway.
-
-  29 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh:
-  I missed one place where HOSTUSE was being used incorrectly.
-
-  29 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/kmerge.sh:
-  Escape the correct quote
-
-  29 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/kmerge.sh:
-  Change remaining instances of run_emerge to run_merge
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/bootloader-setup.sh, targets/support/create-iso.sh:
-  Change all clst_hostuse checks for ppc/ppc64 to ppc*|powerpc* so we match,
-  no matter what.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/bootloader-setup.sh:
-  Let's change our splash checking to a global check so it only needs to be
-  done once. This makes much more sense than having all of those if ... else
-  ... statements.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh, targets/support/kmerge.sh:
-  Fix our USE invocation here so things work as expected.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/livecdfs-update.sh:
-  Force-enable livecd/users for livecd/type gentoo-release-livecd and
-  gentoo-gamecd.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/livecdfs-update.sh:
-  Remove /etc/conf.d/domainname code, since /etc/conf.d/domainname is no
-  longer used.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/livecd-stage2/livecd-stage2-controller.sh:
-  Fixing the snapshot copying so it will only copy the correct snapshot for
-  people who don't know how to properly use wget.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh:
-  Fix HOSTUSE invocation on stage1, since we use -* at the beginning to
-  disable profile USE.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh, targets/support/kmerge.sh:
-  OK, we have to escape our quotes, rather than use single quotes, or we don't
-  evaluate the variables properly.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh, targets/support/chroot-functions.sh,
-  targets/support/kmerge.sh:
-  Fixing echo/sed for make.conf writing.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/grp/grp-chroot.sh, targets/stage1/stage1-chroot.sh,
-  targets/support/kmerge.sh, targets/support/livecdfs-update.sh:
-  Rather than using the environment, we write out our USE to make.conf, then
-  remove it once we're done. We don't bother adding clst_HOSTUSE, since it'll
-  be written to make.conf, already.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/embedded/embedded-chroot.sh, targets/grp/grp-chroot.sh,
-  targets/livecd-stage1/livecd-stage1-chroot.sh,
-  targets/netboot/netboot-chroot.sh, targets/netboot/netboot-combine.sh,
-  targets/netboot2/netboot2-pkg.sh, targets/stage1/stage1-chroot.sh,
-  targets/stage2/stage2-preclean-chroot.sh, targets/stage3/stage3-chroot.sh,
-  targets/stage3/stage3-preclean-chroot.sh, targets/stage4/stage4-chroot.sh,
-  targets/support/chroot-functions.sh, targets/support/pre-kmerge.sh,
-  targets/support/unmerge.sh, targets/tinderbox/tinderbox-chroot.sh:
-  Changing run_emerge to run_merge, changing both setup_portage and
-  setup_myfeatures to add any USE changes to make.conf prior to merge, then
-  removing the settings added, rather than (ab)using the environment.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/grp/grp-chroot.sh, targets/livecd-stage1/livecd-stage1-chroot.sh,
-  targets/stage1/stage1-chroot.sh, targets/stage3/stage3-chroot.sh,
-  targets/stage4/stage4-chroot.sh, targets/support/chroot-functions.sh,
-  targets/tinderbox/tinderbox-chroot.sh:
-  Rearrange some of the functions in chroot-functions.sh in preparation for
-  some upcoming changes and rename setup_portage to setup_pkgmgr.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-controller.sh:
-  Removing an extra env-update call from stage1's preclean.
-
-  28 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  livecd/cdtar/grub-memtest86+-cdtar.tar.bz2,
-  targets/support/bootloader-setup.sh:
-  Set default for grub to 0 and updated cdtar so we don't ship a half-broken
-  help.msg which we didn't even use.
-
-  28 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/bootloader-setup.sh:
-  Don't write out out 'default 1' line when creating grub.conf, since the
-  'help' entry is now at the bottom, and we want grub to default to the first
-  entry
-
-  27 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  targets/support/bootloader-setup.sh:
-  Removed checks on livecd/splash_type, since we only support one type,
-  removed remaining bootsplash code from bootloader-setup.sh, added automatic
-  copying of splash.xpm.gz for Gentoo releases when using grub, and moved grub
-  help to bottom of titles. This is catalyst 2.0.6_pre10 for testing.
-
-  27 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/livecd-stage2/livecd-stage2-controller.sh:
-  Let's automatically copy in the snapshot if livecd/type is
-  gentoo-release-livecd.
-
-  26 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  modules/generic_stage_target.py:
-  Fix leading whitespace in empty() so it's only executed if there's something
-  to execute it on. Thanks to Justin Bronder <jsbronder@gentoo.org> in bug
-  211410 for pointing this out
-
-  21 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/rc-update.sh:
-  Quote baselayout package atom
-
-  21 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/chroot-functions.sh:
-  OK, we shouldn't use which to find env-update, since /usr/sbin isn't in the
-  PATH by default. Instead, simply check if it exists.
-
-  21 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/chroot-functions.sh:
-  Remove temporary package listing code, since --verbose is forced on with
-  --debug
-
-  21 Feb 2008; Andrew Gaffney <agaffney@gentoo.org> catalyst:
-  Force-enable --verbose when using --debug
-
-  21 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/kmerge.sh:
-  Changing modules-update to update-modules to quiet a warning and keep us
-  from having it get removed out from under us.
-
-  21 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  targets/support/chroot-functions.sh:
-  Adding a note to myself for better debug and moving run_default_funcs to the
-  bottom of the script so it gets executed. Since this can otherwise break
-  pkgcache, I'm making this catalyst 2.0.6_pre9 for testing, immediately.
-
-  21 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh, targets/stage2/stage2-chroot.sh,
-  targets/support/chroot-functions.sh:
-  Moved creating of stage1 package list to the beginning of stage1-chroot.sh
-  so we can get the output with --debug, added --newuse to the options for
-  stage1, as we should always rebuild any package where the USE has changed,
-  removed removal of portage logs from stage2-chroot.sh since it is being done
-  by cleanup_stages, moved world removal in cleanup_stages into a check for
-  stages 1 through 3, made update_env_settings check for the existence of
-  env-update before running it since we now run update_env_settings by default
-  everywhere chroot-functions.sh is sourced, and added a section to show_debug
-  to list the packages, since we don't yet force-enable verbose with debug.
-
-  20 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  modules/catalyst_lock.py:
-  Since my python sucks and I don't feel like troubleshooting it at the
-  moment, commenting out all the DEBUG code in catalyst_lock and rolling up
-  2.0.6_pre8 for testing.
-
-  20 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> AUTHORS, catalyst,
-  modules/builder.py, modules/catalyst_lock.py:
-  Added some extra debug output to catalyst_lock.py and added Stuart Longland
-  to AUTHORS. This is catalyst 2.0.6_pre7 for testing.
-
-  20 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  modules/catalyst_support.py:
-  change 'is' to == because python is grumpy
-
-  20 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  examples/livecd-stage2_template.spec, examples/stage4_template.spec,
-  modules/livecd_stage2_target.py, targets/support/kmerge.sh,
-  targets/support/livecdfs-update.sh, targets/support/pre-kmerge.sh,
-  targets/support/rc-update.sh:
-  Removing support for bootsplash, since it hasn't been in a supported kernel
-  in a couple years and isn't accepted upstream.
-
-  20 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/support/pre-kmerge.sh, targets/tinderbox/tinderbox-chroot.sh:
-  Fix up the sed for genkernel so it works on versions both before and after
-  3.4.10_pre2 and fixing a couple places where my sed for the . -> source
-  change was a bit too aggressive.
-
-  20 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/bootloader-setup.sh:
-  Change grub timeout to 15 seconds instead of 150.
-
-  20 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/pre-kmerge.sh:
-  Comment out sed on genkernel executable as it appears to do nothing these
-  days.
-
-  20 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/livecd-stage2/livecd-stage2-controller.sh:
-  Only call find on libdirs that actually exist. Thanks to Kristoffer
-  <krek6597@student.uu.se> in bug #210807.
-
-  20 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  modules/generic_stage_target.py:
-  Add warning about -* in foo/use in the spec.
-
-  20 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/embedded/embedded-chroot.sh,
-  targets/embedded/embedded-preclean-chroot.sh, targets/grp/grp-chroot.sh,
-  targets/grp/grp-preclean-chroot.sh,
-  targets/livecd-stage1/livecd-stage1-chroot.sh,
-  targets/livecd-stage1/livecd-stage1-preclean-chroot.sh,
-  targets/netboot/netboot-chroot.sh, targets/netboot/netboot-image.sh,
-  targets/netboot2/netboot2-copyfile.sh, targets/netboot2/netboot2-pkg.sh,
-  targets/stage1/stage1-chroot.sh, targets/stage1/stage1-preclean-chroot.sh,
-  targets/stage2/stage2-chroot.sh, targets/stage2/stage2-preclean-chroot.sh,
-  targets/stage3/stage3-chroot.sh, targets/stage3/stage3-preclean-chroot.sh,
-  targets/stage4/stage4-chroot.sh, targets/stage4/stage4-preclean-chroot.sh,
-  targets/support/pre-kmerge.sh, targets/tinderbox/tinderbox-chroot.sh,
-  targets/tinderbox/tinderbox-preclean-chroot.sh:
-  Change all . to source.
-
-  20 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/embedded/embedded-preclean-chroot.sh,
-  targets/grp/grp-preclean-chroot.sh,
-  targets/livecd-stage1/livecd-stage1-preclean-chroot.sh,
-  targets/stage1/stage1-chroot.sh, targets/stage1/stage1-preclean-chroot.sh,
-  targets/stage2/stage2-preclean-chroot.sh, targets/stage3/stage3-chroot.sh,
-  targets/stage3/stage3-preclean-chroot.sh,
-  targets/stage4/stage4-preclean-chroot.sh,
-  targets/support/chroot-functions.sh,
-  targets/tinderbox/tinderbox-preclean-chroot.sh:
-  Added a cleanup_stages function and added it to the appropriate places.
-
-  20 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/embedded/embedded-chroot.sh, targets/grp/grp-chroot.sh,
-  targets/livecd-stage1/livecd-stage1-chroot.sh,
-  targets/netboot/netboot-chroot.sh, targets/stage1/stage1-chroot.sh,
-  targets/stage2/stage2-chroot.sh, targets/stage3/stage3-chroot.sh,
-  targets/stage4/stage4-chroot.sh, targets/support/chroot-functions.sh,
-  targets/support/kmerge.sh, targets/support/livecdfs-update.sh,
-  targets/support/post-kmerge.sh, targets/support/pre-kmerge.sh,
-  targets/support/unmerge.sh, targets/tinderbox/tinderbox-chroot.sh:
-  Removing any functions that we now call by default when we source
-  chroot-functions.sh by default.
-
-  20 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/embedded/embedded-chroot.sh, targets/grp/grp-chroot.sh,
-  targets/livecd-stage1/livecd-stage1-chroot.sh,
-  targets/netboot/netboot-chroot.sh, targets/netboot2/netboot2-pkg.sh,
-  targets/stage1/stage1-chroot.sh, targets/stage2/stage2-chroot.sh,
-  targets/stage3/stage3-chroot.sh, targets/stage4/stage4-chroot.sh,
-  targets/support/chroot-functions.sh, targets/support/pre-kmerge.sh:
-  Clean up the debug code that I've added to stage1, move it to
-  chroot_functions.sh, and call it from all of our main targets.
-
-  14 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  modules/generic_stage_target.py:
-  Wow. I need to make sure that we actually comment comments in make.conf or
-  we end up with a failed build. Thanks to Christian Heim <phreak@gentoo.org>
-  for pointing it out. This is catalyst 2.0.6_pre6 for testing.
-
-  14 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh, targets/stage2/stage2-chroot.sh,
-  targets/stage3/stage3-chroot.sh:
-  We need to be sure we clear out /var/log/portage/elog as well as
-  /var/log/emerge.log for stages 1 through 3.
-
-  14 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  modules/generic_stage_target.py,
-  targets/livecd-stage2/livecd-stage2-controller.sh,
-  targets/support/livecdfs-update.sh:
-  Clean up firmware code in livecdfs-update.sh, add beginnings of new firmware
-  code in livecd-stage2-controller.sh, and fix output for USE in make.conf to
-  80 columns. This is catalyst 2.0.6_pre5 for testing.
-
-  14 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/generic_stage_target.py:
-  Apparently, python doesn't like it when you put a set of comments in front
-  of an elif. Thanks to Robin Johnson <robbat2@gentoo.org> for pointing it out
-  and the patch.
-
-  13 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/generic_stage_target.py:
-  Huge refactoring of modules/generic_stage_target.py to fix indentation and
-  generally clean up the code so it's a bit easier to read/follow.
-
-  13 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  modules/generic_stage_target.py:
-  Sort and de-dupe myusevars.
-
-  13 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh:
-  Modify stage1-chroot.sh to use the actual -d/--debug code already in catalyst.
-
-  13 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/generic_stage_target.py, targets/embedded/embedded-chroot.sh,
-  targets/grp/grp-chroot.sh, targets/livecd-stage1/livecd-stage1-chroot.sh,
-  targets/netboot/netboot-chroot.sh, targets/stage3/stage3-chroot.sh,
-  targets/stage4/stage4-chroot.sh, targets/support/chroot-functions.sh,
-  targets/tinderbox/tinderbox-chroot.sh:
-  Move export of FEATURES to setup_myfeatures.
-
-  12 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  targets/stage1/stage1-chroot.sh:
-  Added some debug code to stage1 and fixed a nice bug where we weren't
-  building with the correct USE. Unfortunately, this invalidates any caches
-  for stage1, since we were building with the entire USE from the profile.
-  This is 2.0.6_pre4 for testing.
-
-  11 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh:
-  We don't need to do the device building twice, so removing USE=build from
-  first baselayout install.
-
-  09 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  targets/support/livecdfs-update.sh:
-  We check for a plugdev group, add it if it doesn't exist, and make sure any
-  users specified by livecd/users is in the group.
-
-  09 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> arch/mips.py:
-  Changing cobalt_n32 to use mipsel4_n32 as its inheritance point. Thanks to
-  Stuart Longland <redhatter@gentoo.org> for pointing this change out.
-
-  08 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  modules/catalyst_support.py:
-  Fix up calc_contents in contents_map. Thanks to Brent Baude
-  <ranger@gentoo.org> for pointing it out. This is catalyst 2.0.6_pre3 for
-  testing.
-
-  08 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh:
-  Ensure /etc/xml/catalog does not exist in stage1, since it will always be
-  empty and will cause issues in stage3 and beyond.
-
-  08 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst,
-  targets/support/kmerge.sh, targets/support/rc-update.sh:
-  Changed some of the rc-update code so it should work with baselayout-2,
-  also. This is 2.0.6_pre2 for testing.
-
-  08 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> AUTHORS, catalyst,
-  files/catalyst.conf, modules/catalyst_support.py,
-  modules/generic_stage_target.py, modules/grp_target.py,
-  modules/snapshot_target.py:
-  Added support for generating CONTENTS files automatically. Patch by Robin
-  Johnson <robbat2@gentoo.org> for bug #207862.
-
-  08 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/snapshot_target.py:
-  Add a patch from Robin Johnson <robbat2@gentoo.org> from bug #207860 to
-  exclude digest-* files from the snapshot.
-
-  08 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> arch/amd64.py,
-  arch/x86.py, modules/generic_stage_target.py:
-  Fixing a minor display issue when we write out make.conf, adding HOSTUSE for
-  amd64 to add mmx, sse, and sse2 to USE, adding sse2 to pentium4's HOSTUSE.
-
-  07 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/kmerge.sh:
-  Make the --kerncache option to genkernel dependent on 'kerncache' being in
-  options, so that it can actually be turned off.
-
-  07 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> arch/amd64.py,
-  arch/mips.py:
-  Rearrange things in the arch/*.py files to ensure that nothing is used
-  before it has been defined.
-
-  07 Feb 2008; Andrew Gaffney <agaffney@gentoo.org> arch/powerpc.py:
-  Reorder arch/powerpc.py to make python happy.
-
-  07 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  modules/snapshot_target.py:
-  Change .svn --include to an --exclude like it was supposed to be.
-
-  07 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> arch/mips.py,
-  catalyst:
-  Added several subarches for mips so we can dump the mips subarch profiles
-  from my shiny new multi-parent profile structure. This is 2.0.6_pre1 for
-  testing.
-
-  07 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/livecd-stage2/livecd-stage2-controller.sh:
-  Changed the code for copying the MOTD files so it's fewer lines and makes
-  more sense.
-
-  06 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> +arch/powerpc.py,
-  -arch/ppc.py, -arch/ppc64.py, arch/sparc.py, -arch/sparc64.py:
-  Merged ppc.py and ppc64.py into powerpc.py and merged sparc.py and
-  sparc64.py into sparc.py, so we have a cleaner set of arch files.
-
-  06 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> arch/amd64.py,
-  arch/x86.py:
-  Did a little cleanup on the x86.py to remove some redundant entries and
-  added nocona and core2 to amd64.py, though they're currently commented out.
-
-  06 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/generic_stage_target.py:
-  Write out HOSTUSE settings from arch/*.py to make.conf as well as any USE
-  flags defined in the spec file.
-
-  06 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> arch/ppc64.py:
-  Added a patch from Markus Rothe <corsair@gentoo.org> to add power6 and cell
-  subarches to ppc64 for bug #208860 and removing redundant CXXFLAGS settings,
-  since catalyst sets CXXFLAGS=CFLAGS by default.
-
-  06 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/livecd-stage1/livecd-stage1-chroot.sh, targets/support/kmerge.sh:
-  Added clst_HOSTUSE to livecd-stage1 and livecd-stage2 package builds.
-
-  06 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> arch/x86.py:
-  Added prescott to the subarches for x86.
-
-  06 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  modules/netboot2_target.py, targets/support/kmerge.sh:
-  Add patch to enabled netboot2/linuxrc and automatically add path for
-  initramfs overlay to genkernel commandline. Thanks to Justin Bronder
-  <jsbronder@gentoo.org> in bug #208106.
-
-  06 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  modules/netboot2_target.py:
-  Allow root_overlay in netboot2 target for bug #208106.
-
-  04 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/generic_stage_target.py, modules/livecd_stage1_target.py,
-  targets/stage1/stage1-chroot.sh, targets/support/chroot-functions.sh:
-  Added USE=bindist automatically to everything that inherits set_use from
-  generic_stage_target, added USE=bindist to livecd_stage1_target, added
-  USE=bindist to emerge run for stage1, and did some minor cleanup in
-  get_libdir in chroot-functions.
-
-  03 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/bootloader-setup.sh:
-  Add splashimage= line to grub.conf if /boot/grub/splash.xpm.gz exists.
-
-  02 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  examples/generic_stage_template.spec, examples/grp_template.spec,
-  examples/livecd-stage1_template.spec,
-  examples/livecd-stage2_template.spec, examples/netboot_template.spec,
-  examples/stage4_template.spec, examples/tinderbox_template.spec:
-  Changing link so it no longer points to a dead page.  This is for bug #208609.
-
-  02 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  modules/snapshot_target.py:
-  Add .svn to the catalyst snapshot excludes and remove old pordir_overlay code.
-
-  02 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  targets/stage1/stage1-chroot.sh:
-  As much as I hate this, we're going to force baselayout to install first.
-  This will keep us from having any issues with packages that don't respect
-  multilib libdirs.
-
-  02 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org> files/catalyst.conf:
-  Reorder options in catalyst.conf so they're alphabetical.
-
-  02 Feb 2008; Andrew Gaffney <agaffney@gentoo.org>
-  targets/support/bootloader-setup.sh:
-  Add 'pager on' to grub.conf for bug #208531.
-
-  02 Feb 2008; Chris Gianelloni <wolf31o2@gentoo.org>
-  livecd/files/README.txt, livecd/files/x86-F6.msg:
-  Removing the unused kernel command line options from Volume/Device Management.
-
   10 Jan 2008; Chris Gianelloni <wolf31o2@gentoo.org> catalyst:
   This is now 2.0.5 for release.
 
@@ -674,7 +48,7 @@
   targets/livecd-stage2/livecd-stage2-controller.sh,
   targets/support/livecdfs-update.sh:
   We apparently still need profiles/eclass for building the stage3 from the
-  LiveCD with the installer.
+  livecd with the installer.
 
   17 Nov 2007; Andrew Gaffney <agaffney@gentoo.org> arch/mips.py:
   Apply patch for MIPS N32 support from Stuart Longland <redhatter@gentoo.org>
@@ -705,7 +79,7 @@
 
   11 Nov 2007; Andrew Gaffney <agaffney@gentoo.org>
   modules/generic_stage_target.py:
-  Add an extra warning into the generated make.conf about changing the CHOST.
+  Add an extra warning into the generated make.conf about changing the CHOST
 
   01 Nov 2007; Andrew Gaffney <agaffney@gentoo.org>
   targets/support/livecdfs-update.sh:
@@ -746,24 +120,23 @@
   to go poking around if we need to touch anything in libdir.
 
   11 Oct 2007; Andrew Gaffney <agaffney@gentoo.org> catalyst:
-  Print an error saying what target failed before the traceback.
+  print an error saying what target failed before the traceback
 
   25 Sep 2007; Andrew Gaffney <agaffney@gentoo.org>
   modules/catalyst_support.py:
-  When parsing make.conf, first try pkgcore's
+  when parsing make.conf, first try pkgcore's
   snakeoil.fileutils.read_bash_dict(), then portage's
-  portage_util.getconfig(), then the internal parse_makeconf().
+  portage_util.getconfig(), then the internal parse_makeconf()
 
   06 Sep 2007; Andrew Gaffney <agaffney@gentoo.org>
   modules/catalyst_support.py:
-  Raise an exception in parse_spec() if there's a duplicate key in the spec.
+  raise an exception in parse_spec() if there's a duplicate key in the spec
 
   06 Sep 2007; Andrew Gaffney <agaffney@gentoo.org>
   examples/netboot_template.spec, examples/tinderbox_template.spec,
   modules/grp_target.py, modules/tinderbox_target.py:
-  Remove redundant set_pkgcache_path() functions from tinderbox and grp
-  modules, and remove extra pkgcache_path and kerncache_path options from
-  example specs.
+  remove redundant set_pkgcache_path() functions from tinderbox and grp modules
+  remove extra pkgcache_path and kerncache_path options from example specs
 
   31 Aug 2007; Chris Gianelloni <wolf31o2@gentoo.org> catalyst:
   This is catalyst 2.0.5_pre3 for testing the new stages code.
@@ -790,8 +163,7 @@
   22 Aug 2007; Andrew Gaffney <agaffney@gentoo.org>
   modules/generic_stage_target.py, modules/stage1_target.py,
   modules/stage2_target.py:
-  The 'chost' option is only valid in stage 1/2 specs.  Have catalyst error
-  otherwise.
+  'chost' option is only valid in stage 1/2 specs. have catalyst error otherwise
 
   13 Aug 2007; Andrew Gaffney <agaffney@gentoo.org> catalyst,
   modules/generic_stage_target.py, modules/netboot2_target.py:
@@ -4078,13 +3450,13 @@
   livecd/runscript-support/livecdfs-update.sh:
   firmware tarball fix for packages that need firmware such as ipw2100
 
-  16 Oct 2004; John Davis <zhen@gentoo.org> livecd/files/x86-help.msg,
+  16 Oct 2004; <zhen@gentoo.org> livecd/files/x86-help.msg,
   livecd/runscript/x86-archscript.sh, livecd/runscript-support/kmerge.sh,
   livecd/runscript-support/livecdfs-update.sh,
   modules/livecd_stage2_target.py:
   patches for gensplash support from Chris Gianelloni <wolf31o2@gentoo.org>
 
-  14 Oct 2004; John Davis <zhen@gentoo.org> livecd/runscript/x86-archscript.sh:
+  14 Oct 2004; <zhen@gentoo.org> livecd/runscript/x86-archscript.sh:
   acpi=off changed to acpi=ht. enables HT automatically for intel users, but
   should not hurt non-HT users
 
@@ -4099,7 +3471,7 @@
   12 Oct 2004; John Davis <zhen@gentoo.org> modules/netboot.py:
   small netboot fixups
 
-  11 Oct 2004; John Davis <zhen@gentoo.org> modules/netboot.py,
+  11 Oct 2004; <zhen@gentoo.org> modules/netboot.py,
   targets/netboot/netboot-busybox.sh, targets/netboot/netboot-image.sh,
   targets/netboot/netboot-kernel.sh, targets/netboot/netboot-packages.sh,
   targets/netboot/netboot.sh:
@@ -4222,8 +3594,7 @@
   this out of generic_stage_target and into livecd-stage2 since the
   livecd-stage2 class was overriding generic_stage_target for cleaning anyway.
 
-  13 Jul 2004; John Davis <zhen@gentoo.org>
-  livecd/runscript-support/livecdfs-update.sh:
+  13 Jul 2004; <zhen@gentoo.org> livecd/runscript-support/livecdfs-update.sh:
   changed the behavior of rcadd/ rcdel. it was getting hokey to have to add the
   default rc'ed programs when only one change was required to rcadd. so I
   changed it so that the defaults are *always* loaded and specified additions/
@@ -4236,7 +3607,7 @@
   targets/tinderbox/tinderbox-chroot.sh:
   changing the more verbose behavior to the -V (verbose) flag
 
-  12 Jul 2004; John Davis <zhen@gentoo.org> catalyst,
+  12 Jul 2004; <zhen@gentoo.org> catalyst,
   targets/embedded/embedded-chroot.sh, targets/grp/grp-chroot.sh,
   targets/livecd-stage1/livecd-stage1-chroot.sh,
   targets/stage1/stage1-chroot.sh, targets/stage3/stage3-chroot.sh,
@@ -4244,7 +3615,7 @@
   the -d (debug) flag now makes catalyst calculate an emerge -vp of the packages
   it is about to merge so that deps and USE flags are more evident
 
-  11 Jul 2004; John Davis <zhen@gentoo.org> +catalyst, -catalyst.new.py,
+  11 Jul 2004; <zhen@gentoo.org> +catalyst, -catalyst.new.py,
   modules/catalyst_support.py:
   completely rewrote the catalyst main script so that it can actually utilize
   more than one command line flag. new functionality included, but not active
@@ -4290,13 +3661,14 @@
   now. Additionally, catalyst will stop when there is an error with an ebuild
   ... it didn't do this before, it just plowed along and packed things up.
   
-  Much thanks to <carpaski@gentoo.org> for (writing) pointing me to the spawn()
-  code in portage.py and then answering my noob questions.
+  Much thanks to <carpaski@gentoo.org> for (writing) pointing me to the spawn() code in
+  portage.py and then answering my noob questions.
 
   13 Jun 2004; John Davis <zhen@gentoo.org>
   livecd/runscript/x86-archscript.sh, livecd/runscript-support/kmerge.sh,
   livecd/runscript-support/livecdfs-update.sh:
-  some last minute fixins (stuff to work with the new genkernel)
+  some last minute fixins
+  (stuff to work with the new genkernel)
 
   13 Jun 2004; John Davis <zhen@gentoo.org> catalyst:
   rolling out 1.0.8.1
@@ -4563,21 +3935,21 @@
   examples/livecd/sparc64/config-2.4.24-sparc64:
   sparc fixups contributed by Gustavo Zacarias <gustavoz@gentoo.org>
 
-  12 Feb 2004; Daniel Robbins <drobbins@gentoo.org>:
-  fixed bugs in previous feature additions (see 11 Feb 2004) and added support
-  for a $clst_conf environment variable. You can use the $clst_conf variable to
-  point to a file to use in place of /etc/catalyst.conf. By setting this
-  variable in your shell, catalyst can easily be used by multiple people on the
+  12 Feb 2004; Daniel Robbins <drobbins@gentoo.org>: fixed bugs in previous
+  feature additions (see 11 Feb 2004) and added support for a $clst_conf 
+  environment variable. You can use the $clst_conf variable to point to
+  a file to use in place of /etc/catalyst.conf. By setting this variable
+  in your shell, catalyst can easily be used by multiple people on the
   same machine. Also, ccache support now works for genkernel.
   
-  11 Feb 2004; Daniel Robbins <drobbins@gentoo.org>:
-  removed file for livecd-stage2 target, as this is handled by the runscript
-  now. Added support for "/boot/kernel/foo/use", "/boot/kernel/foo/packages,"
-  and made "/boot/kernel/foo/extraversion" an optional rather than required
-  parameter. The aforementioned "packages" is used to specify kernel-related
-  packages (like module ebuilds) to merge with each kernel, and the new "use"
-  option is used to specify the USE settings you'd like exported to the
-  environment during kernel as well as kernel "packages" build.
+  11 Feb 2004; Daniel Robbins <drobbins@gentoo.org>: removed file for
+  livecd-stage2 target, as this is handled by the runscript now. Added support
+  for "/boot/kernel/foo/use", "/boot/kernel/foo/packages," and made
+  "/boot/kernel/foo/extraversion" an optional rather than required parameter.
+  The aforementioned "packages" is used to specify kernel-related packages
+  (like module ebuilds) to merge with each kernel, and the new "use" option is
+  used to specify the USE settings you'd like exported to the environment
+  during kernel as well as kernel "packages" build.
 
   10 Feb 2004; John Davis <zhen@gentoo.org> README, TODO, catalyst,
   modules/builder.py, modules/catalyst_support.py, modules/targets.py,
@@ -4591,38 +3963,34 @@
   14 Jan 2004; John Davis <zhen@gentoo.org> arch/mips.py, modules/targets.py:
   adding Kumba's patches for MIPS
 
-  16 Dec 2003; Guy Martin <gmsoft@gentoo.org>: arch/hppa.py,modules/targets.py:
+  16 Dec 2003; Guy Martin <gmsoft@gentoo.org> : arch/hppa.py,modules/targets.py:
   Added hppa specific code.
 
-  29 Nov 2003; Daniel Robbins <drobbins@gentoo.org>:
-  Tinderbox target added. See tinderbox examples in examples/ dir.
+  29 Nov 2003; Daniel Robbins <drobbins@gentoo.org>: Tinderbox target added. See
+  tinderbox examples in examples/ dir.
   
-  08 Nov 2003; Daniel Robbins <drobbins@gentoo.org>:
-  spec file support integrated into catalyst. Use "-f/--file specfile" as
-  argument; see examples dir for examples.
-  "grp" target now functional. See examples/x86-grp-20031102.spec for an
-  example of how to use it.
+  08 Nov 2003; Daniel Robbins <drobbins@gentoo.org>: spec file support integrated
+  into catalyst. Use "-f/--file specfile" as argument; see examples dir for examples.
+  "grp" target now functional. See examples/x86-grp-20031102.spec for an example of
+  how to use it.
  
-  08 Nov 2003; Daniel Robbins <drobbins@gentoo.org>:
-  support functions for spec file parsing and reading added. Will get added to
-  the code soon.
+  08 Nov 2003; Daniel Robbins <drobbins@gentoo.org>: support functions for spec
+  file parsing and reading added. Will get added to the code soon.
   
-  05 Nov 2003; Daniel Robbins <drobbins@gentoo.org>:
-  Many bug fixes later, things seem to be working well for stage1/2/3 so I've
-  added a README.
+  05 Nov 2003; Daniel Robbins <drobbins@gentoo.org>: Many bug fixes later, things
+  seem to be working well for stage1/2/3 so I've added a README.
   
-  28 Oct 2003; Daniel Robbins <drobbins@gentoo.org>:
-  Significant rework of code structure. Everything is falling nicely into place.
+  28 Oct 2003; Daniel Robbins <drobbins@gentoo.org>: Significant rework of code
+  structure. Everything is falling nicely into place.
   
-  28 Oct 2003; Daniel Robbins <drobbins@gentoo.org>:
-  Exception handling fully-integrated into current prototype code.
+  28 Oct 2003; Daniel Robbins <drobbins@gentoo.org>: Exception handling fully-
+  integrated into current prototype code.
   
-  27 Oct 2003; Daniel Robbins <drobbins@gentoo.org>:
-  beginning of exception handling integration, got some of the target code
-  nicely fleshed out.
+  27 Oct 2003; Daniel Robbins <drobbins@gentoo.org>: beginning of exception
+  handling integration, got some of the target code nicely fleshed out.
   
-  24 Oct 2003; Daniel Robbins <drobbins@gentoo.org>:
-  major code rework in progress on the python parts.
+  24 Oct 2003; Daniel Robbins <drobbins@gentoo.org>: major code rework in 
+  progress on the python parts.
   
   17 Oct 2003; John Davis <zhen@gentoo.org> files/grp/x86/x86.conf,
   files/grp/x86/x86.pkg.cd1, files/grp/x86/x86.pkg.cd2, files/grp/x86/x86.src,
@@ -4635,117 +4003,11 @@
   All preliminary target build scripts are now added and coded to near as spec
   that we can have at this point.
 
-  14 Oct 2003; Daniel Robbins <drobins@gentoo.org>:
-  new and improved ChangeLog; snapshots now work ("./catalyst-util.py snap
-  20031014",) and snapshotting cleans up after itself (temp files deleted,)
-  something that should be continued as much as reasonably possible in other
-  parts of catalyst. Also, we have /etc/catalyst.conf config file reading stub
-  code completed, and internal fall-backs to reasonable global config defaults
-  completed.
-
-  12 Oct 2003; Daniel Robbins <drobins@gentoo.org>:
-  subarch test outsourced to python catalyst-subarches function.
+  14 Oct 2003; Daniel Robbins <drobins@gentoo.org>: new and improved ChangeLog;
+  snapshots now work ("./catalyst-util.py snap 20031014",) and snapshotting
+  cleans up after itself (temp files deleted,) something that should be
+  continued as much as reasonably possible in other parts of catalyst. Also, we
+  have /etc/catalyst.conf config file reading stub code completed, and internal
+  fall-backs to reasonable global config defaults completed.
   
-  12 Oct 2003; John Davis <zhen@gentoo.org> include/build_functions.sh:
-  fixed the entry in include/build_functions.sh for location of bootstrap.sh
-
-  12 Oct 2003; John Davis <zhen@gentoo.org> catalyst:
-  removing dup enter_chroot
-
-  12 Oct 2003; Robin H. Johnson <robbat2@gentoo.org> catalyst:
-  document subarches checking
-
-  12 Oct 2003; Robin H. Johnson <robbat2@gentoo.org> catalyst:
-  Fix valid subarch test.
-
-  12 Oct 2003; John Davis <zhen@gentoo.org> catalyst, 
-  include/build_functions.sh, include/functions.sh:
-  thanks to robbat2, the cmdline argument handling is now fixed. I moved
-  start_build to build_functions.sh cleaning up the main catalyst script some
-  more.
-
-  11 Oct 2003; John Davis <zhen@gentoo.org> include/build_functions.sh:
-  fixed SRCBALL and DESTBALL, making it transparent for profiles
-
-  11 Oct 2003; John Davis <zhen@gentoo.org> catalyst, include/functions.sh:
-  added an exit condition to the cmd line argument case statement
-
-  09 Oct 2003; John Davis <zhen@gentoo.org> catalyst, bin/build.sh, bin/stage1,
-  files/catalyst.conf, include/build_functions.sh, include/functions.sh:
-  the changes that I made to the above files should make catalyst completely
-  transparent to no matter what profile we are using. check files/catalyst.conf
-  for the list of BUILDTYPEs that we support.
-
-  08 Oct 2003; John Davis <zhen@gentoo.org> catalyst:
-  changed how cmd line arguments are handled
-
-  08 Oct 2003; John Davis <zhen@gentoo.org> catalyst:
-  I changed the is_special handling so that it is cleaner and faster
-
-  08 Oct 2003; John Davis <zhen@gentoo.org> catalyst, include/functions.sh, 
-  livecd/foundations/x86-basic/base.pkg, livecd/foundations/x86-basic/kern.pkg,
-  livecd/foundations/x86-basic/post-clean.sh,
-  livecd/foundations/x86-basic/pre-clean.sh,
-  livecd/foundations/x86-basic/settings:
-  I outsourced more functions to include/functions.sh. I made it a seperate file
-  from build_fucntions.sh so that we can keep our build and other functions
-  apart. I also added in the livecd stuffs from the stager side of things.
-
-  08 Oct 2003; John Davis <zhen@gentoo.org> catalyst,
-  include/build_functions.sh:
-  I outsourced all of the build functions to include/build_functions.sh. In the
-  future, this will happen more - the code needs cleaned up.
-
-  07 Oct 2003; John Davis <zhen@gentoo.org> catalyst, bin/bootstrap.sh,
-  bin/stage1:
-  I mucked with stage1 and bootstrap.sh to add support for ${BUILDTYPE} (profile
-  transparency). Also, I removed gettext from bootstrap, since mainline gentoo
-  does not use that anymore.
-
-  05 Oct 2003; John Davis <zhen@gentoo.org> catalyst:
-  since we now have a default profile in portage, i massaged some errors
-  messages to reflect that.
-
-  04 Oct 2003; John Davis <zhen@gentoo.org> catalyst, bin/bootstrap.sh,
-  bin/stage1:
-  removed ccache support from catalyst stage1 build cause it breaks the build.
-  Additionally, I removed gettext support from bootstrap, because according to
-  our new default profile, we don't use that anymore.
-
-  02 Oct 2003; John Davis <zhen@gentoo.org> catalyst, files/catalyst.conf:
-  added a new var, BUILDTYPE, adding more transparency for building.
-  In the future, we will be building both selinux and hardened sources.
-
-  02 Oct 2003; John Davis <zhen@gentoo.org> catalyst:
-  fixed some formatting when catalyst prints out build info, additionally,
-  trying to make catalyst more transparent for future expansion of stages
-
-  21 Sep 2003; John Davis <zhen@gentoo.org> catalyst:
-  fixed the order/ way in which we handle cmd line arguments wrt to -h or
-  --help. I moved this functionality from the main program section to
-  prechecks().
-
-  21 Sep 2003; John Davis <zhen@gentoo.org> README.catalyst, catalyst:
-  I edited catalyst to change our naming convention from stage*-arch-h.* to
-  stage*-arch-etdyn-ssp.* re method's request. This will not be the first time
-  I change naming conventions, as catalyst will be eventually extended to
-  do selinux-* stages also.
-  
-  Additionally, I updated README.catalyst to include profile information.
-
-  10 Sep 2003; John Davis <zhen@gentoo.org> README.catalyst, README.stager,
-  bin/catalyst, bin/hardened-bootstrap.sh, bin/stage1:
-  I renamed README.stager to README.catalyst and have made some very minor
-  changes to it. bin/bootstrap.sh has been renamed to bin/hardened-bootstrap.sh.
-  I have hacked bootstrap to use the hardened profile, as well as utilize
-  hardened-gcc. bin/catalyst itself has undergone some more changes (nothing too
-  major). Additionally, bin/stage1 has been hacked to accept the hardened
-  profile, and use hardened-gcc.
-
-  09 September 2003; John Davis <zhen@gentoo.org>:
-  Initial import of hardened stager.  I am forking this from the original
-  stager code in order to better fit our needs.  The original stager code is
-  still used by Gentoo, and is maintained by Daniel Robbins
-  <drobbins@gentoo.org>.  I would like to thank him and the rest of the
-  contributors that coded stager.
-
+ 
