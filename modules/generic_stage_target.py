@@ -18,7 +18,7 @@ class generic_stage_target(generic_target):
 		self.valid_values.extend(["version_stamp","target","subarch","keywords",\
 			"rel_type","profile","snapshot","source_subpath","portage_confdir",\
 			"cflags","cxxflags","ldflags","cbuild","hostuse","portage_overlay",\
-			"distcc_hosts","makeopts","pkgcache_path","kerncache_path"])
+			"distcc_hosts","makeopts","pkgcache_path","kerncache_path","portdir","portname"])
 		
 		self.set_valid_build_kernel_vars(addlargs)
 		generic_target.__init__(self,myspec,addlargs)
@@ -385,7 +385,7 @@ class generic_stage_target(generic_target):
 						"/usr/portage"]
 
 	def set_snapshot_path(self):
-		self.settings["snapshot_path"]=normpath(self.settings["storedir"]+"/snapshots/portage-"+self.settings["snapshot"]+".tar.bz2")
+		self.settings["snapshot_path"]=normpath(self.settings["storedir"]+"/snapshots/"+self.settings["portname"]+"-"+self.settings["snapshot"]+".tar.bz2")
 		
 		if os.path.exists(self.settings["snapshot_path"]):
 			self.settings["snapshot_path_hash"]=generate_hash(self.settings["snapshot_path"],\
@@ -727,7 +727,7 @@ class generic_stage_target(generic_target):
 		    	if not os.path.exists(destdir):
 				os.makedirs(destdir,0755)
 		    	
-			print "Unpacking portage tree (This can take a long time) ..."
+			print "Unpacking \""+self.settings["portname"]+"\" portage tree "+self.settings["snapshot_path"]+" ..."
 			cmd(unpack_cmd,unpack_errmsg,env=self.env)
 
 			if self.settings.has_key("SNAPCACHE"): 

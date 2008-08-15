@@ -148,7 +148,7 @@ valid_build_targets=["stage1_target","stage2_target","stage3_target","stage4_tar
 			"livecd_stage1_target","livecd_stage2_target","embedded_target",
 			"tinderbox_target","snapshot_target","netboot_target","netboot2_target"]
 
-required_config_file_values=["storedir","sharedir","distdir","portdir"]
+required_config_file_values=["storedir","sharedir","distdir"]
 valid_config_file_values=required_config_file_values[:]
 valid_config_file_values.append("PKGCACHE")
 valid_config_file_values.append("KERNCACHE")
@@ -703,9 +703,8 @@ def addl_arg_parse(myspec,addlargs,requiredspec,validspec):
 	
 	for x in addlargs.keys():
 		if x not in validspec and x not in valid_config_file_values and x not in requiredspec:
-			raise CatalystError, "Argument \""+x+"\" not recognized."
-		else:
-			myspec[x]=addlargs[x]
+			print ">>> WARNING: Argument \""+x+"\" not recognized for this target."
+		myspec[x]=addlargs[x]
 	
 	for x in requiredspec:
 		if not myspec.has_key(x):
