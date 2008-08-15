@@ -1,7 +1,12 @@
 # Copyright 2002-2008 Gentoo Foundation; Distributed under the GPL v2
 # $Id: $
 
-  15 Aug 2000; Daniel Robbins <drobbins@funtoo.org>
+  15 Aug 2008; Daniel Robbins <drobbins@funtoo.org>
+  forgot:
+  stage1 now has ccache enabled. Will see if this breaks anything. If not,
+  then yay.
+
+  15 Aug 2008; Daniel Robbins <drobbins@funtoo.org>
   many files:
   totally removed AUTORESUME and digest support. This is beta and there are
   likely still digest issues/bugs in the code that I haven't hit yet. Once it
