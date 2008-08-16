@@ -42,8 +42,6 @@ class snapshot_target(generic_stage_target):
 		print "Compressing Portage snapshot tarball..."
 		cmd("tar cjf "+self.settings["snapshot_path"]+" -C "+mytmp+" portage","Snapshot creation failure",env=self.env)
 		
-		self.gen_digest_file(self.settings["snapshot_path"])
-
 		self.cleanup()
 		print "snapshot: complete!"
 	
