@@ -1,0 +1,4 @@
+After removing the AUTOCLEAN code, it looks like catalyst doesn't autoclean at all. Example:
+I masked coreutils-6.12 which was breaking a stage2 build (the /bin/touch in stage1 was broken.)
+Then I deleted the old portage snapshot and restarted the ~x86 build. 5 minutes later I had
+a new stage1! It should have taken at least 30 mins.
