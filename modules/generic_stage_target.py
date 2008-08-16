@@ -549,22 +549,7 @@ class generic_stage_target(generic_target):
 	def unpack(self):
 		unpack=True
 
-		if self.settings.has_key("SEEDCACHE"):
-			if os.path.isdir(self.settings["source_path"]): 
-				# SEEDCACHE Is a directory, use Rsync
-				unpack_cmd="rsync -a --delete "+self.settings["source_path"]+" "+self.settings["chroot_path"]
-				display_msg="\nStarting rsync from "+self.settings["source_path"]+"\nto "+\
-					self.settings["chroot_path"]+" (This may take some time) ...\n"
-				error_msg="Rsync of "+self.settings["source_path"]+" to "+self.settings["chroot_path"]+" failed."
-			else:
-				# SEEDCACHE is a not a directory, try untar'ing
-				print "Referenced SEEDCACHE does not appear to be a directory, trying to untar..."
-				display_msg="\nStarting tar extract from "+self.settings["source_path"]+"\nto "+\
-					self.settings["chroot_path"]+" (This may take some time) ...\n"
-				unpack_cmd="tar xjpf "+self.settings["source_path"]+" -C "+self.settings["chroot_path"]
-				error_msg="Tarball extraction of "+self.settings["source_path"]+" to "+self.settings["chroot_path"]+" failed."
-		else:
-			# No SEEDCACHE, use tar
+		if True:	
 			display_msg="\nStarting tar extract from "+self.settings["source_path"]+"\nto "+\
 				self.settings["chroot_path"]+" (This may take some time) ...\n"
 			unpack_cmd="tar xjpf "+self.settings["source_path"]+" -C "+self.settings["chroot_path"]

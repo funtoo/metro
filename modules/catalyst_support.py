@@ -100,7 +100,6 @@ valid_config_file_values.append("VERBOSE")
 valid_config_file_values.append("PURGE")
 valid_config_file_values.append("SNAPCACHE")
 valid_config_file_values.append("snapshot_cache")
-valid_config_file_values.append("hash_function")
 valid_config_file_values.append("digests")
 valid_config_file_values.append("SEEDCACHE")
 
