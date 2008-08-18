@@ -114,8 +114,6 @@ setup_myemergeopts(){
 	if [ -n "${clst_VERBOSE}" ]
 	then
 		clst_myemergeopts="--verbose"
-	else
-		clst_myemergeopts="--quiet"
 	fi
 	if [ -n "${clst_FETCH}" ]
 	then
