@@ -138,17 +138,6 @@ class CatalystError(Exception):
 			print "!!! catalyst: "+message
 			print
 			
-class LockInUse(Exception):
-	def __init__(self, message):
-		if message:
-			#(type,value)=sys.exc_info()[:2]
-			#if value!=None:
-			    #print
-			    #kprint traceback.print_exc(file=sys.stdout)
-			print
-			print "!!! catalyst lock file in use: "+message
-			print
-
 def die(msg=None):
 	warn(msg)
 	sys.exit(1)

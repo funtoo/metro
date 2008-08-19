@@ -1,6 +1,11 @@
 # Copyright 2002-2008 Gentoo Foundation; Distributed under the GPL v2
 # $Id: $
   18 Aug 2008; Daniel Robbins <drobbins@funtoo.org>
+  modules/catalyst_lock.py,
+  various:
+  Removed locking functionality from catalyst.
+
+  18 Aug 2008; Daniel Robbins <drobbins@funtoo.org>
   targets/stage1/stage1-chroot.sh,
   targets/stage1/stage1-controller.sh:
   Working around an issue in baselayout-2.0.0.ebuild that fries /usr/lib/gcc

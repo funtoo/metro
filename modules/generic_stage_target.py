@@ -8,7 +8,6 @@ import os,string,imp,types,shutil
 from catalyst_support import *
 from generic_target import *
 from stat import *
-import catalyst_lock
 class generic_stage_target(generic_target):
 
 	def __init__(self,myspec,addlargs):
@@ -375,13 +374,11 @@ class generic_stage_target(generic_target):
 	def set_snapcache_path(self):
 		if self.settings.has_key("SNAPCACHE"):
 			self.settings["snapshot_cache_path"]=normpath(self.settings["snapshot_cache"]+"/"+self.settings["snapshot"]+"/")
-			self.snapcache_lock=catalyst_lock.LockDir(self.settings["snapshot_cache_path"])
 			print "Caching snapshot to " + self.settings["snapshot_cache_path"]
 	
 	def set_chroot_path(self):
 		# Note the trailing slash is very important and things would break without it
 		self.settings["chroot_path"]=normpath(self.settings["storedir"]+"/tmp/"+self.settings["target_subpath"]+"/")
-		self.chroot_lock=catalyst_lock.LockDir(self.settings["chroot_path"])
 	
 	def set_controller_file(self):
 		self.settings["controller_file"]=normpath(self.settings["sharedir"]+"/targets/"+self.settings["target"]+"/"+self.settings["target"]+"-controller.sh")
@@ -645,8 +642,6 @@ class generic_stage_target(generic_target):
 				os.makedirs(self.mountmap[x],0755)
 			
 			src=self.mountmap[x]
-			if self.settings.has_key("SNAPCACHE") and x == "/usr/portage":
-				self.snapshot_lock_object.read_lock()
 			if os.uname()[0] == "FreeBSD":
 				if src == "/dev":
 					retval=os.system("mount -t devfs none "+self.settings["chroot_path"]+x)
@@ -686,14 +681,6 @@ class generic_stage_target(generic_target):
 				    ouch=1
 				    warn("Couldn't umount bind mount: "+mypath+x)
 				    # keep trying to umount the others, to minimize damage if developer makes a mistake
-		
-			if self.settings.has_key("SNAPCACHE") and x == "/usr/portage":
-				try:
-				    # Its possible the snapshot lock object isnt created yet
-				    # this is because mount safety check calls unbind before the target is fully initialized		
-				    self.snapshot_lock_object.unlock()
-				except:
-				    pass
 		if ouch:
 			"""
 			if any bind mounts really failed, then we need to raise
@@ -932,8 +919,6 @@ class generic_stage_target(generic_target):
 			self.env["MAKEOPTS"]=self.settings["makeopts"]
 			
 	def run(self):
-		self.chroot_lock.write_lock()
-
                 # Kill any pids in the chroot
                 self.kill_chroot_pids()
 
@@ -952,8 +937,6 @@ class generic_stage_target(generic_target):
 				self.mount_safety_check()
 				raise
 		
-		self.chroot_lock.unlock()
-
         def unmerge(self):
 		if self.settings.has_key(self.settings["spec_prefix"]+"/unmerge"):
 		    if type(self.settings[self.settings["spec_prefix"]+"/unmerge"])==types.StringType:
