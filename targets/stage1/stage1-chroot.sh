@@ -26,7 +26,8 @@ fi
 
 ## START BUILD
 clst_root_path=/ setup_portage
-
+# emerge this first so we set up our /usr/lib dir correctly
+run_emerge baselayout
 run_emerge "--noreplace --oneshot ${clst_buildpkgs}"
 rm -f /var/lib/portage/world
 touch /var/lib/portage/world

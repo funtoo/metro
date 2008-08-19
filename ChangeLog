@@ -1,5 +1,14 @@
 # Copyright 2002-2008 Gentoo Foundation; Distributed under the GPL v2
 # $Id: $
+  18 Aug 2008; Daniel Robbins <drobbins@funtoo.org>
+  targets/stage1/stage1-chroot.sh,
+  targets/stage1/stage1-controller.sh:
+  Working around an issue in baselayout-2.0.0.ebuild that fries /usr/lib/gcc
+  in its pkg_preinst script if it is merged after gcc. This should be
+  considered a temporary fix. To debug this issue, I added a basic
+  /etc/portage/bashrc "probes" capability to stage1-chroot.sh which is now
+  commented out but kept for future reference as the code itself is useful
+  when you hit a thorny build problem.
 
   15 Aug 2008; Daniel Robbins <drobbins@funtoo.org>
   forgot:
