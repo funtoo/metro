@@ -33,6 +33,7 @@ class snapshot_target(generic_stage_target):
 			" from "+self.settings["portdir"]+"..."
 		
 		mytmp=self.settings["tmp_path"]
+		print "Going to store snapshot in",mytmp+"..."
 		if not os.path.exists(mytmp):
 			os.makedirs(mytmp)
 		
