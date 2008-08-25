@@ -141,7 +141,6 @@ class generic_stage_target(generic_target):
 		self.set_snapshot_path()
 		self.set_root_path()
 		self.set_source_path()
-		self.set_snapcache_path()
 		self.set_chroot_path()
 		self.set_dest_path()
 		self.set_stage_path()
@@ -179,14 +178,8 @@ class generic_stage_target(generic_target):
 			file_locate(self.settings,["portage_confdir"],expand=0)
 		
 		# setup our mount points
-		if self.settings.has_key("SNAPCACHE"):
-			self.mounts=[ "/proc","/dev","/usr/portage","/usr/portage/distfiles" ]
-			self.mountmap={"/proc":"/proc", "/dev":"/dev", "/dev/pts":"/dev/pts",\
-				"/usr/portage":self.settings["snapshot_cache_path"]+"/portage",\
-				"/usr/portage/distfiles":self.settings["distdir"]}
-		else:
-			self.mounts=[ "/proc","/dev","/usr/portage/distfiles" ]
-			self.mountmap={"/proc":"/proc", "/dev":"/dev", "/dev/pts":"/dev/pts",\
+		self.mounts=[ "/proc","/dev","/usr/portage/distfiles" ]
+		self.mountmap={"/proc":"/proc", "/dev":"/dev", "/dev/pts":"/dev/pts",\
 				"/usr/portage/distfiles":self.settings["distdir"]}
 		if os.uname()[0] == "Linux":
 			self.mounts.append("/dev/pts")
@@ -371,11 +364,6 @@ class generic_stage_target(generic_target):
 	def set_snapshot_path(self):
 		self.settings["snapshot_path"]=normpath(self.settings["storedir"]+"/snapshots/"+self.settings["portname"]+"-"+self.settings["snapshot"]+".tar.bz2")
 		
-	def set_snapcache_path(self):
-		if self.settings.has_key("SNAPCACHE"):
-			self.settings["snapshot_cache_path"]=normpath(self.settings["snapshot_cache"]+"/"+self.settings["snapshot"]+"/")
-			print "Caching snapshot to " + self.settings["snapshot_cache_path"]
-	
 	def set_chroot_path(self):
 		# Note the trailing slash is very important and things would break without it
 		self.settings["chroot_path"]=normpath(self.settings["storedir"]+"/tmp/"+self.settings["target_subpath"]+"/")

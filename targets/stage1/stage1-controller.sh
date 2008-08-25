@@ -16,7 +16,7 @@ case $1 in
 		# sure it's correct and matches what is in the profile.
 
 		rm ${clst_chroot_path}/etc/make.profile
-		ln -s ../usr/portage/profiles/${clst_profile} ${clst_chroot_path}/etc/make.profile
+		ln -s /usr/portage/profiles/${clst_profile} ${clst_chroot_path}/etc/make.profile
 #
 #	This is a useful piece of code to debug various build issues. May add it as a "probes" feature
 #	in the future. I used it to find that baselayout-2.0.0 was totally frying /usr/lib/gcc if it

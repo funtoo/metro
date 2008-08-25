@@ -8,3 +8,6 @@ This isn't exactly optimal. We need to make things sexy again and allow for the 
 configured. Might be good to actually have STOREDIR not be the mirror, dunno. So we can copy to the mirror only
 if the build succeeds.
 
+turn ccache off in catalyst.conf, and things seem to break for stage1 build. Ick. ? No, looks like I had a bad portage snapshot with no profiles in it? Need code to prevent this from biting. Maybe removing digests was a bad idea. No, just need to do things in a temp dir and then move to a "real" dir in storedir once we know we completed successfully, so we don't have incomplete data in storedir.
+
+

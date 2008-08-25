@@ -109,14 +109,6 @@ def parse_config(myconfig):
 		print "Purge support enabled."
 		conf_values["PURGE"]="1"
 
-	if "seedcache" in string.split(conf_values["options"]):
-		print "Seed cache support enabled."
-		conf_values["SEEDCACHE"]="1"
-
-	if "snapcache" in string.split(conf_values["options"]):
-		print "Snapshot cache support enabled."
-		conf_values["SNAPCACHE"]="1"
-
 	if "metadata_overlay" in conf_values["options"].split():
 		print "Use of metadata_overlay module for portage enabled."
 		conf_values["METADATA_OVERLAY"]="1"

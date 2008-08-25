@@ -1,15 +1,16 @@
 #!/bin/bash
-# grab proxy settings
-env-update
-source /etc/profile
-
 . /tmp/chroot-functions.sh
 
 update_env_settings
 
-setup_myfeatures
+#setup_myfeatures
 
 # Setup our environment
+echo
+echo "Output of /tmp/build.py:"
+/tmp/build.py
+echo
+
 export clst_buildpkgs="$(/tmp/build.py)"
 export STAGE1_USE="$(portageq envvar STAGE1_USE)"
 export USE="-* bindist build ${STAGE1_USE}"
@@ -25,7 +26,6 @@ then
 fi
 
 ## START BUILD
-clst_root_path=/ setup_portage
 # emerge this first so we set up our /usr/lib dir correctly
 run_emerge baselayout
 run_emerge "--noreplace --oneshot ${clst_buildpkgs}"

@@ -98,8 +98,6 @@ valid_config_file_values.append("options")
 valid_config_file_values.append("DEBUG")
 valid_config_file_values.append("VERBOSE")
 valid_config_file_values.append("PURGE")
-valid_config_file_values.append("SNAPCACHE")
-valid_config_file_values.append("snapshot_cache")
 
 verbosity=1
 
