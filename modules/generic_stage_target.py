@@ -873,7 +873,6 @@ class generic_stage_target(generic_target):
 		try:
 			if os.path.exists(self.settings["controller_file"]):
 		    		cmd("/bin/bash "+self.settings["controller_file"]+" preclean","preclean script failed.",env=self.env)
-		
 		except:
 			self.unbind()
 			raise CatalystError, "Build failed, could not execute preclean"
@@ -928,14 +927,13 @@ class generic_stage_target(generic_target):
 			self.env["MAKEOPTS"]=self.settings["makeopts"]
 			
 	def run(self):
-                # Kill any pids in the chroot
-                self.kill_chroot_pids()
+		# Kill any pids in the chroot
+		self.kill_chroot_pids()
 
-                # Check for mounts right away and abort if we cannot unmount them.
-                self.mount_safety_check()
+		# Check for mounts right away and abort if we cannot unmount them.
+		self.mount_safety_check()
 
-                if self.settings.has_key("PURGE"):
-                        self.purge()
+		self.purge()
 
 		for x in self.settings["action_sequence"]:
 			print "--- Running action sequence: "+x
@@ -946,7 +944,7 @@ class generic_stage_target(generic_target):
 				self.mount_safety_check()
 				raise
 		
-        def unmerge(self):
+	def unmerge(self):
 		if self.settings.has_key(self.settings["spec_prefix"]+"/unmerge"):
 		    if type(self.settings[self.settings["spec_prefix"]+"/unmerge"])==types.StringType:
 			self.settings[self.settings["spec_prefix"]+"/unmerge"]=[self.settings[self.settings["spec_prefix"]+"/unmerge"]]
@@ -1098,63 +1096,33 @@ class generic_stage_target(generic_target):
 			self.unbind()
 			raise CatalystError,"build aborting due to livecd_update error."
 
-	def clear_chroot(self):
-		myemp=self.settings["chroot_path"]
-		if os.path.isdir(myemp):
-		    print "Emptying directory",myemp
-		    # stat the dir, delete the dir, recreate the dir and set
-		    # the proper perms and ownership
-		    mystat=os.stat(myemp)
-		    #cmd("rm -rf "+myemp, "Could not remove existing file: "+myemp,env=self.env)
-		    if os.uname()[0] == "FreeBSD": # There's no easy way to change flags recursively in python
-			    os.system("chflags -R noschg "+myemp)
-		    shutil.rmtree(myemp)
-		    os.makedirs(myemp,0755)
-		    os.chown(myemp,mystat[ST_UID],mystat[ST_GID])
-		    os.chmod(myemp,mystat[ST_MODE])
-	
-	def clear_packages(self):
-	    if self.settings.has_key("PKGCACHE"):
-		print "purging the pkgcache ..."
+	def clear_dir(self,path):
+	    if not os.path.isdir(path):
+	    	return
+		print "Emptying directory",path
+		# stat the dir, delete the dir, recreate the dir and set the proper perms and ownership
+		mystat=os.stat(path)
+		if os.uname()[0] == "FreeBSD": # There's no easy way to change flags recursively in python
+			os.system("chflags -R noschg "+path)
+		shutil.rmtree(path)
+		os.makedirs(path,0755)
+		os.chown(path,mystat[ST_UID],mystat[ST_GID])
+		os.chmod(path,mystat[ST_MODE])
 
-		myemp=self.settings["pkgcache_path"]
-		if os.path.isdir(myemp):
-		    print "Emptying directory",myemp
-		    # stat the dir, delete the dir, recreate the dir and set
-		    # the proper perms and ownership
-		    mystat=os.stat(myemp)
-		    #cmd("rm -rf "+myemp, "Could not remove existing file: "+myemp,env=self.env)
-		    shutil.rmtree(myemp)
-		    os.makedirs(myemp,0755)
-		    os.chown(myemp,mystat[ST_UID],mystat[ST_GID])
-		    os.chmod(myemp,mystat[ST_MODE])
+	def clear_chroot(self):
+		self.clear_dir(self.settings["chroot_path"])
+
+	def clear_packages(self):
+		if self.settings.has_key("PKGCACHE"):
+			self.clear_dir(self.settings["pkgcache_path"])
 	
 	def clear_kerncache(self):
-	    if self.settings.has_key("KERNCACHE"):
-		print "purging the kerncache ..."
-
-		myemp=self.settings["kerncache_path"]
-		if os.path.isdir(myemp):
-		    print "Emptying directory",myemp
-		    # stat the dir, delete the dir, recreate the dir and set
-		    # the proper perms and ownership
-		    mystat=os.stat(myemp)
-		    #cmd("rm -rf "+myemp, "Could not remove existing file: "+myemp,env=self.env)
-		    shutil.rmtree(myemp)
-		    os.makedirs(myemp,0755)
-		    os.chown(myemp,mystat[ST_UID],mystat[ST_GID])
-		    os.chmod(myemp,mystat[ST_MODE])
+		if self.settings.has_key("KERNCACHE"):
+			self.clear_dir(self.settings["kerncache_path"])
 	
 	def purge(self):
-	    countdown(10,"Purging Caches ...")
-	    if self.settings.has_key("PURGE"):
-		print "clearing chroot ..."
 		self.clear_chroot()
-		
-		print "clearing package cache ..."
 		self.clear_packages()
-		
-		print "clearing kerncache ..."
 		self.clear_kerncache()
 
 #vim: ts=4 sw=4 sta et sts=4 ai
