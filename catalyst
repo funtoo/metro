@@ -328,9 +328,6 @@ if __name__ == "__main__":
 		print
 		print "Catalyst aborting...."
 		sys.exit(2)
-	except LockInUse:
-		print "Catalyst aborting...."
-		sys.exit(2)
 	except:
 		print "Catalyst aborting...."
 		raise

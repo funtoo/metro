@@ -559,19 +559,38 @@ def read_spec(myspecfile):
 
 def read_makeconf(mymakeconffile):
 	if os.path.exists(mymakeconffile):
+		# try using snakeoil
 		try:
-			try:
-				import snakeoil.fileutils
-				return snakeoil.fileutils.read_bash_dict(mymakeconffile, sourcing_command="source")
-			except ImportError:
-				try:
-					import portage_util
-					return portage_util.getconfig(mymakeconffile, tolerant=1, allow_sourcing=True)
-				except ImportError:
-					myf=open(mymakeconffile,"r")
-					mylines=myf.readlines()
-					myf.close()
-					return parse_makeconf(mylines)
+			import snakeoil.fileutils
+			print "Reading make.conf using snakeoil.fileutils..."
+			return snakeoil.fileutils.read_bash_dict(mymakeconffile, sourcing_command="source")
+		except ImportError:
+			pass
+
+		# try using new portage.util (portage 2.2)
+		try:
+			import portage.util
+			print "Reading make.conf using portage.util..."
+			return portage.util.getconfig(mymakeconffile, tolerant=1, allow_sourcing=True)
+		except ImportError:
+			pass
+
+		# try using portage_util (pre-2.2)
+		try:
+			import portage_util
+			print "Reading make.conf using portage_util..."
+			return portage_util.getconfig(mymakeconffile, tolerant=1, allow_sourcing=True)
+		except ImportError:
+			pass
+
+		# try the old-fashioned approach
+
+		try:
+			print "Reading make.conf using old school internal function..."
+			myf=open(mymakeconffile,"r")
+			mylines=myf.readlines()
+			myf.close()
+			return parse_makeconf(mylines)
 		except:
 			raise CatalystError, "Could not parse make.conf file "+mymakeconffile
 	else:
