@@ -699,7 +699,7 @@ class generic_stage_target(generic_target):
 
 		# drobbins add - configure /etc/locale.gen with proper locale settings
 		# locale settings are in "locales" setting in "locale/charmap" format
-		if self.settings.has_key["locales"]:
+		if self.settings.has_key("locales"):
 			# our locale.gen template (nothing in it except comments: )
 			srcfile=self.settings["sharedir"]+"/misc/locale.gen"
 			# our destination locale.gen file:
