@@ -711,7 +711,7 @@ class generic_stage_target(generic_target):
 				a=open(locfile,"a")
 			except:
 				raise CatalystError,"Couldn't open "+locfile+" for writing."
-			for localepair in self.settings["locales"].split():
+			for localepair in self.settings["locales"]:
 				locale,charmap = localepair.split("/")
 				a.write(locale+" "+charmap+"\n")
 			#all done writing out our locales/charmaps
