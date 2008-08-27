@@ -17,7 +17,7 @@ class generic_stage_target(generic_target):
 		self.valid_values.extend(["version_stamp","target","subarch","keywords",\
 			"rel_type","profile","snapshot","source_subpath","portage_confdir",\
 			"cflags","cxxflags","ldflags","cbuild","hostuse","portage_overlay",\
-			"distcc_hosts","makeopts","pkgcache_path","kerncache_path","portdir","portname"])
+			"distcc_hosts","makeopts","pkgcache_path","kerncache_path","portdir","portname","locales"])
 		
 		self.set_valid_build_kernel_vars(addlargs)
 		generic_target.__init__(self,myspec,addlargs)
@@ -87,16 +87,16 @@ class generic_stage_target(generic_target):
 			self.settings["hostarch"] = machinemap[self.settings["realsubarch"]]
 			self.settings["treearch"] = self.settings["hostarch"]
 		
-		print "DEBUG: realsubarch: ",self.settings["realsubarch"]
-		print "DEBUG: treearch: ",self.settings["treearch"]
+		#print "DEBUG: realsubarch: ",self.settings["realsubarch"]
+		#print "DEBUG: treearch: ",self.settings["treearch"]
 		
 		try:
 			self.settings["buildarch"] = machinemap[os.uname()[4]]
 		except KeyError:
 			raise CatalystError, "Unknown build machine type "+os.uname()[4]
 
-		print "DEBUG: buildarch: ", self.settings["buildarch"]
-		print "DEBUG: hostarch: ",self.settings["hostarch"]	
+		#print "DEBUG: buildarch: ", self.settings["buildarch"]
+		#print "DEBUG: hostarch: ",self.settings["hostarch"]	
 
 		self.settings["crosscompile"] = (self.settings["hostarch"] != self.settings["buildarch"])
 
@@ -696,6 +696,27 @@ class generic_stage_target(generic_target):
 			else:
 				a.write("# "+x+" is not set")
 		a.close()
+
+		# drobbins add - configure /etc/locale.gen with proper locale settings
+		# locale settings are in "locales" setting in "locale/charmap" format
+		if self.settings.has_key["locales"]:
+			# our locale.gen template (nothing in it except comments: )
+			srcfile=self.settings["sharedir"]+"/misc/locale.gen"
+			# our destination locale.gen file:
+			locfile=self.settings["chroot_path"]+"/etc/locale.gen"
+			cmd("rm -f "+locfile)
+			cmd("install -m0644 -o root -g root "+srcfile+" "+locfile)
+			try:
+				#open to append locale entries
+				a=open(locfile,"a")
+			except:
+				raise CatalystError,"Couldn't open "+locfile+" for writing."
+			for localepair in self.settings["locales"].split():
+				locale,charmap = localepair.split("/")
+				a.write(locale+" "+charmap+"\n")
+			#all done writing out our locales/charmaps
+			a.close()
+
 		if True:	
 			print "Setting up chroot..."
 			
@@ -870,7 +891,7 @@ class generic_stage_target(generic_target):
 		print "Creating stage tarball..."
 		
 		cmd("tar cjpf "+self.settings["target_path"]+" -C "+self.settings["stage_path"]+\
-			" .","Couldn't create stage tarball",env=self.env)
+			" .","Couldn't create stage tarball",env=self.env,badval=2)
 
 
 	def run_local(self):
