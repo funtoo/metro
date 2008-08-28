@@ -309,20 +309,6 @@ def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,retur
         cleanup(mypid)
         return 0
 
-def cmd(mycmd,myexc="",env={},badval=None):
-	try:
-		sys.stdout.flush()
-		retval=spawn_bash(mycmd,env)
-		if badval:
-			# This code is here because tar has a retval of 1 for non-fatal warnings
-			if retval == badval:
-				raise CatalystError,myexc
-		else:
-			if retval != 0:
-				raise CatalystError,myexc
-	except:
-		raise
-
 def process_exit_code(retval,throw_signals=False):
         """process a waitpid returned exit code, returning exit code if it exit'd, or the
         signal if it died from signalling

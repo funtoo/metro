@@ -5,23 +5,20 @@ import os
 
 directory = { "stage1" : stage1, "stage2" : stage2, "stage3" : stage3 , "snapshot" : snapshot }
 
-class snapshot(stage):
-	def __init__(self,myspec,addlargs):
-		stage.__init__(self,settings)
+class snapshot(target):
+	def __init__(self,settings):
+		target.__init__(self,settings)
 		self.require(["version","target","portname","portdir"])
 		
 		#self.settings["target_subpath"]="portage"
 		#st=self.settings["storedir"]
 		#self.settings["snapshot_path"]=normpath(st+"/snapshots/"+self.settings["portname"]+"-"+self.settings["version_stamp"]+".tar.bz2")
 		#self.settings["tmp_path"]=normpath(st+"/tmp/"+self.settings["target_subpath"])
-	
-	def setup(self):
-		x=normpath(self.settings["storedir"]+"/snapshots")
+
+	def run(self):
+		#x=normpath(self.settings["storedir"]+"/snapshots")
 		if not os.path.exists(x):
 			os.makedirs(x)
-	
-	def run(self):
-		self.setup()
 		print "Creating Portage tree snapshot "+self.settings["version_stamp"]+\
 			" from "+self.settings["portdir"]+"..."
 		
@@ -71,22 +68,37 @@ stage_path: $[chroot_path]$[root_path]
 root_path: /tmp/stage1root
 cleanables: /usr/share/gettext /usr/lib/python2.?/test /usr/lib/python2.?/email /usr/lib/python2.?/lib-tk /usr/share/zoneinfo
 """
-	def set_mounts(self):
+	def run(self):
 		# stage_path/proc probably doesn't exist yet, so create it
 		if not os.path.exists(self.settings["stage_path"]+"/proc"):
 			os.makedirs(self.settings["stage_path"]+"/proc")
-
+		
+		stage.run(self)
 		# alter the mount mappings to bind mount proc onto it
 		# self.mounts.append("/tmp/stage1root/proc")
 		# self.mountmap["/tmp/stage1root/proc"]="/proc"
 		# This appears to break baselayout-2.0's makefile, who tries to write to /tmp/stage1root/proc/.keep, so I'm removing it and will see how the build goes
 
-class stage:
+class target:
 
 	def require(self,mylist):
 		missing=self.settings.missing(mylist)
 		if missing:
 			raise CatalystError,"Missing required configuration values "+`missing`
+
+	def clear_dir(self,path):
+	    if not os.path.isdir(path):
+	    	return
+		print "Emptying directory",path
+		# stat the dir, delete the dir, recreate the dir and set the proper perms and ownership
+		mystat=os.stat(path)
+		if os.uname()[0] == "FreeBSD": # There's no easy way to change flags recursively in python
+			os.system("chflags -R noschg "+path)
+		shutil.rmtree(path)
+		os.makedirs(path,0755)
+		os.chown(path,mystat[ST_UID],mystat[ST_GID])
+		os.chmod(path,mystat[ST_MODE])
+
 
 	def find_binary(self,myc):
 		"""look through the environmental path for an executable file named whatever myc is"""
@@ -106,56 +118,30 @@ class stage:
 		self.env = {}
 		self.env["PATH"] = "/bin:/sbin:/usr/bin:/usr/sbin"
 
-		for x in os.listdir(settings["sharedir"]+"/arch"):
-			if x.endswith(".spec"):
-				self.settings.collect(settings["sharedir"]+"/arch/"+x)
-		
-		# We also use an initial "~" as a trigger to build an unstable version of the portage tree. This
-		# means we need to use ~arch rather than arch in ACCEPT_KEYWORDS. So if someone specified "~pentium4"
-		# as subarch, we would set ACCEPT_KEYWORDS to "~x86" and later write this into make.conf.
-		
-		if self.settings["subarch"][0] == "~":
-			self.settings["ACCEPT_KEYWORDS"] = "~"+self.settings["arch"]
-		else:
-			self.settings["ACCEPT_KEYWORDS"] = self.settings["arch"]
+	def cmd(self,mycmd,myexc="",badval=None):
+		try:
+			sys.stdout.flush()
+			retval=spawn_bash(mycmd,self.env)
+			if badval:
+				# This code is here because tar has a retval of 1 for non-fatal warnings
+				if retval == badval:
+					raise CatalystError,myexc
+			else:
+				if retval != 0:
+					raise CatalystError,myexc
+		except:
+			raise
 
-		# All the ~x86, ~pentium4, etc. unstable subarch build logic should be done now. Now we need to make
-		# sure that we use the new variables for paths, below...
-		
-		self.require(["target","subarch","rel_type","profile","snapshot","source_subpath","arch"])
+class chroot(target):
+	def __init__(self,settings):
+		target.__init__(self,settings)
 
-		if self.settings["hostarch"] = "amd64" and self.settings["arch"] = "x86":
-			self.settings["chroot"]=self.find_binary("linux32")+" "+self.find_binary("chroot")
-		else:
-			self.settings["chroot"]=self.find_binary("chroot")
+		# DEFINE GENERAL LINUX CHROOT MOUNTS
 
-#"""
-#target_subpath: $[rel_type]/$[target]-$[subarch]-$[version_stamp]
-#snapshot_path: $[storedir]/snapshots/$[portname]-$[snapshot].tar.bz2
-#root_path: /
-#source_path: $[storedir]/builds/$[source_subpath].tar.bz2
-#chroot_path: $[storedir]/tmp/$[target_subpath]/
-#destpath: $[chroot_path]/$[root_path]
-#stage_path: $[chroot_path]
-#target_path: $[storedir]/builds/$[target_subpath].tar.bz2
-#controller_file: $[sharedir]/targets/$[target]/$[target]-controller.sh
-#action_sequence: unpack unpack_snapshot config_profile_link setup_confdir portage_overlay base_dirs bind chroot_setup setup_environment run_local preclean unbind clean
-#cleanables: /etc/resolv.conf /var/tmp/* /tmp/* /root/* /usr/portage
-#USE: $[HOSTUSE]
+		self.mounts=[ "/proc","/dev", "/dev/pts" ]
+		self.mountmap={"/proc":"/proc", "/dev":"/dev", "/dev/pts":"/dev/pts"}
 
-#NOW THE flexdata should be pretty much all defined.... whee ha.
-#"""
-
-	def run(self):
-		# STUFF WE NEED
-		file_locate(self.settings,["source_path","snapshot_path","distdir"],expand=0)
-
-		# setup our mount points
-
-		self.mounts=[ "/proc","/dev","/usr/portage/distfiles", "/dev/pts" ]
-		self.mountmap={"/proc":"/proc", "/dev":"/dev", "/dev/pts":"/dev/pts",\
-				"/usr/portage/distfiles":self.settings["distdir"]}
-		self.set_mounts()
+		# CCACHE SUPPORT FOR CHROOTS
 
 		if self.settings.has_key("CCACHE"):
 			if os.environ.has_key("CCACHE_DIR"):
@@ -164,124 +150,36 @@ class stage:
 			else:
 				ccdir="/root/.ccache"
 			if not os.path.isdir(ccdir):
-					raise CatalystError,\
-						"Compiler cache support can't be enabled (can't find "+ccdir+")"
+					raise CatalystError, "Compiler cache support can't be enabled (can't find "+ccdir+")"
 			self.mounts.append("/var/tmp/ccache")
 			self.mountmap["/var/tmp/ccache"]=ccdir
 			# for the chroot:
 			self.env["CCACHE_DIR"]="/var/tmp/ccache"	
-		# Kill any pids in the chroot
-		self.kill_chroot_pids()
-
-		# Check for mounts right away and abort if we cannot unmount them.
-		self.mount_safety_check()
-
-		# BEFORE WE START
-		self.purge()
-
-		for x in self.settings["action_sequence"]:
-			print "--- Running action sequence: "+x
-			sys.stdout.flush()
-			try:
-				apply(getattr(self,x))
-			except:
-				self.mount_safety_check()
-				raise
-			# first clean up any existing target stuff
-
-	def kill_chroot_pids(self):
-	    print "Checking for processes running in chroot and killing them."
-	    
-	    # Force environment variables to be exported so script can see them
-	    self.setup_environment()
-
-	    if os.path.exists(self.settings["sharedir"]+"/targets/support/kill-chroot-pids.sh"):
-			    cmd("/bin/bash "+self.settings["sharedir"]+"/targets/support/kill-chroot-pids.sh",\
-			    			"kill-chroot-pids script failed.",env=self.env)
 	
-	def mount_safety_check(self):
-		mypath=self.settings["chroot_path"]
-		
-		"""
-		check and verify that none of our paths in mypath are mounted. We don't want to clean
-		up with things still mounted, and this allows us to check. 
-		returns 1 on ok, 0 on "something is still mounted" case.
-		"""
-		if not os.path.exists(mypath):
-			return
-		
-		for x in self.mounts:
-			if not os.path.exists(mypath+x):
-				continue
-			
-			if ismount(mypath+x):
-				#something is still mounted
-				try:
-					print x+" is still mounted; performing auto-bind-umount...",
-					# try to umount stuff ourselves
-					self.unbind()
-					if ismount(mypath+x):
-						raise CatalystError, "Auto-unbind failed for "+x
-					
-					else:
-						print "Auto-unbind successful..."
-				
-				except CatalystError:
-					raise CatalystError, "Unable to auto-unbind "+x
-		
-	def unpack(self):
-		unpack=True
-		
-		if True:	
-			display_msg="\nStarting tar extract from "+self.settings["source_path"]+"\nto "+\
-				self.settings["chroot_path"]+" (This may take some time) ...\n"
-			unpack_cmd="tar xjpf "+self.settings["source_path"]+" -C "+self.settings["chroot_path"]
-			error_msg="Tarball extraction of "+self.settings["source_path"]+" to "+self.settings["chroot_path"]+" failed."
-		
-		invalid_snapshot=False
-
-		if unpack:
-			self.mount_safety_check()
-			
-			if not os.path.exists(self.settings["chroot_path"]):
-				os.makedirs(self.settings["chroot_path"])
-
-			if not os.path.exists(self.settings["chroot_path"]+"/tmp"):
-				os.makedirs(self.settings["chroot_path"]+"/tmp",1777)
-			
-			print display_msg
-			cmd(unpack_cmd,error_msg,env=self.env)
-
-	def unpack_snapshot(self):
-		destdir=normpath(self.settings["chroot_path"]+"/usr/portage")
-		cleanup_errmsg="Error removing existing snapshot directory."
-		cleanup_msg="Cleaning up existing portage tree (This can take a long time) ..."
-		unpack_cmd="tar xjpf "+self.settings["snapshot_path"]+" -C "+self.settings["chroot_path"]+"/usr"
-		unpack_errmsg="Error unpacking snapshot"
-	
-		if os.path.exists(destdir):
-			print cleanup_msg
-			cleanup_cmd="rm -rf "+destdir
-			cmd(cleanup_cmd,cleanup_errmsg,env=self.env)
-		if not os.path.exists(destdir):
-			os.makedirs(destdir,0755)
-		    	
-		print "Unpacking \""+self.settings["portname"]+"\" portage tree "+self.settings["snapshot_path"]+" ..."
-		cmd(unpack_cmd,unpack_errmsg,env=self.env)
-
-	def config_profile_link(self):
-		print "Configuring profile link..."
-		cmd("rm -f "+self.settings["chroot_path"]+"/etc/make.profile",\
-				"Error zapping profile link",env=self.env)
-		cmd("ln -sf ../usr/portage/profiles/"+self.settings["profile"]+" "+self.settings["chroot_path"]+"/etc/make.profile","Error creating profile link",env=self.env)
-				       
-	def setup_confdir(self):	
-		if self.settings.has_key("portage_confdir"):
-			print "Configuring /etc/portage..."
-			cmd("rm -rf "+self.settings["chroot_path"]+"/etc/portage","Error zapping /etc/portage",env=self.env)
-			cmd("cp -R "+self.settings["portage_confdir"]+"/ "+self.settings["chroot_path"]+\
-				"/etc/portage","Error copying /etc/portage",env=self.env)
-	
+	def setup_environment(self):
+		# Modify the current environment. This is an ugly hack that should be
+		# fixed. We need this to use the os.system() call since we can't
+		# specify our own environ:
+		for x in self.settings.keys():
+			# sanitize var names by doing "s|/-.|_|g"
+			varname="clst_"+string.replace(x,"/","_")
+			varname=string.replace(varname,"-","_")
+			varname=string.replace(varname,".","_")
+			if type(self.settings[x])==types.StringType:
+				# prefix to prevent namespace clashes:
+				#os.environ[varname]=self.settings[x]
+				self.env[varname]=self.settings[x]
+			elif type(self.settings[x])==types.ListType:
+				#os.environ[varname]=string.join(self.settings[x])
+				self.env[varname]=string.join(self.settings[x])
+			elif type(self.settings[x])==types.BooleanType:
+				if self.settings[x]:
+					self.env[varname]="true"
+				else:
+					self.env[varname]="false"
+		if self.settings.has_key("makeopts"):
+			self.env["MAKEOPTS"]=self.settings["makeopts"]
+						       
 	def bind(self):
 		for x in self.mounts: 
 			if not os.path.exists(self.settings["chroot_path"]+x):
@@ -291,14 +189,7 @@ class stage:
 				os.makedirs(self.mountmap[x],0755)
 			
 			src=self.mountmap[x]
-			if os.uname()[0] == "FreeBSD":
-				if src == "/dev":
-					retval=os.system("mount -t devfs none "+self.settings["chroot_path"]+x)
-				else:
-					retval=os.system("mount_nullfs "+src+" "+self.settings["chroot_path"]+x)
-			else:
-				retval=os.system("mount --bind "+src+" "+self.settings["chroot_path"]+x)
-			if retval!=0:
+			if os.system("mount --bind "+src+" "+self.settings["chroot_path"]+x) != 0:
 				self.unbind()
 				raise CatalystError,"Couldn't bind mount "+src
 			    
@@ -337,6 +228,163 @@ class stage:
 			from wiping our bind mounts.
 			"""
 			raise CatalystError,"Couldn't umount one or more bind-mounts; aborting for safety."
+	
+	def kill_chroot_pids(self):
+	    print "Checking for processes running in chroot and killing them."
+	    
+	    # Force environment variables to be exported so script can see them
+
+	    if os.path.exists(self.settings["sharedir"]+"/targets/support/kill-chroot-pids.sh"):
+			    self.cmd("/bin/bash "+self.settings["sharedir"]+"/targets/support/kill-chroot-pids.sh", "kill-chroot-pids script failed.")
+	
+	def mount_safety_check(self):
+		mypath=self.settings["chroot_path"]
+		
+		"""
+		check and verify that none of our paths in mypath are mounted. We don't want to clean
+		up with things still mounted, and this allows us to check. 
+		returns 1 on ok, 0 on "something is still mounted" case.
+		"""
+		if not os.path.exists(mypath):
+			return
+		
+		for x in self.mounts:
+			if not os.path.exists(mypath+x):
+				continue
+			
+			if ismount(mypath+x):
+				#something is still mounted
+				try:
+					print x+" is still mounted; performing auto-bind-umount...",
+					# try to umount stuff ourselves
+					self.unbind()
+					if ismount(mypath+x):
+						raise CatalystError, "Auto-unbind failed for "+x
+					else:
+						print "Auto-unbind successful..."
+				except CatalystError:
+					raise CatalystError, "Unable to auto-unbind "+x
+
+class stage(chroot):
+
+	def __init__(self,settings):
+		
+		chroot.__init__(self,settings)
+		
+		for x in os.listdir(settings["sharedir"]+"/arch"):
+			if x.endswith(".spec"):
+				self.settings.collect(settings["sharedir"]+"/arch/"+x)
+		
+		# We also use an initial "~" as a trigger to build an unstable version of the portage tree. This
+		# means we need to use ~arch rather than arch in ACCEPT_KEYWORDS. So if someone specified "~pentium4"
+		# as subarch, we would set ACCEPT_KEYWORDS to "~x86" and later write this into make.conf.
+		
+		if self.settings["subarch"][0] == "~":
+			self.settings["ACCEPT_KEYWORDS"] = "~"+self.settings["arch"]
+		else:
+			self.settings["ACCEPT_KEYWORDS"] = self.settings["arch"]
+
+		# All the ~x86, ~pentium4, etc. unstable subarch build logic should be done now. Now we need to make
+		# sure that we use the new variables for paths, below...
+		
+		self.require(["target","distdir","subarch","rel_type","profile","snapshot","source_subpath","arch"])
+
+		if self.settings["hostarch"] = "amd64" and self.settings["arch"] = "x86":
+			self.settings["chroot"]=self.find_binary("linux32")+" "+self.find_binary("chroot")
+		else:
+			self.settings["chroot"]=self.find_binary("chroot")
+
+		# DEFINE GENTOO MOUNTS
+
+		self.mounts.append("/usr/portage/distfiles")
+		self.mountmap["/usr/portage/distfiles"]=self.settings["distdir"]
+
+		# DEFINE FLEXDATA HERE
+
+		#"""
+		#target_subpath: $[rel_type]/$[target]-$[subarch]-$[version_stamp]
+		#snapshot_path: $[storedir]/snapshots/$[portname]-$[snapshot].tar.bz2
+		#root_path: /
+		#source_path: $[storedir]/builds/$[source_subpath].tar.bz2
+		#chroot_path: $[storedir]/tmp/$[target_subpath]/
+		#destpath: $[chroot_path]/$[root_path]
+		#stage_path: $[chroot_path]
+		#target_path: $[storedir]/builds/$[target_subpath].tar.bz2
+		#controller_file: $[sharedir]/targets/$[target]/$[target]-controller.sh
+		#action_sequence: unpack unpack_snapshot config_profile_link setup_confdir portage_overlay base_dirs bind chroot_setup setup_environment run_local preclean unbind clean
+		#cleanables: /etc/resolv.conf /var/tmp/* /tmp/* /root/* /usr/portage
+		#USE: $[HOSTUSE]
+
+		#NOW THE flexdata should be pretty much all defined.... whee ha.
+		#"""
+
+		# Export our settings to environment variables so that external processes can access them:
+
+
+
+	def run(self):
+		# STUFF WE NEED
+		file_locate(self.settings,["source_path","snapshot_path","distdir"],expand=0)
+
+		self.kill_chroot_pids()
+
+		# Check for mounts right away and abort if we cannot unmount them.
+		self.mount_safety_check()
+
+		# BEFORE WE START - CLEAN UP ANY MESSES
+		self.purge()
+		
+		self.setup_environment()
+
+		for x in self.settings["action_sequence"]:
+			print "--- Running action sequence: "+x
+			sys.stdout.flush()
+			try:
+				apply(getattr(self,x))
+			except:
+				self.mount_safety_check()
+				raise
+			# first clean up any existing target stuff
+
+	def unpack(self):
+		display_msg="\nStarting tar extract from "+self.settings["source_path"]+"\nto "+ self.settings["chroot_path"]+" (This may take some time) ...\n"
+		unpack_cmd="tar xjpf "+self.settings["source_path"]+" -C "+self.settings["chroot_path"]
+		error_msg="Tarball extraction of "+self.settings["source_path"]+" to "+self.settings["chroot_path"]+" failed."
+		
+		self.mount_safety_check()
+			
+		if not os.path.exists(self.settings["chroot_path"]):
+			os.makedirs(self.settings["chroot_path"])
+
+		if not os.path.exists(self.settings["chroot_path"]+"/tmp"):
+			os.makedirs(self.settings["chroot_path"]+"/tmp",1777)
+			
+		print display_msg
+		self.cmd(unpack_cmd,error_msg)
+
+	def unpack_snapshot(self):
+		destdir=normpath(self.settings["chroot_path"]+"/usr/portage")
+		cleanup_errmsg="Error removing existing snapshot directory."
+		cleanup_msg="Cleaning up existing portage tree (This can take a long time) ..."
+		unpack_cmd="tar xjpf "+self.settings["snapshot_path"]+" -C "+self.settings["chroot_path"]+"/usr"
+		unpack_errmsg="Error unpacking snapshot"
+	
+		if os.path.exists(destdir):
+			print cleanup_msg
+			cleanup_cmd="rm -rf "+destdir
+			self.cmd(cleanup_cmd,cleanup_errmsg)
+		if not os.path.exists(destdir):
+			os.makedirs(destdir,0755)
+		    	
+		print "Unpacking \""+self.settings["portname"]+"\" portage tree "+self.settings["snapshot_path"]+" ..."
+		self.cmd(unpack_cmd,unpack_errmsg)
+
+	def config_profile_link(self):
+		print "Configuring profile link..."
+		self.cmd("rm -f "+self.settings["chroot_path"]+"/etc/make.profile", "Error zapping profile link")
+		self.cmd("ln -sf ../usr/portage/profiles/"+self.settings["profile"]+" "+self.settings["chroot_path"]+"/etc/make.profile","Error creating profile link",env=self.env)
+	
+	# THIS IS REALLY A "GENTOO" CHROOT SETUP, NOT A GENERIC CHROOT SETUP
 
 	def chroot_setup(self):
 
@@ -475,7 +523,6 @@ class stage:
 		except:
 		    self.unbind()
 		    raise
-
 	
 	def preclean(self):
 		try:
@@ -508,30 +555,6 @@ class stage:
 			self.unbind()
 			raise CatalystError,"Stage build aborting due to error."
 	
-	def setup_environment(self):
-		# Modify the current environment. This is an ugly hack that should be
-		# fixed. We need this to use the os.system() call since we can't
-		# specify our own environ:
-		for x in self.settings.keys():
-			# sanitize var names by doing "s|/-.|_|g"
-			varname="clst_"+string.replace(x,"/","_")
-			varname=string.replace(varname,"-","_")
-			varname=string.replace(varname,".","_")
-			if type(self.settings[x])==types.StringType:
-				# prefix to prevent namespace clashes:
-				#os.environ[varname]=self.settings[x]
-				self.env[varname]=self.settings[x]
-			elif type(self.settings[x])==types.ListType:
-				#os.environ[varname]=string.join(self.settings[x])
-				self.env[varname]=string.join(self.settings[x])
-			elif type(self.settings[x])==types.BooleanType:
-				if self.settings[x]:
-					self.env[varname]="true"
-				else:
-					self.env[varname]="false"
-		if self.settings.has_key("makeopts"):
-			self.env["MAKEOPTS"]=self.settings["makeopts"]
-			
 	
 	def unmerge(self):
 		if self.settings.has_key(self.settings["target"]+"/unmerge"):
@@ -555,20 +578,6 @@ class stage:
 		    except CatalystError:
 			self.unbind()
 			raise
-
-	def clear_dir(self,path):
-	    if not os.path.isdir(path):
-	    	return
-		print "Emptying directory",path
-		# stat the dir, delete the dir, recreate the dir and set the proper perms and ownership
-		mystat=os.stat(path)
-		if os.uname()[0] == "FreeBSD": # There's no easy way to change flags recursively in python
-			os.system("chflags -R noschg "+path)
-		shutil.rmtree(path)
-		os.makedirs(path,0755)
-		os.chown(path,mystat[ST_UID],mystat[ST_GID])
-		os.chmod(path,mystat[ST_MODE])
-
 	def clear_chroot(self):
 		self.clear_dir(self.settings["chroot_path"])
 
