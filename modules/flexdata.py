@@ -203,11 +203,11 @@ class collection:
 					for foo in mysplit[2:-1]:
 						if self[mysplit[1]] == foo:
 							match=True
+							break
 					if match:
 						print "DEBUG: EVALUATING BLOCK"
 						while mysplit[0] != "}":
 							mysplit=self.parseline(openfile)
-						break
 					else:
 						print "SKIPPING BLOCK 2", " ".join(mysplit[2:len(mysplit)-1])
 						self.skipblock(openfile)

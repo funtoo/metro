@@ -41,8 +41,9 @@ def run_target(target):
 	fh=open(targetfn)
 	module=imp.load_module(target,fh,"targets/"+target+".py",(".py","r",imp.PY_SOURCE))
 	fh.close()
-	print "Registered target",x[:-3]
-	module.run()
+	print "Registered target",target
+	targetobj=module.me(settings)
+	targetobj.run()
 
 if __name__ == "__main__":
 	version()
@@ -95,16 +96,18 @@ if __name__ == "__main__":
 
 	settings=flexdata.collection()
 	settings["catalyst_version"]=__version__
+	settings["sharedir"]=sharedir
 	# grab config file
 	settings.collect("/etc/catalyst/catalyst.conf")
 	settings.debugdump("right after reading config")
+
 
 	#PARSE THE SPEC HERE
 	for arg in args:
 		settings.collect(arg)
 
 	try:
-		run_target(settings[target])
+		run_target(settings["target"])
 	except CatalystError:
 		print
 		print "Catalyst aborting...."

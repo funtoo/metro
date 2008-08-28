@@ -2,11 +2,21 @@
 """
 Builder class for a stage3 installation tarball build.
 """
-
+import sys
 from catalyst_support import *
 from generic_stage_target import *
 
+
 class stage3_target(generic_stage_target):
+
+	def __init__(self,settings):
+		generic_stage_target.__init__(self,settings)
+
+	def run(self):
+		print "YOU RAN ME!"
+		self.settings.debugdump("hiya")
+		sys.exit(0)
+
 	def set_portage_overlay(self):
 		generic_stage_target.set_portage_overlay(self)
 		if self.settings.has_key("portage_overlay"):
@@ -18,3 +28,6 @@ class stage3_target(generic_stage_target):
 	def set_cleanables(self):
 		generic_stage_target.set_cleanables(self)
 		self.settings["cleanables"].extend(["/etc/portage"])
+
+me=stage3_target
+		

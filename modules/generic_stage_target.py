@@ -12,12 +12,14 @@ from stat import *
 class generic_stage_target(generic_target):
 
 	def __init__(self,settings):
-
-		self.require(["target","subarch","rel_type","profile","snapshot","source_subpath"])
+		
 		generic_target.__init__(self,settings)
 
-		for x in os.listdir(sharedir+"/arch") if x.endswith(".spec"):
-			self.settings.collect(x)
+		self.require(["target","subarch","rel_type","profile","snapshot","source_subpath"])
+
+		for x in os.listdir(settings["sharedir"]+"/arch"):
+			if x.endswith(".spec"):
+				self.settings.collect(settings["sharedir"]+"/arch/"+x)
 		
 		# If subarch is specified as "~pentium4", set the realsubarch to "pentium4". This info will be
 		# used when validating the subarch so a user-specified "~pentium4" will be interpreted as valid.
@@ -36,25 +38,24 @@ class generic_stage_target(generic_target):
 		# All the ~x86, ~pentium4, etc. unstable subarch build logic should be done now. Now we need to make
 		# sure that we use the new variables for paths, below...
 
-"""
-target_subpath: $[rel_type]/$[target]-$[subarch]-$[version_stamp]
-snapshot_path: $[storedir]/snapshots/$[portname]-$[snapshot].tar.bz2
-root_path: /
-source_path: $[storedir]/builds/$[source_subpath].tar.bz2
-chroot_path: $[storedir]/tmp/$[target_subpath]/
-destpath: $[chroot_path]/$[root_path]
-stage_path: $[chroot_path]
-target_path: $[storedir]/builds/$[target_subpath].tar.bz2
-controller_file: $[sharedir]/targets/$[target]/$[target]-controller.sh
-action_sequence: unpack unpack_snapshot config_profile_link setup_confdir portage_overlay base_dirs bind chroot_setup setup_environment run_local preclean unbind clean
-cleanables: /etc/resolv.conf /var/tmp/* /tmp/* /root/* /usr/portage
-USE: $[HOSTUSE]
+#"""
+#target_subpath: $[rel_type]/$[target]-$[subarch]-$[version_stamp]
+#snapshot_path: $[storedir]/snapshots/$[portname]-$[snapshot].tar.bz2
+#root_path: /
+#source_path: $[storedir]/builds/$[source_subpath].tar.bz2
+#chroot_path: $[storedir]/tmp/$[target_subpath]/
+#destpath: $[chroot_path]/$[root_path]
+#stage_path: $[chroot_path]
+#target_path: $[storedir]/builds/$[target_subpath].tar.bz2
+#controller_file: $[sharedir]/targets/$[target]/$[target]-controller.sh
+#action_sequence: unpack unpack_snapshot config_profile_link setup_confdir portage_overlay base_dirs bind chroot_setup setup_environment run_local preclean unbind clean
+#cleanables: /etc/resolv.conf /var/tmp/* /tmp/* /root/* /usr/portage
+#USE: $[HOSTUSE]
 
-NOW THE flexdata should be pretty much all defined.... whee ha.
-"""
+#NOW THE flexdata should be pretty much all defined.... whee ha.
+#"""
 
 	def run(self):
-		
 		# STUFF WE NEED
 		file_locate(self.settings,["source_path","snapshot_path","distdir"],expand=0)
 
