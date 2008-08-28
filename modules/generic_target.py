@@ -7,9 +7,7 @@ from catalyst_support import *
 import os
 
 class generic_target:
-
-	def __init__(self,myspec,addlargs):
-		addl_arg_parse(myspec,addlargs,self.required_values,self.valid_values)
-		self.settings=myspec
+	def __init__(self,settings):
+		self.settings=settings
 		self.env={}
 		self.env["PATH"]="/bin:/sbin:/usr/bin:/usr/sbin"

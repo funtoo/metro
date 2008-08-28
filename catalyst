@@ -4,33 +4,19 @@ import os,sys,imp,string,getopt
 import pdb
 
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
-__version__="0.1"
-
-conf_values={}
+__version__="2112.0 funtoo"
 
 def usage():
-	print "Usage catalyst [options] [-C variable=value...] [ -s identifier]"
-	print " -c --config		use specified configuration file"
-	print " -C --cli		catalyst commandline (MUST BE LAST OPTION)"
+	print "Usage catalyst [options] specfile1 [specfile2...]"
 	print " -d --debug		enable debugging"
-	print " -f --file		read specfile"
-	print " -F --fetchonly		fetch files only"
 	print " -h --help		print this help message"
-	print " -p --purge		clear tmp dirs and package cache"
-	print " -s --snapshot		generate a release snapshot"
 	print " -V --version		display version information"
 	print " -v --verbose		verbose output"
 	print
 	print "Usage examples:"
 	print
-	print "Using the commandline option (-C, --cli) to build a Portage snapshot:"
-	print "catalyst -C target=snapshot version_stamp=my_date"
-	print
-	print "Using the snapshot option (-s, --snapshot) to build a release snapshot:"
-	print "catalyst -s 20071121"
-	print
 	print "Using the specfile option (-f, --file) to build a stage target:"
-	print "catalyst -f stage1-specfile.spec"
+	print "catalyst stage1-specfile.spec"
 
 def version():
 	print "Catalyst, version "+__version__
@@ -39,94 +25,23 @@ def version():
 	print "Distributed under the GNU General Public License version 2\n"
 
 def parse_config(myconfig):
-	# search a couple of different areas for the main config file
-	myconf={}
-	config_file=""
-
-	confdefaults={ "storedir":"/var/tmp/catalyst", "workdir":"/var/tmp/catalyst",\
-		"sharedir":"/usr/share/catalyst","distdir":"/usr/portage/distfiles",\
-		"portdir":"/usr/portage","portname":"portage","options":"",\
-		"snapshot_cache":"/var/tmp/catalyst/snapshot_cache"}
-		
-	# first, try the one passed (presumably from the cmdline)
-	if myconfig:
-		if os.path.exists(myconfig):
-			print "Using command line specified Catalyst configuration file, "+myconfig
-			config_file=myconfig
-		else:
-			print "!!! catalyst: Could not use specified configuration file "+myconfig
-			sys.exit(1)
-	# next, try the default location
-	elif os.path.exists("/etc/catalyst/catalyst.conf"):
-		print "Using default Catalyst configuration file, /etc/catalyst/catalyst.conf"
-		config_file="/etc/catalyst/catalyst.conf"
-	# can't find a config file (we are screwed), so bail out
-	else:
-		print "!!! catalyst: Could not find a suitable configuration file"
-		sys.exit(1)
-
-	# now, try and parse the config file "config_file"
-	try:
-		execfile(config_file, myconf, myconf)
-	except:
-		print "!!! catalyst: Unable to parse configuration file, "+myconfig
-		sys.exit(1)
-	
-	# now, load up the values into conf_values so that we can use them
-	for x in confdefaults.keys():
-		if myconf.has_key(x):
-			print "Setting",x,"to config file value \""+myconf[x]+"\""
-			conf_values[x]=myconf[x]
-		else:
-			print "Setting",x,"to default value \""+confdefaults[x]+"\""
-			conf_values[x]=confdefaults[x]
-	
+	# FOR COMPATIBILITY THIS IS GOOD - drobbins
 	for opt in [ "ccache", "distcc", "icecream", "kerncache", "pkgcache", "purge", "metadata_overlay", "envscript" ]:
-		if opt in string.split(conf_values["options"]):
+		if opt in string.split(settings["options"]):
 			print opt,"support enabled."
-			conf_values[opt.upper()]="1"
+			settings[opt.upper()]="1"
 
-def import_modules():
-	targetmap={}
-	for x in os.listdir(conf_values["sharedir"]+"/targets"):
-		if x[-3:] != ".py":
-			continue
-		fh=open(os.path.join(conf_values["sharedir"]+"/targets/"+x))
-		module=imp.load_module(x[:-3],fh,"targets/"+x,(".py","r",imp.PY_SOURCE))
-		module.register(targetmap)
-		fh.close()
-		print "Registered target",x[:-3]
-	return targetmap
-
-def do_spec(myspecfile):
-	try:
-		addlargs=read_spec(myspecfile)
-	except:
-		sys.exit(1)
-	return addlargs
-
-def do_cli(cmdline):
-	try:
-		return arg_parse(cmdline)
-	
-	except CatalystError:
-		print "!!! catalyst: Could not parse commandline, exiting."
-		sys.exit(1)
-	
-def build_target(addlargs, targetmap):
-	try:
-		if not targetmap.has_key(addlargs["target"]):
-			raise CatalystError,"Target \""+addlargs["target"]+"\" not available."
-		mytarget=targetmap[addlargs["target"]](conf_values, addlargs)
-		mytarget.run()
-	except:
-		# TODO: Capture traceback, so we can display this error after printing of the traceback
-		print "!!! catalyst: Error encountered during run of target " + addlargs["target"]
-		raise
+def run_target(target):
+	targetfn=os.path.join(settings["sharedir"]+"/targets/"+target+".py")
+	if not os.path.exists(targetfn):
+		raise CatalystError, "Target "+target+" not found at "+targetfn
+	fh=open(targetfn)
+	module=imp.load_module(target,fh,"targets/"+target+".py",(".py","r",imp.PY_SOURCE))
+	fh.close()
+	print "Registered target",x[:-3]
+	module.run()
 
 if __name__ == "__main__":
-	targetmap={}
-	
 	version()
 	if os.getuid() != 0:
 		# catalyst cannot be run as a normal user due to chroots, mounts, etc
@@ -140,9 +55,7 @@ if __name__ == "__main__":
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "phvdc:C:f:FVs:", ["purge","help", "version", "debug",\
-			"config=", "cli=", "file=", "fetch", "verbose","snapshot="])
-	
+		opts,args = getopt.getopt(sys.argv[1:], "dhvV", ["debug","help", "verbose", "version" ])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -150,92 +63,47 @@ if __name__ == "__main__":
 	# defaults for commandline opts
 	debug=False
 	verbose=False
-	fetch=False
-	myconfig=""
-	myspecfile=""
-	mycmdline=[]
 	myopts=[]
 
 	# check preconditions
-	if len(opts) == 0:
-		print "!!! catalyst: please specify one of either -f or -C\n"
+	if len(args) == 0:
+		print "!!! catalyst: please specify at least one file to read\n"
 		usage()
 		sys.exit(2)
-	run=0	
 
-	for o, a in opts:
-		if o in ("-h", "--help"):
+	for opt,optarg in opts:
+		if opt in ("-h","--help"):
 			usage()
 			sys.exit(1)
-		
 		if o in ("-V", "--version"):
 			print "Catalyst version "+__version__
 			sys.exit(1)
-
-		if o in ("-C", "--cli"):
-			run=1	
-			x=sys.argv.index(o)+1
-			while x < len(sys.argv):
-				mycmdline.append(sys.argv[x])
-				x=x+1
-
-		if o in ("-s", "--snapshot"):
-			if len(sys.argv) < 3:
-				print "!!! catalyst: missing snapshot identifier\n"
-				usage()
-				sys.exit(2)
-			else:
-				run=1
-				mycmdline.append("target=snapshot")
-				mycmdline.append("version_stamp="+a)
-				
-		if o in ("-f", "--file"):
-			run=1	
-			myspecfile=a
-
 		if o in ("-d", "--debug"):
-			conf_values["DEBUG"]="1"
-
-		if o in ("-c", "--config"):
-			myconfig=a
-
-		if o in ("-F", "--fetchonly"):
-			conf_values["FETCH"]="1"
-			
-		if o in ("-v", "--verbose"):
-			conf_values["VERBOSE"]="1"
-
-		if o in ("-p", "--purge"):
-			conf_values["PURGE"]="1"
-
-	if run != 1:
-		print "!!! catalyst: please specify one of either -f or -C\n"
-		usage()
-		sys.exit(2)
+			debug=True
+			print "DEBUG: opts",opts
+			print "DEBUG: args",args
+		if o in ("-v","--verbose"):
+			verbose=True
 
 	# import configuration file and import our main module using those settings
-	parse_config(myconfig)
-	sys.path.append(conf_values["sharedir"]+"/modules")
+	sys.path.append("/usr/lib/catalyst/modules")
 	from catalyst_support import *
-	
-	# import the rest of the catalyst modules
-	targetmap=import_modules()
+	import flexdata
 
-	addlargs={}
-	
-	if myspecfile:
-		addlargs.update(do_spec(myspecfile))
-	
-	if mycmdline:
-		addlargs.update(do_cli(mycmdline))
-	
-	if not addlargs.has_key("target"):
-		raise CatalystError, "Required value \"target\" not specified."
+	settings=flexdata.collection()
+	settings["catalyst_version"]=__version__
+	# grab config file
+	settings.collect("/etc/catalyst/catalyst.conf")
+	settings.debugdump("right after reading config")
 
-	# everything is setup, so the build is a go
+	#PARSE THE SPEC HERE
+	for arg in args:
+		settings.collect(arg)
+
 	try:
-		build_target(addlargs, targetmap)
-			
+	# check for required values
+		settings.debugdump("main app")
+	#	run_target(settings[target])
 	except CatalystError:
 		print
 		print "Catalyst aborting...."

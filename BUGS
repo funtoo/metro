@@ -3,5 +3,6 @@ This isn't exactly optimal. We need to make things sexy again and allow for the 
 configured. Might be good to actually have STOREDIR not be the mirror, dunno. So we can copy to the mirror only
 if the build succeeds.
 
-
+The parser allows multiple definitions of "foo" in a single file, which shouldn't be allowed. Instead, it should
+be detected and an exception should be thrown.
 
