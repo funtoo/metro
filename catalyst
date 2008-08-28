@@ -4,7 +4,7 @@ import os,sys,imp,string,getopt
 import pdb
 
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
-__version__="2.0.5"
+__version__="0.1"
 
 conf_values={}
 
@@ -35,6 +35,7 @@ def usage():
 def version():
 	print "Catalyst, version "+__version__
 	print "Copyright 2003-2007 Gentoo Foundation"
+	print "Copyright 2008 Funtoo Technologies, LLC"
 	print "Distributed under the GNU General Public License version 2\n"
 
 def parse_config(myconfig):
@@ -54,8 +55,7 @@ def parse_config(myconfig):
 			config_file=myconfig
 
 		else:
-			print "!!! catalyst: Could not use specified configuration file "+\
-				myconfig
+			print "!!! catalyst: Could not use specified configuration file "+myconfig
 			sys.exit(1)
 	
 	# next, try the default location
@@ -84,59 +84,18 @@ def parse_config(myconfig):
 		else:
 			print "Setting",x,"to default value \""+confdefaults[x]+"\""
 			conf_values[x]=confdefaults[x]
-
-	if "ccache" in string.split(conf_values["options"]):
-		print "Compiler cache support enabled."
-		conf_values["CCACHE"]="1"
-
-	if "distcc" in string.split(conf_values["options"]):
-		print "Distcc support enabled."
-		conf_values["DISTCC"]="1"
-
-	if "icecream" in string.split(conf_values["options"]):
-		print "Icecream compiler cluster support enabled."
-		conf_values["ICECREAM"]="1"
-
-	if "kerncache" in string.split(conf_values["options"]):
-		print "Kernel cache support enabled."
-		conf_values["KERNCACHE"]="1"
-
-	if "pkgcache" in string.split(conf_values["options"]):
-		print "Package cache support enabled."
-		conf_values["PKGCACHE"]="1"
-
-	if "purge" in string.split(conf_values["options"]):
-		print "Purge support enabled."
-		conf_values["PURGE"]="1"
-
-	if "metadata_overlay" in conf_values["options"].split():
-		print "Use of metadata_overlay module for portage enabled."
-		conf_values["METADATA_OVERLAY"]="1"
-
-#	if "tarball" in string.split(conf_values["options"]):
-#		print "Tarball creation enabled."
-#		conf_values["TARBALL"]="1"
-
-	if myconf.has_key("envscript"):
-		print "Envscript support enabled."
-		conf_values["ENVSCRIPT"]=myconf["envscript"]
+	
+	for opt in [ "ccache", "distcc", "icecream", "kerncache", "pkgcache", "purge", "metadata_overlay", "envscript" ]:
+		if opt in string.split(conf_values["options"]):
+			print opt,"support enabled."
+			conf_values[opt.upper()]="1"
 
 def import_modules():
 	# import catalyst's own modules (i.e. catalyst_support and the arch modules)
 	targetmap={}
 
 	try:
-		for x in required_build_targets:
-			try:
-				fh=open(conf_values["sharedir"]+"/modules/"+x+".py")
-				module=imp.load_module(x,fh,"modules/"+x+".py",(".py","r",imp.PY_SOURCE))
-				fh.close()
-        	
-			except IOError:
-				raise CatalystError,"Can't find "+x+".py plugin in "+\
-					conf_values.settings["sharedir"]+"/modules/"
-
-		for x in valid_build_targets:
+		for x in required_build_targets + valid_build_targets:
 			try:
 				fh=open(conf_values["sharedir"]+"/modules/"+x+".py")
 				module=imp.load_module(x,fh,"modules/"+x+".py",(".py","r",imp.PY_SOURCE))
@@ -146,7 +105,6 @@ def import_modules():
 			except IOError:
 				raise CatalystError,"Can't find "+x+".py plugin in "+\
 					conf_values.settings["sharedir"]+"/modules/"
-
 	except ImportError:
 		print "!!! catalyst: Python modules not found in "+\
 			conf_values["sharedir"]+"/modules; exiting."
@@ -222,6 +180,7 @@ if __name__ == "__main__":
 		usage()
 		sys.exit(2)
 	run=0	
+
 	for o, a in opts:
 		if o in ("-h", "--help"):
 			usage()
@@ -231,48 +190,12 @@ if __name__ == "__main__":
 			print "Catalyst version "+__version__
 			sys.exit(1)
 
-		if o in ("-d", "--debug"):
-			if len(sys.argv) < 3:
-				print "!!! catalyst: please specify one of either -f or -C\n"
-				usage()
-				sys.exit(2)
-			else:
-				conf_values["DEBUG"]="1"
-
-		if o in ("-c", "--config"):
-			if len(sys.argv) < 3:
-				print "!!! catalyst: please specify one of either -f or -C\n"
-				usage()
-				sys.exit(2)
-			else:
-				myconfig=a
-
 		if o in ("-C", "--cli"):
 			run=1	
 			x=sys.argv.index(o)+1
 			while x < len(sys.argv):
 				mycmdline.append(sys.argv[x])
 				x=x+1
-			
-		if o in ("-f", "--file"):
-			run=1	
-			myspecfile=a
-
-		if o in ("-F", "--fetchonly"):
-			if len(sys.argv) < 3:
-				print "!!! catalyst: please specify one of either -f or -C\n"
-				usage()
-				sys.exit(2)
-			else:
-				conf_values["FETCH"]="1"
-			
-		if o in ("-v", "--verbose"):
-			if len(sys.argv) < 3:
-				print "!!! catalyst: please specify one of either -f or -C\n"
-				usage()
-				sys.exit(2)
-			else:
-				conf_values["VERBOSE"]="1"
 
 		if o in ("-s", "--snapshot"):
 			if len(sys.argv) < 3:
@@ -283,14 +206,26 @@ if __name__ == "__main__":
 				run=1
 				mycmdline.append("target=snapshot")
 				mycmdline.append("version_stamp="+a)
-		
+				
+		if o in ("-f", "--file"):
+			run=1	
+			myspecfile=a
+
+		if o in ("-d", "--debug"):
+			conf_values["DEBUG"]="1"
+
+		if o in ("-c", "--config"):
+			myconfig=a
+
+		if o in ("-F", "--fetchonly"):
+			conf_values["FETCH"]="1"
+			
+		if o in ("-v", "--verbose"):
+			conf_values["VERBOSE"]="1"
+
 		if o in ("-p", "--purge"):
-			if len(sys.argv) < 3:
-				print "!!! catalyst: please specify one of either -f or -C\n"
-				usage()
-				sys.exit(2)
-			else:
-				conf_values["PURGE"]="1"
+			conf_values["PURGE"]="1"
+
 	if run != 1:
 		print "!!! catalyst: please specify one of either -f or -C\n"
 		usage()
@@ -332,20 +267,3 @@ if __name__ == "__main__":
 		print "Catalyst aborting...."
 		raise
 		sys.exit(2)
-
-	#except CatalystError:
-	#	print
-	#	print "Catalyst aborting...."
-	#	sys.exit(2)
-	#except KeyError:
-	#	print "\nproblem with command line or spec file ( Key Error )"
-	#	print "Key: "+str(sys.exc_value)+" was not found"
-	#	print "Catalyst aborting...."
-	#	sys.exit(2)
-	#except UnboundLocalError:
-	#	print
-	#	print "UnboundLocalError: "+str(sys.exc_value)+" was not found"
-	#	raise
-	#	print
-	#	print "Catalyst aborting...."
-	#	sys.exit(2)

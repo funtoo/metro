@@ -1,9 +1,0 @@
-##GREETING
-
-The root password on this system has been auto-scrambled for security.
-
-If any ethernet adapters were detected at boot, they should be auto-configured
-if DHCP is available on your network.  Type "net-setup eth0" to specify eth0 IP
-address settings by hand.
-
-Check /etc/kernels/kernel-config-* for kernel configuration(s).

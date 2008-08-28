@@ -1,5 +1,0 @@
-
-Stage tarball(s), distfiles and packages can be found in /mnt/cdrom/.
-
-You can view the networkless installation instructions for this release by
-typing "links /mnt/cdrom/docs/handbook/html".
