@@ -92,7 +92,7 @@ def import_modules():
 		if x[-3:] != ".py":
 			continue
 		fh=open(os.path.join(conf_values["sharedir"]+"/targets/"+x))
-		module=imp.load_module(x,fh,"targets/"+x+".py",(".py","r",imp.PY_SOURCE))
+		module=imp.load_module(x[:-3],fh,"targets/"+x,(".py","r",imp.PY_SOURCE))
 		module.register(targetmap)
 		fh.close()
 		print "Registered target",x[:-3]
