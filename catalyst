@@ -34,16 +34,12 @@ def parse_config(myconfig):
 			print opt,"support enabled."
 			settings[opt.upper()]="1"
 
-def run_target(target):
-	targetfn=os.path.join(sharedir+"/targets/"+target+".py")
-	if not os.path.exists(targetfn):
-		raise CatalystError, "Target "+target+" not found at "+targetfn
-	fh=open(targetfn)
-	module=imp.load_module(target,fh,"targets/"+target+".py",(".py","r",imp.PY_SOURCE))
-	fh.close()
-	print "Registered target",target
-	targetobj=module.me(settings)
-	targetobj.run()
+def find_target(settings):
+	if not targets.directory.has_key(targetname):
+		raise CatalystError, "Target "+targetname+" not supported."
+	else:
+		# create instance of new target
+		return targets.directory[targetname](settings)
 
 if __name__ == "__main__":
 	version()
@@ -93,10 +89,18 @@ if __name__ == "__main__":
 	sys.path.append(sharedir+"/modules")
 	from catalyst_support import *
 	import flexdata
+	import targets
 
 	settings=flexdata.collection()
 	settings["catalyst_version"]=__version__
 	settings["sharedir"]=sharedir
+
+	host=os.uname()[4]
+	if host == "x86_64":
+		settings["hostarch"] = "amd64"
+	elif host in [ "i386", "i486", "i586", "i686" ]
+		settings["hostarch"] = "x86"
+
 	# grab config file
 	settings.collect("/etc/catalyst/catalyst.conf")
 	settings.debugdump("right after reading config")
@@ -105,12 +109,13 @@ if __name__ == "__main__":
 	for arg in args:
 		settings.collect(arg)
 
-
 	if not settings.has_key("target"):
 		raise CatalystError("Please specify a target.")
 	
 	try:
-		run_target(settings["target"])
+		target = find_target(settings)
+		target.run()
+
 	except CatalystError:
 		print
 		print "Catalyst aborting...."

@@ -69,20 +69,6 @@ def die(msg=None):
 def warn(msg):
 	print "!!! catalyst: "+msg
 
-
-def find_binary(myc):
-	"""look through the environmental path for an executable file named whatever myc is"""
-        # this sucks. badly.
-        p=os.getenv("PATH")
-        if p == None:
-                return None
-        for x in p.split(":"):
-                #if it exists, and is executable
-                if os.path.exists("%s/%s" % (x,myc)) and os.stat("%s/%s" % (x,myc))[0] & 0x0248:
-                        return "%s/%s" % (x,myc)
-        return None
-
-
 def spawn_bash(mycommand,env={},debug=False,opt_name=None,**keywords):
 	"""spawn mycommand as an arguement to bash"""
 	args=[BASH_BINARY]
@@ -384,7 +370,7 @@ def ismount(path):
 	a.close()
 	for line in mylines:
 		mysplit=line.split()
-		if os.path.normpath(path) == os.path.normpath(mysplit2)
+		if os.path.normpath(path) == os.path.normpath(mysplit2):
 			print "popen shows",path,"still mounted. Line: ",line
 			return 1
 	return 0
