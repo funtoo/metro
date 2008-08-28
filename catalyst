@@ -6,6 +6,9 @@ import pdb
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
 __version__="2112.0 funtoo"
 
+# we need to define this here because we need to add a module to our path so we can load the config file in /etc
+sharedir="/usr/lib/catalyst"
+
 def usage():
 	print "Usage catalyst [options] specfile1 [specfile2...]"
 	print " -d --debug		enable debugging"
@@ -32,7 +35,7 @@ def parse_config(myconfig):
 			settings[opt.upper()]="1"
 
 def run_target(target):
-	targetfn=os.path.join(settings["sharedir"]+"/targets/"+target+".py")
+	targetfn=os.path.join(sharedir+"/targets/"+target+".py")
 	if not os.path.exists(targetfn):
 		raise CatalystError, "Target "+target+" not found at "+targetfn
 	fh=open(targetfn)
@@ -86,7 +89,7 @@ if __name__ == "__main__":
 			verbose=True
 
 	# import configuration file and import our main module using those settings
-	sys.path.append("/usr/lib/catalyst/modules")
+	sys.path.append(sharedir+"/modules")
 	from catalyst_support import *
 	import flexdata
 
@@ -101,9 +104,7 @@ if __name__ == "__main__":
 		settings.collect(arg)
 
 	try:
-	# check for required values
-		settings.debugdump("main app")
-	#	run_target(settings[target])
+		run_target(settings[target])
 	except CatalystError:
 		print
 		print "Catalyst aborting...."

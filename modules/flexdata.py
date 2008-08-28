@@ -192,21 +192,25 @@ class collection:
 				# ? foo bar {
 				# or
 				# ? foo bar oni {
-				# (which means: "if foo is defined and evaluates to the string "bar" or "bar oni", then evaluate this block...
+				# (which means: "if foo is defined and evaluates to the string "bar" or "oni", then evaluate this block...
 				if not self.raw.has_key(mysplit[1]):
+					# foo isn't defined so we don't need to see if we're equal to bar or oni
 					if self.debug:
 						print "SKIPPING BLOCK 1"
 					self.skipblock(openfile)
-				elif self[mysplit[1]] != " ".join(mysplit[2:len(mysplit)-1]):
-					if self.debug:
-						print "SKIPPING BLOCK 2", " ".join(mysplit[2:len(mysplit)-1])
-					self.skipblock(openfile)
 				else:
-					if self.debug:
+					match=False
+					for foo in mysplit[2:-1]:
+						if self[mysplit[1]] == foo:
+							match=True
+					if match:
 						print "DEBUG: EVALUATING BLOCK"
-					#we're good - evaluate the block
-					while mysplit[0] != "}":
-						mysplit=self.parseline(openfile)
+						while mysplit[0] != "}":
+							mysplit=self.parseline(openfile)
+						break
+					else:
+						print "SKIPPING BLOCK 2", " ".join(mysplit[2:len(mysplit)-1])
+						self.skipblock(openfile)
 			else:
 				raise KeyError, "Error parsing line "+repr(mysplit)
 		return mysplit	
