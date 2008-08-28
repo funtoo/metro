@@ -56,7 +56,8 @@ class collection:
 				newstack.append(varname)
 				ex += self.expand(self.raw[varname],newstack)
 			else:
-				raise KeyError, "Cannot find variable '"+varname+"'"
+				if not self.lax:
+					raise KeyError, "Cannot find variable '"+varname+"'"
 		if not fromfile:
 			return ex
 		else:

@@ -15,8 +15,6 @@ class generic_stage_target(generic_target):
 		
 		generic_target.__init__(self,settings)
 
-		self.require(["target","subarch","rel_type","profile","snapshot","source_subpath"])
-
 		for x in os.listdir(settings["sharedir"]+"/arch"):
 			if x.endswith(".spec"):
 				self.settings.collect(settings["sharedir"]+"/arch/"+x)
@@ -37,6 +35,8 @@ class generic_stage_target(generic_target):
 
 		# All the ~x86, ~pentium4, etc. unstable subarch build logic should be done now. Now we need to make
 		# sure that we use the new variables for paths, below...
+		
+		self.require(["target","subarch","rel_type","profile","snapshot","source_subpath"])
 
 #"""
 #target_subpath: $[rel_type]/$[target]-$[subarch]-$[version_stamp]

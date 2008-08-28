@@ -49,59 +49,7 @@ def cleanup(pids,block_exceptions=True):
                 try:                    spawned_pids.remove(x)
                 except IndexError:      pass
 
-
-
-# a function to turn a string of non-printable characters into a string of
-# hex characters
-def hexify(str):
-	hexStr = string.hexdigits
-	r = ''
-	for ch in str:
-		i = ord(ch)
-		r = r + hexStr[(i >> 4) & 0xF] + hexStr[i & 0xF]
-	return r
-# hexify()
-
-def read_from_clst(file):
-	line = ''
-	myline = ''
-	try:
-		myf=open(file,"r")
-	except:
-		return -1
-		#raise CatalystError, "Could not open file "+file
-	for line in myf.readlines():
-	    #line = string.replace(line, "\n", "") # drop newline
-	    myline = myline + line
-	myf.close()
-	return myline
-# read_from_clst
-
 verbosity=1
-
-def list_bashify(mylist):
-	if type(mylist)==types.StringType:
-		mypack=[mylist]
-	else:
-		mypack=mylist[:]
-	for x in range(0,len(mypack)):
-		# surround args with quotes for passing to bash,
-		# allows things like "<" to remain intact
-		mypack[x]="'"+mypack[x]+"'"
-	mypack=string.join(mypack)
-	return mypack
-
-def list_to_string(mylist):
-	if type(mylist)==types.StringType:
-		mypack=[mylist]
-	else:
-		mypack=mylist[:]
-	for x in range(0,len(mypack)):
-		# surround args with quotes for passing to bash,
-		# allows things like "<" to remain intact
-		mypack[x]=mypack[x]
-	mypack=string.join(mypack)
-	return mypack
 
 class CatalystError(Exception):
 	def __init__(self, message):
@@ -426,18 +374,6 @@ def msg(mymsg,verblevel=1):
 	if verbosity>=verblevel:
 		print mymsg
 
-def pathcompare(path1,path2):
-	# Change double slashes to slash
-	path1 = re.sub(r"//",r"/",path1)
-	path2 = re.sub(r"//",r"/",path2)
-	# Removing ending slash
-	path1 = re.sub("/$","",path1)
-	path2 = re.sub("/$","",path2)
-	
-	if path1 == path2:
-		return 1
-	return 0
-
 def ismount(path):
 	"enhanced to handle bind mounts"
 	if os.path.ismount(path):
@@ -448,41 +384,10 @@ def ismount(path):
 	a.close()
 	for line in mylines:
 		mysplit=line.split()
-		if pathcompare(path,mysplit[2]):
+		if os.path.normpath(path) == os.path.normpath(mysplit2)
 			print "popen shows",path,"still mounted. Line: ",line
 			return 1
 	return 0
-
-def arg_parse(cmdline):
-	#global required_config_file_values
-	mydict={}
-	for x in cmdline:
-		foo=string.split(x,"=",1)
-		if len(foo)!=2:
-			raise CatalystError, "Invalid arg syntax: "+x
-
-		else:
-			mydict[foo[0]]=foo[1]
-	
-	# if all is well, we should return (we should have bailed before here if not)
-	return mydict
-		
-def addl_arg_parse(myspec,addlargs,requiredspec,validspec):
-	"helper function to help targets parse additional arguments"
-	global valid_config_file_values
-	
-	for x in addlargs.keys():
-		if x not in validspec and x not in valid_config_file_values and x not in requiredspec:
-			print ">>> WARNING: Argument \""+x+"\" not recognized for this target."
-		myspec[x]=addlargs[x]
-	
-	for x in requiredspec:
-		if not myspec.has_key(x):
-			raise CatalystError, "Required argument \""+x+"\" not specified."
-	
-def spec_dump(myspec):
-	for x in myspec.keys():
-		print x+": "+repr(myspec[x])
 
 def touch(myfile):
 	try:
@@ -490,28 +395,3 @@ def touch(myfile):
 		myf.close()
 	except IOError:
 		raise CatalystError, "Could not touch "+myfile+"."
-
-def countdown(secs=5, doing="Starting"):
-        if secs:
-		print ">>> Waiting",secs,"seconds before starting..."
-		print ">>> (Control-C to abort)...\n"+doing+" in: ",
-		ticks=range(secs)
-		ticks.reverse()
-		for sec in ticks:
-			sys.stdout.write(str(sec+1)+" ")
-			sys.stdout.flush()
-			time.sleep(1)
-		print
-
-def normpath(mypath):
-	TrailingSlash=False
-        if mypath[-1] == "/":
-	    TrailingSlash=True
-        newpath = os.path.normpath(mypath)
-        if len(newpath) > 1:
-                if newpath[:2] == "//":
-                        newpath = newpath[1:]
-	if TrailingSlash:
-	    newpath=newpath+'/'
-        return newpath
-

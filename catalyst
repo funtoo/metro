@@ -101,11 +101,14 @@ if __name__ == "__main__":
 	settings.collect("/etc/catalyst/catalyst.conf")
 	settings.debugdump("right after reading config")
 
-
 	#PARSE THE SPEC HERE
 	for arg in args:
 		settings.collect(arg)
 
+
+	if not settings.has_key("target"):
+		raise CatalystError("Please specify a target.")
+	
 	try:
 		run_target(settings["target"])
 	except CatalystError:
