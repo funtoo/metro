@@ -4,10 +4,33 @@ from stat import *
 import os
 
 class target:
+
+	def checkconfig(self,strict=True):
+
+		# notify user of any variable that were accessed but were not defined:
+		self.settings.expand_all()
+
+		failcount = 0
+		if strict:
+			warnmsg = "ERROR: "
+		else:
+			warnmsg = "Warning: "
+	
+		for element in self.settings.blanks.keys():
+			print warnmsg+"value \""+element+"\" was referenced but not defined."
+			failcount += 1
+		if strict and failcount:
+			raise CatalystError, "Total config errors: "+`failcount`+" - stopping."
+
 	def require(self,mylist):
 		missing=self.settings.missing(mylist)
 		if missing:
 			raise CatalystError,"Missing required configuration values "+`missing`
+
+	def recommend(self,mylist):
+		missing=self.settings.missing(mylist)
+		for item in missing:
+			print "Warning: recommended value \""+item+"\" not defined."
 
 	def clear_dir(self,path):
 	    if not os.path.isdir(path):
@@ -23,17 +46,15 @@ class target:
 		os.chmod(path,mystat[ST_MODE])
 
 
-	def find_binary(self,myc):
+	def bin(self,myc):
 		"""look through the environmental path for an executable file named whatever myc is"""
 		# this sucks. badly.
 		p=self.env["PATH"]
-		if p == None:
-			return None
 		for x in p.split(":"):
 			#if it exists, and is executable
 			if os.path.exists("%s/%s" % (x,myc)) and os.stat("%s/%s" % (x,myc))[0] & 0x0248:
 				return "%s/%s" % (x,myc)
-		return None
+		raise CatalystError, "Can't find command "+myc
 
 	def __init__(self,settings):
 	
@@ -41,7 +62,20 @@ class target:
 		self.env = {}
 		self.env["PATH"] = "/bin:/sbin:/usr/bin:/usr/sbin"
 
+		self.require(["target","version"])
+
+		self.settings["workdir"]="/var/tmp/catalyst/$[target]-$[version]"
+
+		if not os.path.exists(self.settings["workdir"]):
+			os.makedirs(self.settings["workdir"])
+
+	def cleanup(self):
+		if os.path.exists(self.settings["workdir"]):
+			print "Cleaning up "+self.settings["workdir"]+"..."
+		self.cmd(self.bin("rm") + " -rf "+self.settings["workdir"])
+
 	def cmd(self,mycmd,myexc="",badval=None):
+		print "Executing \""+mycmd.split(" ")[0]+"\"..."
 		try:
 			sys.stdout.flush()
 			retval=spawn_bash(mycmd,self.env)
@@ -192,47 +226,49 @@ class chroot(target):
 class snapshot(target):
 	def __init__(self,settings):
 		target.__init__(self,settings)
-		self.require(["version","target","portname","portdir"])
-		
-		#self.settings["target_subpath"]="portage"
-		#st=self.settings["storedir"]
-		#self.settings["snapshot_path"]=normpath(st+"/snapshots/"+self.settings["portname"]+"-"+self.settings["version_stamp"]+".tar.bz2")
-		#self.settings["tmp_path"]=normpath(st+"/tmp/"+self.settings["target_subpath"])
+		self.require(["portname","portdir","version","target"])
+		self.require(["storedir/snapshot"])
 
 	def run(self):
-		#x=normpath(self.settings["storedir"]+"/snapshots")
-		if not os.path.exists(x):
-			os.makedirs(x)
-		print "Creating Portage tree snapshot "+self.settings["version_stamp"]+\
-			" from "+self.settings["portdir"]+"..."
-		
-		mytmp=self.settings["tmp_path"]
-		print "Going to store snapshot in",mytmp+"..."
-		if not os.path.exists(mytmp):
-			os.makedirs(mytmp)
-		
-		cmd("rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude .git/ "+\
-			self.settings["portdir"]+"/ "+mytmp+"/portage/","Snapshot failure",env=self.env)
-		
-		print "Compressing Portage snapshot tarball..."
-		cmd("tar cjf "+self.settings["snapshot_path"]+" -C "+mytmp+" portage","Snapshot creation failure",env=self.env)
-		
-		self.cleanup()
-		print "snapshot: complete!"
+
+		if os.path.exists(self.settings["workdir"]):
+			print "Removing existing temporary work directory..."
+			self.cmd( self.bin("rm") + " -rf " + self.settings["workdir"] )
+
+		# do not overwrite snapshot if it already exists
+		if os.path.exists(self.settings["storedir/snapshot"]):
+			raise CatalystError,"Snapshot "+self.settings["storedir/snapshot"]+" already exists. Aborting."
+				
+		# create required directories
+		for dir in [ os.path.dirname(self.settings["storedir/snapshot"]), self.settings["workdir"]+"/portage" ]:
+			if not os.path.exists(dir):
+				os.makedirs(dir)
 	
+		# rsync options
+		rsync_opts = "-a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/"
+		rsync_cmd = self.bin("rsync") + " " + rsync_opts + " " + os.path.normpath(self.settings["portdir"])+"/ " + os.path.normpath(self.settings["workdir"]+"/portage")+"/"
+	
+		self.cmd(rsync_cmd,"Snapshot failure")
+		
+		self.cmd( self.bin("tar") + " -cjf " + self.settings["storedir/snapshot"]+" -C "+self.settings["workdir"]+" portage","Snapshot creation failure")
+
+		# workdir cleanup is handled by catalyst calling our cleanup() method
 
 class stage(chroot):
 
 	def __init__(self,settings):
-		
 		chroot.__init__(self,settings)
 	
-		self.require(["target","distdir","subarch","profile","snapshot","arch"])
-
-		for x in os.listdir(settings["sharedir"]+"/arch"):
-			if x.endswith(".spec"):
-				self.settings.collect(settings["sharedir"]+"/arch/"+x)
+		self.require(["arch","subarch","profile","storedir/srcstage","storedir/deststage","storedir/snapshot"])
 		
+		# look for user-specified USE, if none specified then fallback to HOSTUSE if specified
+		if not self.settings.has_key("USE"):
+			if self.settings.has_key("HOSTUSE"):
+				self.settings["USE"]="$[HOSTUSE]"
+
+		# If DISTDIR, USE or CFLAGS not specified, alert the user that they might be missing them
+		self.recommend(["DISTDIR","USE","CFLAGS"])
+
 		# We also use an initial "~" as a trigger to build an unstable version of the portage tree. This
 		# means we need to use ~arch rather than arch in ACCEPT_KEYWORDS. So if someone specified "~pentium4"
 		# as subarch, we would set ACCEPT_KEYWORDS to "~x86" and later write this into make.conf.
@@ -246,24 +282,25 @@ class stage(chroot):
 		# sure that we use the new variables for paths, below...
 
 		if self.settings["hostarch"] == "amd64" and self.settings["arch"] == "x86":
-			self.settings["chroot"]=self.find_binary("linux32")+" "+self.find_binary("chroot")
+			self.settings["chroot"]=self.bin("linux32")+" "+self.bin("chroot")
 		else:
-			self.settings["chroot"]=self.find_binary("chroot")
+			self.settings["chroot"]=self.bin("chroot")
 
 		# DEFINE GENTOO MOUNTS
 
-		self.mounts.append("/usr/portage/distfiles")
-		self.mountmap["/usr/portage/distfiles"]=self.settings["distdir"]
+		if self.settings.has_key("distdir"):
+			self.mounts.append("/usr/portage/distfiles")
+			self.mountmap["/usr/portage/distfiles"]=self.settings["distdir"]
 
 		# DEFINE FLEXDATA HERE
 
 		#"""
 		#target_subpath: $[rel_type]/$[target]-$[subarch]-$[version_stamp]
 		#snapshot_path: $[storedir]/snapshots/$[portname]-$[snapshot].tar.bz2
-		#root_path: /
+		#ROOT: /
 		#source_path: $[storedir]/builds/$[source_subpath].tar.bz2
 		#chroot_path: $[storedir]/tmp/$[target_subpath]/
-		#destpath: $[chroot_path]/$[root_path]
+		#destpath: $[chroot_path]/$[ROOT]
 		#stage_path: $[chroot_path]
 		#target_path: $[storedir]/builds/$[target_subpath].tar.bz2
 		#controller_file: $[sharedir]/targets/$[target]/$[target]-controller.sh
@@ -279,8 +316,10 @@ class stage(chroot):
 
 
 	def run(self):
-		# STUFF WE NEED
-		file_locate(self.settings,["source_path","snapshot_path","distdir"],expand=0)
+		# look for required files
+		for loc in [ "storedir/srcstage", "storedir/snapshot" ]:
+			if not os.path.exists(self.settings[loc]):
+				raise CatalystError,"Required file "+self.settings[loc]+" not found. Aborting."
 
 		self.kill_chroot_pids()
 
@@ -545,12 +584,15 @@ class stage3(stage):
 
 	def __init__(self,settings):
 		stage.__init__(self,settings)
+		
+		# set standard hard-coded variables for this stage
+		self.settings["ROOT"]="/"
+		self.settings["source"] = "stage2"
+		# TODO: extend parser so we can easily augment this list from the specfile if we want:
+		self.settings["cleanables"] = "/etc/portage /etc/resolv.conf /var/tmp/* /tmp/* /root/* /usr/portage" 
 
 	def run(self):
-		print "YOU RAN ME!"
-		sys.exit(0)
-		"""cleanables: $[cleanables] /etc/portage"""
-
+		self.settings.debugdump("hi")
 
 class stage2(stage):
 	def __init__(self,settings):
@@ -567,8 +609,8 @@ class stage1(stage):
 	def __init__(self,settings):
 		stage.__init__(self,settings)
 		"""
-		stage_path: $[chroot_path]$[root_path]
-		root_path: /tmp/stage1root
+		stage_path: $[chroot_path]$[ROOT]
+		ROOT: /tmp/stage1root
 		cleanables: /usr/share/gettext /usr/lib/python2.?/test /usr/lib/python2.?/email /usr/lib/python2.?/lib-tk /usr/share/zoneinfo
 		"""
 	def run(self):

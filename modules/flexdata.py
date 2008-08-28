@@ -11,6 +11,7 @@ class collection:
 		self.immutable=False
 		# lax means: if a key isn't found, pretend it exists but return the empty string.
 		self.lax=True
+		self.blanks={}
 
 	def clear(self):
 		self.raw={}
@@ -18,6 +19,13 @@ class collection:
 		# self.evaluated holds our already-evaluated variables
 
 		self.evaluated={}
+
+	def expand_all(self):
+		
+		# try to expand all variables to find any undefined elements, to record all blanks or throw an exception
+		for key in self.keys():
+			myvar = self[key]
+
 
 	def expand(self,element,stack=[]):
 
@@ -58,6 +66,9 @@ class collection:
 			else:
 				if not self.lax:
 					raise KeyError, "Cannot find variable '"+varname+"'"
+				else:
+					# record variables that we attempted to expand but were blank, so we can inform the user of possible bugs
+					self.blanks[varname] = True
 		if not fromfile:
 			return ex
 		else:
@@ -93,6 +104,8 @@ class collection:
 			self.evaluated[element]=self.expand(self.raw[element])
 			return self.evaluated[element]
 		elif self.lax:
+			# record that we looked up an undefined element
+			self.blanks[element]=True
 			return ""
 		else:
 			raise KeyError, "Cannot find element '"+element+"'"
@@ -113,10 +126,7 @@ class collection:
 
 	def debugdump(self,desc=""):
 		print
-		print "DEBUG flexdata: "+desc
-		print "RAW:"
-		print self.raw
-		print "EVAL:"
+		print "DEBUG: "+desc
 		for key in self.keys():
 			print key, self[key]
 		print
@@ -206,11 +216,13 @@ class collection:
 							match=True
 							break
 					if match:
-						print "DEBUG: EVALUATING BLOCK"
+						if self.debug:
+							print "DEBUG: EVALUATING BLOCK"
 						while mysplit[0] != "}":
 							mysplit=self.parseline(openfile)
 					else:
-						print "SKIPPING BLOCK 2", " ".join(mysplit[2:len(mysplit)-1])
+						if self.debug:
+							print "SKIPPING BLOCK 2", " ".join(mysplit[2:len(mysplit)-1])
 						self.skipblock(openfile)
 			else:
 				raise KeyError, "Error parsing line "+repr(mysplit)

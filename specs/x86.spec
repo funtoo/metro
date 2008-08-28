@@ -1,11 +1,3 @@
-? buildarch amd64 {
-	chroot: linux32 chroot
-}
-
-? buildarch x86 {
-	chroot: chroot
-}
-
 ? subarch x86 ~x86 {
 	arch: x86
 	cflags: -O2 -mtune=i686 -pipe

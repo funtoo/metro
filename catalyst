@@ -4,7 +4,7 @@ import os,sys,imp,string,getopt
 import pdb
 
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
-__version__="2112.0 funtoo"
+__version__="2112.0-funtoo"
 
 # we need to define this here because we need to add a module to our path so we can load the config file in /etc
 sharedir="/usr/lib/catalyst"
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "dhvV", ["debug","help", "verbose", "version" ])
+		opts,args = getopt.getopt(sys.argv[1:], "ldhvV", ["lax","debug","help", "verbose", "version" ])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -64,6 +64,7 @@ if __name__ == "__main__":
 	debug=False
 	verbose=False
 	myopts=[]
+	strict=True
 
 	# check preconditions
 	if len(args) == 0:
@@ -72,6 +73,8 @@ if __name__ == "__main__":
 		sys.exit(2)
 
 	for opt,optarg in opts:
+		if opt in ("-l","--lax"):
+			strict=False		
 		if opt in ("-h","--help"):
 			usage()
 			sys.exit(1)
@@ -102,7 +105,6 @@ if __name__ == "__main__":
 		settings["hostarch"] = "x86"
 
 	# the new version of catalyst does not have any configuration file
-
 	# parse command-line supplied configuration files and spec files in the order they were specified
 	for arg in args:
 		settings.collect(arg)
@@ -112,7 +114,32 @@ if __name__ == "__main__":
 	
 	try:
 		target = find_target(settings)
+
+		# "target" is now a new object, constructor has run. We have validated that we have all required values.
+		
+		# However - we could still have some bad data -
+		# since settings should now be all defined, now we can go through all the settings now and make sure we don't have any bad
+		# references in our spec data, like foo: $[bar] and not having bar defined. If we find problems, checkconfig() will alert
+		# the user and abort:
+
+		target.checkconfig(strict)
+		
+		# OK, we have all required values - our config is good - now we can run the target
+
+		print "Running target \""+settings["target"]+"\"."
 		target.run()
+
+		# Now that the target has run, we want to clean up our temporary work space. cleanup() does this.
+
+		target.cleanup()
+
+		# We're all done.
+
+		print "Catalyst complete."
+		print
+	except CatalystError:
+		print "ERROR - exiting."
+		sys.exit(1)
 	except KeyboardInterrupt:
 		print "\nCatalyst build aborted due to user interrupt ( Ctrl-C )"
 		print
