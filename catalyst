@@ -35,11 +35,11 @@ def parse_config(myconfig):
 			settings[opt.upper()]="1"
 
 def find_target(settings):
-	if not targets.directory.has_key(targetname):
-		raise CatalystError, "Target "+targetname+" not supported."
+	if not targets.directory.has_key(settings["target"]):
+		raise CatalystError, "Target "+settings["target"]+" not supported."
 	else:
 		# create instance of new target
-		return targets.directory[targetname](settings)
+		return targets.directory[settings["target"]](settings)
 
 if __name__ == "__main__":
 	version()
@@ -98,14 +98,12 @@ if __name__ == "__main__":
 	host=os.uname()[4]
 	if host == "x86_64":
 		settings["hostarch"] = "amd64"
-	elif host in [ "i386", "i486", "i586", "i686" ]
+	elif host in [ "i386", "i486", "i586", "i686" ]:
 		settings["hostarch"] = "x86"
 
-	# grab config file
-	settings.collect("/etc/catalyst/catalyst.conf")
-	settings.debugdump("right after reading config")
+	# the new version of catalyst does not have any configuration file
 
-	#PARSE THE SPEC HERE
+	# parse command-line supplied configuration files and spec files in the order they were specified
 	for arg in args:
 		settings.collect(arg)
 
@@ -115,17 +113,8 @@ if __name__ == "__main__":
 	try:
 		target = find_target(settings)
 		target.run()
-
-	except CatalystError:
-		print
-		print "Catalyst aborting...."
-		sys.exit(2)
 	except KeyboardInterrupt:
 		print "\nCatalyst build aborted due to user interrupt ( Ctrl-C )"
 		print
 		print "Catalyst aborting...."
-		sys.exit(2)
-	except:
-		print "Catalyst aborting...."
-		raise
 		sys.exit(2)

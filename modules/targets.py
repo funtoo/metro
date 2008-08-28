@@ -3,84 +3,7 @@ from catalyst_support import *
 from stat import *
 import os
 
-directory = { "stage1" : stage1, "stage2" : stage2, "stage3" : stage3 , "snapshot" : snapshot }
-
-class snapshot(target):
-	def __init__(self,settings):
-		target.__init__(self,settings)
-		self.require(["version","target","portname","portdir"])
-		
-		#self.settings["target_subpath"]="portage"
-		#st=self.settings["storedir"]
-		#self.settings["snapshot_path"]=normpath(st+"/snapshots/"+self.settings["portname"]+"-"+self.settings["version_stamp"]+".tar.bz2")
-		#self.settings["tmp_path"]=normpath(st+"/tmp/"+self.settings["target_subpath"])
-
-	def run(self):
-		#x=normpath(self.settings["storedir"]+"/snapshots")
-		if not os.path.exists(x):
-			os.makedirs(x)
-		print "Creating Portage tree snapshot "+self.settings["version_stamp"]+\
-			" from "+self.settings["portdir"]+"..."
-		
-		mytmp=self.settings["tmp_path"]
-		print "Going to store snapshot in",mytmp+"..."
-		if not os.path.exists(mytmp):
-			os.makedirs(mytmp)
-		
-		cmd("rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude .git/ "+\
-			self.settings["portdir"]+"/ "+mytmp+"/portage/","Snapshot failure",env=self.env)
-		
-		print "Compressing Portage snapshot tarball..."
-		cmd("tar cjf "+self.settings["snapshot_path"]+" -C "+mytmp+" portage","Snapshot creation failure",env=self.env)
-		
-		self.cleanup()
-		print "snapshot: complete!"
-	
-
-class stage3(stage):
-
-	def __init__(self,settings):
-		stage.__init__(self,settings)
-
-	def run(self):
-		print "YOU RAN ME!"
-		self.settings.debugdump("hiya")
-		sys.exit(0)
-"""cleanables: $[cleanables] /etc/portage"""
-
-
-class stage2(stage):
-	def __init__(self,settings):
-		stage.__init__(self,settings)
-
-"""
-source_path: $[storedir]/builds/$[source_subpath].tar.bz2
-cleanables: $[cleanables] /etc/portage
-"""
-
-
-
-class stage1(stage):
-	def __init__(self,settings):
-		stage.__init__(self,settings)
-"""
-stage_path: $[chroot_path]$[root_path]
-root_path: /tmp/stage1root
-cleanables: /usr/share/gettext /usr/lib/python2.?/test /usr/lib/python2.?/email /usr/lib/python2.?/lib-tk /usr/share/zoneinfo
-"""
-	def run(self):
-		# stage_path/proc probably doesn't exist yet, so create it
-		if not os.path.exists(self.settings["stage_path"]+"/proc"):
-			os.makedirs(self.settings["stage_path"]+"/proc")
-		
-		stage.run(self)
-		# alter the mount mappings to bind mount proc onto it
-		# self.mounts.append("/tmp/stage1root/proc")
-		# self.mountmap["/tmp/stage1root/proc"]="/proc"
-		# This appears to break baselayout-2.0's makefile, who tries to write to /tmp/stage1root/proc/.keep, so I'm removing it and will see how the build goes
-
 class target:
-
 	def require(self,mylist):
 		missing=self.settings.missing(mylist)
 		if missing:
@@ -265,12 +188,47 @@ class chroot(target):
 				except CatalystError:
 					raise CatalystError, "Unable to auto-unbind "+x
 
+
+class snapshot(target):
+	def __init__(self,settings):
+		target.__init__(self,settings)
+		self.require(["version","target","portname","portdir"])
+		
+		#self.settings["target_subpath"]="portage"
+		#st=self.settings["storedir"]
+		#self.settings["snapshot_path"]=normpath(st+"/snapshots/"+self.settings["portname"]+"-"+self.settings["version_stamp"]+".tar.bz2")
+		#self.settings["tmp_path"]=normpath(st+"/tmp/"+self.settings["target_subpath"])
+
+	def run(self):
+		#x=normpath(self.settings["storedir"]+"/snapshots")
+		if not os.path.exists(x):
+			os.makedirs(x)
+		print "Creating Portage tree snapshot "+self.settings["version_stamp"]+\
+			" from "+self.settings["portdir"]+"..."
+		
+		mytmp=self.settings["tmp_path"]
+		print "Going to store snapshot in",mytmp+"..."
+		if not os.path.exists(mytmp):
+			os.makedirs(mytmp)
+		
+		cmd("rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude .git/ "+\
+			self.settings["portdir"]+"/ "+mytmp+"/portage/","Snapshot failure",env=self.env)
+		
+		print "Compressing Portage snapshot tarball..."
+		cmd("tar cjf "+self.settings["snapshot_path"]+" -C "+mytmp+" portage","Snapshot creation failure",env=self.env)
+		
+		self.cleanup()
+		print "snapshot: complete!"
+	
+
 class stage(chroot):
 
 	def __init__(self,settings):
 		
 		chroot.__init__(self,settings)
-		
+	
+		self.require(["target","distdir","subarch","profile","snapshot","arch"])
+
 		for x in os.listdir(settings["sharedir"]+"/arch"):
 			if x.endswith(".spec"):
 				self.settings.collect(settings["sharedir"]+"/arch/"+x)
@@ -286,10 +244,8 @@ class stage(chroot):
 
 		# All the ~x86, ~pentium4, etc. unstable subarch build logic should be done now. Now we need to make
 		# sure that we use the new variables for paths, below...
-		
-		self.require(["target","distdir","subarch","rel_type","profile","snapshot","source_subpath","arch"])
 
-		if self.settings["hostarch"] = "amd64" and self.settings["arch"] = "x86":
+		if self.settings["hostarch"] == "amd64" and self.settings["arch"] == "x86":
 			self.settings["chroot"]=self.find_binary("linux32")+" "+self.find_binary("chroot")
 		else:
 			self.settings["chroot"]=self.find_binary("chroot")
@@ -583,5 +539,49 @@ class stage(chroot):
 
 	def purge(self):
 		self.clear_chroot()
+
+
+class stage3(stage):
+
+	def __init__(self,settings):
+		stage.__init__(self,settings)
+
+	def run(self):
+		print "YOU RAN ME!"
+		sys.exit(0)
+		"""cleanables: $[cleanables] /etc/portage"""
+
+
+class stage2(stage):
+	def __init__(self,settings):
+		stage.__init__(self,settings)
+
+"""
+source_path: $[storedir]/builds/$[source_subpath].tar.bz2
+cleanables: $[cleanables] /etc/portage
+"""
+
+
+
+class stage1(stage):
+	def __init__(self,settings):
+		stage.__init__(self,settings)
+		"""
+		stage_path: $[chroot_path]$[root_path]
+		root_path: /tmp/stage1root
+		cleanables: /usr/share/gettext /usr/lib/python2.?/test /usr/lib/python2.?/email /usr/lib/python2.?/lib-tk /usr/share/zoneinfo
+		"""
+	def run(self):
+		# stage_path/proc probably doesn't exist yet, so create it
+		if not os.path.exists(self.settings["stage_path"]+"/proc"):
+			os.makedirs(self.settings["stage_path"]+"/proc")
+		
+		stage.run(self)
+		# alter the mount mappings to bind mount proc onto it
+		# self.mounts.append("/tmp/stage1root/proc")
+		# self.mountmap["/tmp/stage1root/proc"]="/proc"
+		# This appears to break baselayout-2.0's makefile, who tries to write to /tmp/stage1root/proc/.keep, so I'm removing it and will see how the build goes
+directory = { "stage1" : stage1, "stage2" : stage2, "stage3" : stage3 , "snapshot" : snapshot }
+
 
 #vim: ts=4 sw=4 sta et sts=4 ai

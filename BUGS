@@ -6,3 +6,12 @@ if the build succeeds.
 The parser allows multiple definitions of "foo" in a single file, which shouldn't be allowed. Instead, it should
 be detected and an exception should be thrown.
 
+The parser's conditional support means that order of evaluation matters. For example:
+
+? subarch foo {
+	bar: oni
+}
+
+subarch: foo
+
+Will result in bar not being defined.
