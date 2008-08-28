@@ -53,16 +53,13 @@ def parse_config(myconfig):
 		if os.path.exists(myconfig):
 			print "Using command line specified Catalyst configuration file, "+myconfig
 			config_file=myconfig
-
 		else:
 			print "!!! catalyst: Could not use specified configuration file "+myconfig
 			sys.exit(1)
-	
 	# next, try the default location
 	elif os.path.exists("/etc/catalyst/catalyst.conf"):
 		print "Using default Catalyst configuration file, /etc/catalyst/catalyst.conf"
 		config_file="/etc/catalyst/catalyst.conf"
-	
 	# can't find a config file (we are screwed), so bail out
 	else:
 		print "!!! catalyst: Could not find a suitable configuration file"
@@ -71,7 +68,6 @@ def parse_config(myconfig):
 	# now, try and parse the config file "config_file"
 	try:
 		execfile(config_file, myconf, myconf)
-	
 	except:
 		print "!!! catalyst: Unable to parse configuration file, "+myconfig
 		sys.exit(1)
@@ -91,25 +87,15 @@ def parse_config(myconfig):
 			conf_values[opt.upper()]="1"
 
 def import_modules():
-	# import catalyst's own modules (i.e. catalyst_support and the arch modules)
 	targetmap={}
-
-	try:
-		for x in required_build_targets + valid_build_targets:
-			try:
-				fh=open(conf_values["sharedir"]+"/modules/"+x+".py")
-				module=imp.load_module(x,fh,"modules/"+x+".py",(".py","r",imp.PY_SOURCE))
-				module.register(targetmap)
-				fh.close()
-        	
-			except IOError:
-				raise CatalystError,"Can't find "+x+".py plugin in "+\
-					conf_values.settings["sharedir"]+"/modules/"
-	except ImportError:
-		print "!!! catalyst: Python modules not found in "+\
-			conf_values["sharedir"]+"/modules; exiting."
-		sys.exit(1)
-
+	for x in os.listdir(conf_values["sharedir"]+"/targets"):
+		if x[-3:] != ".py":
+			continue
+		fh=open(os.path.join(conf_values["sharedir"]+"/targets/"+x))
+		module=imp.load_module(x,fh,"targets/"+x+".py",(".py","r",imp.PY_SOURCE))
+		module.register(targetmap)
+		fh.close()
+		print "Registered target",x[:-3]
 	return targetmap
 
 def do_spec(myspecfile):
@@ -117,7 +103,6 @@ def do_spec(myspecfile):
 		addlargs=read_spec(myspecfile)
 	except:
 		sys.exit(1)
-		
 	return addlargs
 
 def do_cli(cmdline):
@@ -132,11 +117,8 @@ def build_target(addlargs, targetmap):
 	try:
 		if not targetmap.has_key(addlargs["target"]):
 			raise CatalystError,"Target \""+addlargs["target"]+"\" not available."
-		
 		mytarget=targetmap[addlargs["target"]](conf_values, addlargs)
-	
 		mytarget.run()
-
 	except:
 		# TODO: Capture traceback, so we can display this error after printing of the traceback
 		print "!!! catalyst: Error encountered during run of target " + addlargs["target"]
