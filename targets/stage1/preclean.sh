@@ -1,5 +1,9 @@
 #!/bin/bash
 
+gcc-config 1 || exit 1
+binutils-config 1 || exit 1
+env-update || exit 1
+
 . /tmp/chroot-functions.sh
 
 # Now, some finishing touches to initialize gcc-config....

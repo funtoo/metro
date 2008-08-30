@@ -11,14 +11,13 @@ case $1 in
 	run)
 		shift
 		export clst_packages="$*"
-		exec_in_chroot \
-			${clst_sharedir}/targets/${clst_target}/${clst_target}-chroot.sh
+		exec_in_chroot ${clst_sharedir}/targets/${clst_target}/run.sh
 	;;
 	preclean)
-		exec_in_chroot ${clst_sharedir}/targets/${clst_target}/${clst_target}-preclean-chroot.sh ${clst_root_path}
+		exec_in_chroot ${clst_sharedir}/targets/${clst_target}/preclean.sh ${clst_root_path}
 	;;
 	clean)
-		exit 0
+		exec_in_chroot ${clst_sharedir}/targets/${clst_target}/clean.sh ${clst_root_path}
 	;;
 	*)
 		exit 1

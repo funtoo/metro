@@ -1,14 +1,14 @@
 #!/bin/bash
 # Script to kill processes found running in the chroot.
 
-if [ "${clst_chroot_path}" == "/" ]
+if [ "${clst_chrootdir}" == "/" ]
 then
 	echo "Aborting .... clst_chroot_path is set to /"
 	echo "This is very dangerous"
 	exit 1
 fi
 
-if [ "${clst_chroot_path}" == "" ]
+if [ "${clst_chrootdir}" == "" ]
 then
 	echo "Aborting .... clst_chroot_path is NOT set"
 	echo "This is very dangerous"
@@ -23,8 +23,8 @@ do
 	# Test for directories
 	if [ -d /proc/$i ]
 	then
-	# Search for exe containing string inside ${clst_chroot_path}
-	ls -la --color=never /proc/$i 2>&1 |grep exe|grep ${clst_chroot_path} > /dev/null
+	# Search for exe containing string inside ${clst_chrootdir}
+	ls -la --color=never /proc/$i 2>&1 |grep exe|grep ${clst_chrootdir} > /dev/null
 
 	# If found
 	if [ $? == 0 ]
@@ -43,7 +43,7 @@ then
 	echo "pid: process name"
 	for pid in ${pids[@]} 
 	do 
-		P_NAME=$(ls -la --color=never /proc/${pid} 2>&1 |grep exe|grep ${clst_chroot_path}|awk '{print $11}')
+		P_NAME=$(ls -la --color=never /proc/${pid} 2>&1 |grep exe|grep ${clst_chrootdir}|awk '{print $11}')
 		echo ${pid}: ${P_NAME}
 	done
 	echo 

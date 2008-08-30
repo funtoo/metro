@@ -15,3 +15,5 @@ The parser's conditional support means that order of evaluation matters. For exa
 subarch: foo
 
 Will result in bar not being defined.
+
+CHOST needs to be required for bash scripts

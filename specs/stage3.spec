@@ -15,6 +15,13 @@ storedir/srcstage: $[storedir]/$[subarch]/$[portname]-$[lastdate]/$[source]-$[su
 storedir/deststage: $[storedir]/$[subarch]/$[portname]-$[version]/$[target]-$[subarch]-$[version].tar.bz2 
 storedir/snapshot: $[storedir]/snapshots/$[portname]-$[version].tar.bz2 
 
+
+# config
+workdir:
+chrootdir: $[workdir]/chroot
+
+
+
 # arch stuff
 arch: amd64
 CFLAGS: -O2 -pipe

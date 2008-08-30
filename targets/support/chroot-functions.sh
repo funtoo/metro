@@ -14,27 +14,6 @@ trap "echo SIGKILL signal recieved killing $0 with pid $$;kill -9 $$" SIGKILL
 #	* kernel recognizes this and generates SIGINT signal
 trap "echo SIGINT signal recieved killing $0 with pid $$;kill -9 $$" SIGINT
  
-check_genkernel_version(){
-	if [ -x /usr/bin/genkernel ]
-	then
-		genkernel_version=$(genkernel --version)
-		genkernel_version_major=${genkernel_version%%.*}
-		genkernel_version_minor_sub=${genkernel_version#${genkernel_version_major}.}
-		genkernel_version_minor=${genkernel_version_minor_sub%%.*}
-		genkernel_version_sub=${genkernel_version##*.}
-		if [ -n "${genkernel_version}" -a "${genkernel_version_major}" -eq '3' -a "${genkernel_version_minor}" -ge '3' ]
-		then
-			echo "Genkernel version ${genkernel_version} found ... continuing"
-		else
-			echo "ERROR: Your genkernel version is too low in your seed stage.  genkernel version 3.3.0"
-			echo "or greater is required."
-			exit 1
-		fi
-	else
-		exit 1
-	fi
-}
-
 get_libdir() {
 	DEFAULT_ABI=$(portageq envvar DEFAULT_ABI)
 	LIBDIR_default=$(portageq envvar LIBDIR_default)
@@ -71,42 +50,6 @@ setup_myfeatures(){
 		export clst_myfeatures="${clst_myfeatures} ccache"
 		echo "DEBUG: http_proxy: $http_proxy"
 		clst_root_path=/ run_emerge --oneshot --nodeps ccache || exit 1
-	fi
-
-	if [ -n "${clst_DISTCC}" ] && [ "${clst_target}" != "stage1" ]
-	then
-		export clst_myfeatures="${clst_myfeatures} distcc"
-		export DISTCC_HOSTS="${clst_distcc_hosts}"
-		USE="-gtk -gnome" clst_root_path=/ run_emerge --oneshot --nodeps distcc || exit 1
-		mkdir -p /etc/distcc
-		echo "${clst_distcc_hosts}" > /etc/distcc/hosts
-
-		# This sets up automatic cross-distcc-fu according to
-		# http://www.gentoo.org/doc/en/cross-compiling-distcc.xml
-		CHOST=$(portageq envvar CHOST)
-		# TODO: change to use get_libdir
-		cd /usr/lib/distcc/bin
-		rm cc gcc g++ c++ 2>/dev/null
-		echo -e '#!/bin/bash\nexec /usr/lib/distcc/bin/'${CHOST}'-g${0:$[-2]} "$@"' > ${CHOST}-wrapper
-		chmod a+x /usr/lib/distcc/bin/${CHOST}-wrapper
-		for i in cc gcc g++ c++; do ln -s ${CHOST}-wrapper ${i}; done
-	fi
-
-	if [ -n "${clst_ICECREAM}" ] && [ "${clst_target}" != "stage1" ]
-	then
-		clst_root_path=/ run_emerge --oneshot --nodeps sys-devel/icecream || exit 1
-
-		# This sets up automatic cross-icecc-fu according to
-		# http://gentoo-wiki.com/HOWTO_Setup_An_ICECREAM_Compile_Cluster#Icecream_and_cross-compiling
-		CHOST=$(portageq envvar CHOST)
-		LIBDIR=$(get_libdir)
-		cd /usr/${LIBDIR}/icecc/bin
-		rm cc gcc g++ c++ 2>/dev/null
-		echo -e '#!/bin/bash\nexec /usr/'${LIBDIR}'/icecc/bin/'${CHOST}'-g${0:$[-2]} "$@"' > ${CHOST}-wrapper
-		chmod a+x ${CHOST}-wrapper
-		for i in cc gcc g++ c++; do ln -s ${CHOST}-wrapper ${i}; done
-		export PATH="/usr/lib/icecc/bin:${PATH}"
-		export PREROOTPATH="/usr/lib/icecc/bin"
 	fi
 }
 
@@ -155,25 +98,6 @@ setup_binutils(){
 		fi
 		binutils-config ${mythang}; update_env_settings
 	fi
-}
-
-cleanup_distcc() {
-	rm -rf /etc/distcc/hosts
-	for i in cc gcc c++ g++; do
-		# TODO: change to use get_libdir
-		rm /usr/lib/distcc/bin/${i}
-		ln -s /usr/bin/distcc /usr/lib/distcc/bin/${i}
-	done
-	rm /usr/lib/distcc/bin/*-wrapper
-}
-
-cleanup_icecream() {
-	LIBDIR=$(get_libdir)
-	for i in cc gcc c++ g++; do
-		rm /usr/${LIBDIR}/icecc/bin/${i}
-		ln -s /usr/bin/icecc /usr/${LIBDIR}/icecc/bin/${i}
-	done
-	rm /usr/${LIBDIR}/icecc/bin/*-wrapper
 }
 
 update_env_settings(){
@@ -302,18 +226,4 @@ function copy_file() {
 	then
 		copy_symlink ${f}
 	fi
-}
-
-create_handbook_icon() {
-	# This function creates a local icon to the Gentoo Handbook
-	echo "[Desktop Entry]
-Encoding=UTF-8
-Version=1.0
-Type=Link
-URL=file:///mnt/cdrom/docs/handbook/html/index.html
-Terminal=false
-Name=Gentoo Linux Handbook
-GenericName=Gentoo Linux Handbook
-Comment=This is a link to the local copy of the Gentoo Linux Handbook.
-Icon=text-editor" > /usr/share/applications/gentoo-handbook.desktop
 }

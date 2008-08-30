@@ -1,7 +1,33 @@
 #!/usr/bin/python
 
-import sys,os
+import sys,os,types
 
+"""
+
+<<
+
+foo: << bar
+
+bar: [
+#!/bin/bash
+ls -l /
+mv $[foo] $[oni]
+>> bar
+]
+
+"""
+
+class FlexDataError(Exception):
+	def __init__(self, message):
+		if message:
+			(type,value)=sys.exc_info()[:2]
+			if value!=None:
+				print 
+				print traceback.print_exc(file=sys.stdout)
+			print
+			print "!!! catalyst: "+message
+			print
+	
 class collection:
 	def __init__(self,debug=False):
 		self.clear()
@@ -20,27 +46,52 @@ class collection:
 
 		self.evaluated={}
 
-	def expand_all(self):
-		
+	def expandAll(self):
 		# try to expand all variables to find any undefined elements, to record all blanks or throw an exception
 		for key in self.keys():
 			myvar = self[key]
 
+	def expand(self,myvar):
+		if self.evaluated.has_key(myvar):
+			return self.evaluated[myvar]
+		elif self.raw.has_key(myvar):
+			if type(self.raw[myvar]) == types.ListType:
+				return self.expandMulti(myvar)
+			else:
+				return self.expandString(myvar=myvar)
+		elif self.lax:
+			# record that we looked up an undefined element
+			self.blanks[element]=True
+			return ""
+		else:
+			raise FlexDataError,"Variable \""+myvar+"\" not found"
 
-	def expand(self,element,stack=[]):
+	def expandString(self,string=None,myvar=None,stack=[]):
+		if self.debug:
+			print "DEBUG: in expandString"
+		# Expand all variables in a basic value, ie. a string 
 
-		# expand() performs variable expansion but does not update the self.evaluated dictionary.
-		# it just performs variable expansion on a string based on the data in self.raw and self.evaluated
-		# and returns the result.
+		if string == None:
+			if self.evaluated.has_key(myvar):
+				return self.evaluated[myvar]
+			elif self.raw.has_key(myvar):
+				string = self.raw[myvar]
 
-		fromfile=False
-		
-		if element[0:3] == "<< ":
-			# strip the "<< ", expand our variable, and then use it as a filename and try to grab data from it before we return
-			fromfile=True
-			element=element[3:]
+		if type(string) != types.StringType:
+			raise FlexDataError("expandString received non-string: "+repr(string)+", myvar = "+repr(myvar))
 
-		unex = element
+		if myvar == None:
+			# this is to make our exception error messages happy if they trigger
+			myvar = "(None)"
+
+		mysplit = string.strip().split(" ")
+		if len(mysplit) == 2 and mysplit[0] == "<<":
+			fromfile = True
+			string = " ".join(mysplit[1:])
+		else:
+			fromfile = False
+
+		unex = string
 		ex = ""
 		while unex != "":
 			varpos = unex.find(self.pre)
@@ -52,36 +103,75 @@ class collection:
 			unex = unex[varpos+len(self.pre):] # remove "${"
 			endvarpos = unex.find(self.suf)
 			if endvarpos == -1:
-				raise KeyError,"Error expanding variable for '"+element+"'"
+				raise KeyError,"Error expanding variable for '"+string+"'"
 			varname = unex[0:endvarpos]
 			unex = unex[endvarpos+len(self.suf):]
 			if varname in stack:
 				raise KeyError, "Circular reference of '"+varname+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
 			if self.evaluated.has_key(varname):
+				if type(self.evaluated[varname]) == types.ListType:
+					raise FlexDataError,"Trying to expand multi-line value \""+varname+"\" in single-line value \""+myvar+"\""
 				ex += self.evaluated[varname]
 			elif self.raw.has_key(varname):
+				if type(self.raw[varname]) == types.ListType:
+					raise FlexDataError,"Trying to expand multi-line value \""+varname+"\" in single-line value \""+myvar+"\""
 				newstack = stack[:]
 				newstack.append(varname)
-				ex += self.expand(self.raw[varname],newstack)
+				ex += self.expandString(self.raw[varname],varname,newstack)
 			else:
 				if not self.lax:
 					raise KeyError, "Cannot find variable '"+varname+"'"
 				else:
 					# record variables that we attempted to expand but were blank, so we can inform the user of possible bugs
 					self.blanks[varname] = True
-		if not fromfile:
+		if fromfile == False:
+			self.evaluated[myvar] = ex
 			return ex
+
+		#use "ex" as a filename
+		try:
+			myfile=open(ex,"r")
+		except:
+			raise FlexDataError,"Cannot open file "+ex+" specified in variable \""+varname+"\""
+		outstring=""
+		for line in myfile.readlines():
+			outstring=outstring+line[:-1]+" "
+		myfile.close()
+		self.evaluated[myvar] = outstring[:-1]
+		return self.evaluated[myvar] 
+
+
+	def expandMulti(self,myvar,stack=[]):
+		# Expand all variables in a multi-line value. stack is used internally to detect circular references.
+		if self.debug:
+			print "DEBUG: in expandMulti"
+	
+		if self.evaluated.has_key(myvar):
+			element = self.evaluated[myvar]
+			if type(element) != types.ListType:
+				raise FlexDataError("expandMulti encountered non-multi")
+			return element
+		if self.raw.has_key(myvar):
+			multi = self.raw[myvar]
+			if type(multi) != types.ListType:
+				raise FlexDataError("expandMulti received non-multi")
 		else:
-			#use "ex" as a filename
-			try:
-				myfile=open(ex,"r")
-			except:
-				return "(CANNOTOPEN:"+ex+")"
-			outstring=""
-			for line in myfile.readlines():
-				outstring=outstring+line[:-1]+" "
-			myfile.close()
-			return outstring[:-1]
+			raise FlexDataError("referenced variable \""+myvar+"\" not found")
+
+		newlines=[]
+
+		for line in multi:
+			mysplit = line.strip().split(" ")
+			if len(mysplit) == 2 and mysplit[0] == ">>":
+				if mysplit[1] in stack:
+					raise FlexDataError,"Circular reference of '"+mysplit[1]+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
+				newstack = stack[:]
+				newstack.append(mysplit[1])
+				newlines += self.expandMulti(mysplit[1],newstack)
+			else:	
+				newlines.append(self.expandString(string=line))
+		self.evaluated[myvar] = newlines
+		return newlines
 
 	def __setitem__(self,key,value):
 		if self.immutable and self.raw.has_key(key):
@@ -97,19 +187,8 @@ class collection:
 		self.evaluated={}
 
 	def __getitem__(self,element):
-		#eval() will try to return the value of "element", performing variable expansion and updating self.evaluated on success
-		if self.evaluated.has_key(element):
-			return self.evaluated[element]
-		elif self.raw.has_key(element):
-			self.evaluated[element]=self.expand(self.raw[element])
-			return self.evaluated[element]
-		elif self.lax:
-			# record that we looked up an undefined element
-			self.blanks[element]=True
-			return ""
-		else:
-			raise KeyError, "Cannot find element '"+element+"'"
-	
+		return self.expand(element)
+
 	def has_key(self,key):
 		return self.raw.has_key(key)
 
@@ -178,56 +257,30 @@ class collection:
 			# not an element
 			return []
 
-		if mysplit[0][-1] == ":":
+		if len(mysplit) == 2 and mysplit[0][-1] == ":" and mysplit[1] == "[":
+			if self.debug:
+				print "DEBUG: MULTI-LINE BLOCK"
+			myvar = mysplit[0]
+			mylines = []
+			while 1:
+				curline = openfile.readline()
+				if curline == "":
+					raise KeyError,"Error - incomplete [[ multi-line block,"
+				mysplit = curline[:-1].strip().split(" ")
+				if len(mysplit) == 1 and mysplit[0] == "]":
+					if self.debug:
+						print "DEBUG: end multi-line block"
+					# record value and quit
+					self.raw[myvar] = mylines
+					break
+				else:
+					# append new line
+					mylines.append(curline[:-1])
+		elif mysplit[0][-1] == ":":
 			#basic element - rejoin all data elements with spaces and add to self.raw
 			self.raw[mysplit[0][:-1]] = " ".join(mysplit[1:])
-		elif len(mysplit) >=3 and mysplit[0] == "?" and mysplit[-1] == "{":
-			if self.debug:
-				print "DEBUG: CONDITIONAL"
-			#conditional block
-			if len(mysplit) == 3:
-				# we found something in this format:
-				# ? foo {
-				# (which means: "if foo has been defined to be anything, then evaluate this block...
-				if self.raw.has_key(mysplit[1]):
-					#yes! it is defined
-					while mysplit[0] != "}":
-						mysplit=self.parseline(openfile)
-				else:
-					#otherwise, skip this block
-					self.skipblock(openfile)
-			elif len(mysplit) >= 4:
-				if self.debug:
-					print "DEBUG: LEN MYSPLIT 4"
-				# we found something in this format:
-				# ? foo bar {
-				# or
-				# ? foo bar oni {
-				# (which means: "if foo is defined and evaluates to the string "bar" or "oni", then evaluate this block...
-				if not self.raw.has_key(mysplit[1]):
-					# foo isn't defined so we don't need to see if we're equal to bar or oni
-					if self.debug:
-						print "SKIPPING BLOCK 1"
-					self.skipblock(openfile)
-				else:
-					match=False
-					for foo in mysplit[2:-1]:
-						if self[mysplit[1]] == foo:
-							match=True
-							break
-					if match:
-						if self.debug:
-							print "DEBUG: EVALUATING BLOCK"
-						while mysplit[0] != "}":
-							mysplit=self.parseline(openfile)
-					else:
-						if self.debug:
-							print "SKIPPING BLOCK 2", " ".join(mysplit[2:len(mysplit)-1])
-						self.skipblock(openfile)
-			else:
-				raise KeyError, "Error parsing line "+repr(mysplit)
 		return mysplit	
-
+	
 	def collect(self,filename):
 		if not os.path.exists(filename):
 			raise IOError, "File '"+filename+"' does not exist."
@@ -240,3 +293,12 @@ class collection:
 			if out == None:
 				break
 		openfile.close()
+
+if __name__ == "__main__":
+	coll = collection(debug=True)
+	for arg in sys.argv[1:]:
+		coll.collect(arg)
+	print coll.raw
+	coll.debugdump()
+	sys.exit(0)
+

@@ -110,50 +110,24 @@ class chroot(target):
 					raise CatalystError, "Compiler cache support can't be enabled (can't find "+ccdir+")"
 			self.mounts.append("/var/tmp/ccache")
 			self.mountmap["/var/tmp/ccache"]=ccdir
-			# for the chroot:
-			self.env["CCACHE_DIR"]="/var/tmp/ccache"	
 	
-	def setup_environment(self):
-		# Modify the current environment. This is an ugly hack that should be
-		# fixed. We need this to use the os.system() call since we can't
-		# specify our own environ:
-		for x in self.settings.keys():
-			# sanitize var names by doing "s|/-.|_|g"
-			varname="clst_"+string.replace(x,"/","_")
-			varname=string.replace(varname,"-","_")
-			varname=string.replace(varname,".","_")
-			if type(self.settings[x])==types.StringType:
-				# prefix to prevent namespace clashes:
-				#os.environ[varname]=self.settings[x]
-				self.env[varname]=self.settings[x]
-			elif type(self.settings[x])==types.ListType:
-				#os.environ[varname]=string.join(self.settings[x])
-				self.env[varname]=string.join(self.settings[x])
-			elif type(self.settings[x])==types.BooleanType:
-				if self.settings[x]:
-					self.env[varname]="true"
-				else:
-					self.env[varname]="false"
-		if self.settings.has_key("makeopts"):
-			self.env["MAKEOPTS"]=self.settings["makeopts"]
-						       
 	def bind(self):
 		for x in self.mounts: 
-			if not os.path.exists(self.settings["chroot_path"]+x):
-				os.makedirs(self.settings["chroot_path"]+x,0755)
+			if not os.path.exists(self.settings["chrootdir"]+x):
+				os.makedirs(self.settings["chrootdir"]+x,0755)
 			
 			if not os.path.exists(self.mountmap[x]):
 				os.makedirs(self.mountmap[x],0755)
 			
 			src=self.mountmap[x]
-			if os.system("mount --bind "+src+" "+self.settings["chroot_path"]+x) != 0:
+			if os.system("/bin/mount --bind "+src+" "+self.settings["chrootdir"]+x) != 0:
 				self.unbind()
 				raise CatalystError,"Couldn't bind mount "+src
 			    
 	
 	def unbind(self):
 		ouch=0
-		mypath=self.settings["chroot_path"]
+		mypath=self.settings["chrootdir"]
 		myrevmounts=self.mounts[:]
 		myrevmounts.reverse()
 		# unmount in reverse order for nested bind-mounts
@@ -185,17 +159,8 @@ class chroot(target):
 			from wiping our bind mounts.
 			"""
 			raise CatalystError,"Couldn't umount one or more bind-mounts; aborting for safety."
-	
-	def kill_chroot_pids(self):
-	    print "Checking for processes running in chroot and killing them."
-	    
-	    # Force environment variables to be exported so script can see them
-
-	    if os.path.exists(self.settings["sharedir"]+"/targets/support/kill-chroot-pids.sh"):
-			    self.cmd("/bin/bash "+self.settings["sharedir"]+"/targets/support/kill-chroot-pids.sh", "kill-chroot-pids script failed.")
-	
 	def mount_safety_check(self):
-		mypath=self.settings["chroot_path"]
+		mypath=self.settings["chrootdir"]
 		
 		"""
 		check and verify that none of our paths in mypath are mounted. We don't want to clean
@@ -259,6 +224,9 @@ class stage(chroot):
 	def __init__(self,settings):
 		chroot.__init__(self,settings)
 	
+		# In the constructor, we want to define settings but not reference them if we can help it, certain things
+		# like paths may not be able to be fully expanded yet until we define our goodies like "source", etc.
+
 		self.require(["arch","subarch","profile","storedir/srcstage","storedir/deststage","storedir/snapshot"])
 		
 		# look for user-specified USE, if none specified then fallback to HOSTUSE if specified
@@ -267,7 +235,7 @@ class stage(chroot):
 				self.settings["USE"]="$[HOSTUSE]"
 
 		# If DISTDIR, USE or CFLAGS not specified, alert the user that they might be missing them
-		self.recommend(["DISTDIR","USE","CFLAGS"])
+		self.recommend(["DISTDIR","USE","CFLAGS","MAKEOPTS"])
 
 		# We also use an initial "~" as a trigger to build an unstable version of the portage tree. This
 		# means we need to use ~arch rather than arch in ACCEPT_KEYWORDS. So if someone specified "~pentium4"
@@ -292,28 +260,8 @@ class stage(chroot):
 			self.mounts.append("/usr/portage/distfiles")
 			self.mountmap["/usr/portage/distfiles"]=self.settings["distdir"]
 
-		# DEFINE FLEXDATA HERE
-
-		#"""
-		#target_subpath: $[rel_type]/$[target]-$[subarch]-$[version_stamp]
-		#snapshot_path: $[storedir]/snapshots/$[portname]-$[snapshot].tar.bz2
-		#ROOT: /
-		#source_path: $[storedir]/builds/$[source_subpath].tar.bz2
-		#chroot_path: $[storedir]/tmp/$[target_subpath]/
-		#destpath: $[chroot_path]/$[ROOT]
-		#stage_path: $[chroot_path]
-		#target_path: $[storedir]/builds/$[target_subpath].tar.bz2
-		#controller_file: $[sharedir]/targets/$[target]/$[target]-controller.sh
-		#action_sequence: unpack unpack_snapshot config_profile_link setup_confdir portage_overlay base_dirs bind chroot_setup setup_environment run_local preclean unbind clean
-		#cleanables: /etc/resolv.conf /var/tmp/* /tmp/* /root/* /usr/portage
-		#USE: $[HOSTUSE]
-
-		#NOW THE flexdata should be pretty much all defined.... whee ha.
-		#"""
-
-		# Export our settings to environment variables so that external processes can access them:
-
-
+		self.settings["chrootdir"]="$[workdir]/chroot"
+		self.settings["controller_file"]="$[sharedir]/targets/$[target]/$[target]-controller.sh"
 
 	def run(self):
 		# look for required files
@@ -321,89 +269,83 @@ class stage(chroot):
 			if not os.path.exists(self.settings[loc]):
 				raise CatalystError,"Required file "+self.settings[loc]+" not found. Aborting."
 
+		# BEFORE WE CLEAN UP - MAKE SURE WE ARE UNMOUNTED
 		self.kill_chroot_pids()
-
-		# Check for mounts right away and abort if we cannot unmount them.
 		self.mount_safety_check()
 
 		# BEFORE WE START - CLEAN UP ANY MESSES
-		self.purge()
-		
-		self.setup_environment()
+		if os.path.exists(self.settings["workdir"]):
+			print "Removing existing temporary work directory..."
+			self.cmd( self.bin("rm") + " -rf " + self.settings["workdir"] )
+		try:
+			self.unpack()
+			self.unpack_snapshot()
+			self.config_profile_link()
+			self.bind()
+			self.chroot_setup()
+			self.run_local()
+			self.preclean()
+			self.unbind()
+			self.clean()
+			# OK SO FAR
+		except:
+			self.kill_chroot_pids()
+			self.mount_safety_check()
+			raise
 
-		for x in self.settings["action_sequence"]:
-			print "--- Running action sequence: "+x
-			sys.stdout.flush()
-			try:
-				apply(getattr(self,x))
-			except:
-				self.mount_safety_check()
-				raise
-			# first clean up any existing target stuff
+		# Now, grab the fruits of our labor.
+		self.capture()
 
 	def unpack(self):
-		display_msg="\nStarting tar extract from "+self.settings["source_path"]+"\nto "+ self.settings["chroot_path"]+" (This may take some time) ...\n"
-		unpack_cmd="tar xjpf "+self.settings["source_path"]+" -C "+self.settings["chroot_path"]
-		error_msg="Tarball extraction of "+self.settings["source_path"]+" to "+self.settings["chroot_path"]+" failed."
+		unpack_cmd=self.bin("tar")+" xjpf "+self.settings["storedir/srcstage"]+" -C "+self.settings["chrootdir"]
 		
 		self.mount_safety_check()
 			
-		if not os.path.exists(self.settings["chroot_path"]):
-			os.makedirs(self.settings["chroot_path"])
+		if not os.path.exists(self.settings["chrootdir"]):
+			os.makedirs(self.settings["chrootdir"])
 
-		if not os.path.exists(self.settings["chroot_path"]+"/tmp"):
-			os.makedirs(self.settings["chroot_path"]+"/tmp",1777)
+		# Ensure /tmp exists in chroot - may not be required anymore
+		if not os.path.exists(self.settings["chrootdir"]+"/tmp"):
+			os.makedirs(self.settings["chrootdir"]+"/tmp",1777)
 			
-		print display_msg
-		self.cmd(unpack_cmd,error_msg)
+		self.cmd(unpack_cmd,"Error unpacking source stage.")
 
 	def unpack_snapshot(self):
-		destdir=normpath(self.settings["chroot_path"]+"/usr/portage")
+		destdir=normpath(self.settings["chrootdir"]+"/usr/portage")
 		cleanup_errmsg="Error removing existing snapshot directory."
 		cleanup_msg="Cleaning up existing portage tree (This can take a long time) ..."
-		unpack_cmd="tar xjpf "+self.settings["snapshot_path"]+" -C "+self.settings["chroot_path"]+"/usr"
+		unpack_cmd="tar xjpf "+self.settings["storedir/snapshot"]+" -C "+self.settings["chrootdir"]+"/usr"
 		unpack_errmsg="Error unpacking snapshot"
 	
-		if os.path.exists(destdir):
-			print cleanup_msg
-			cleanup_cmd="rm -rf "+destdir
-			self.cmd(cleanup_cmd,cleanup_errmsg)
 		if not os.path.exists(destdir):
 			os.makedirs(destdir,0755)
 		    	
-		print "Unpacking \""+self.settings["portname"]+"\" portage tree "+self.settings["snapshot_path"]+" ..."
+		print "Unpacking \""+self.settings["storedir/snapshot"]+" ..."
 		self.cmd(unpack_cmd,unpack_errmsg)
 
 	def config_profile_link(self):
-		print "Configuring profile link..."
-		self.cmd("rm -f "+self.settings["chroot_path"]+"/etc/make.profile", "Error zapping profile link")
-		self.cmd("ln -sf ../usr/portage/profiles/"+self.settings["profile"]+" "+self.settings["chroot_path"]+"/etc/make.profile","Error creating profile link",env=self.env)
+		self.controller("profile")
 	
-	# THIS IS REALLY A "GENTOO" CHROOT SETUP, NOT A GENERIC CHROOT SETUP
-
-	def chroot_setup(self):
-
+	def proxy_config(self):
 		# SETUP PROXY SETTINGS - ENVSCRIPT DOESN'T ALWAYS WORK. THIS DOES.
-		
-		print "Writing out proxy settings... (drobbins)"
+		print "Writing out proxy settings..."
 		try:
-			a=open(self.settings["chroot_path"]+"/etc/env.d/99zzcatalyst","w")
+			a=open(self.settings["chrootdir"]+"/etc/env.d/99zzcatalyst","w")
 		except:
-			raise CatalystError,"Couldn't open "+self.settings["chroot_path"]+"/etc/env.d/99zzcatalyst for writing"
+			raise CatalystError,"Couldn't open "+self.settings["chrootdir"]+"/etc/env.d/99zzcatalyst for writing"
 		for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
 			if os.environ.has_key(x):
 				a.write(x+"=\""+os.environ[x]+"\"\n")
 			else:
 				a.write("# "+x+" is not set")
 		a.close()
-
-		# SETUP LOCALES SPECIFIED IN SPEC FILE (IF ANY - DEFAULT TO ALL)
-
+	
+	def locale_config(self):
 		if self.settings.has_key("locales"):
 			# our locale.gen template (nothing in it except comments: )
 			srcfile=self.settings["sharedir"]+"/misc/locale.gen"
 			# our destination locale.gen file:
-			locfile=self.settings["chroot_path"]+"/etc/locale.gen"
+			locfile=self.settings["chrootdir"]+"/etc/locale.gen"
 			cmd("rm -f "+locfile)
 			cmd("install -m0644 -o root -g root "+srcfile+" "+locfile)
 			try:
@@ -417,168 +359,94 @@ class stage(chroot):
 			#all done writing out our locales/charmaps
 			a.close()
 
-		print "Setting up chroot..."
-	
-		# COPY OVER /etc/resolv.conf
+	def network_config(self):
+		# Copy over /etc/resolv.conf and /etc/hosts from our root filesystem since we may need them for network connectivity.
+		# Back up original files.
+		for file in [ "/etc/resolv.conf", "/etc/hosts" ]:
+			respath=self.settings["chrootdir"]+file
+			if os.path.exists(respath):
+				self.cmd("/bin/cp "+respath+" "+respath+".bck","Couldn't back up "+file)
+			self.cmd("/bin/cp "+file+" "+respath,"Couldn't copy "+file+" into place.")
 
-		cmd("cp /etc/resolv.conf "+self.settings["chroot_path"]+"/etc","Could not copy resolv.conf into place.",env=self.env)
-	
-		# COPY OVER ENVSCRIPT
-		
-		if self.settings.has_key("ENVSCRIPT"):
-			if not os.path.exists(self.settings["ENVSCRIPT"]):
-				raise CatalystError, "Can't find envscript "+self.settings["ENVSCRIPT"]
-			
-			cmd("cp "+self.settings["ENVSCRIPT"]+" "+self.settings["chroot_path"]+"/tmp/envscript","Could not copy envscript into place.",env=self.env)
-		
-		# BACK UP ORIGINAL /etc/hosts, COPY WORKING /etc/hosts SO WE CAN FUNCTION BETTER, WILL RESTORE LATER
-
-		if os.path.exists(self.settings["chroot_path"]+"/etc/hosts"):
-			cmd("mv "+self.settings["chroot_path"]+"/etc/hosts "+self.settings["chroot_path"]+"/etc/hosts.bck", "Could not backup /etc/hosts",env=self.env)
-			cmd("cp /etc/hosts "+self.settings["chroot_path"]+"/etc/hosts", "Could not copy /etc/hosts",env=self.env)
-		
-		# SET UP MAKE.CONF
-		
-		cmd("rm -f "+self.settings["chroot_path"]+"/etc/make.conf","Could not remove "+self.settings["chroot_path"]+"/etc/make.conf",env=self.env)
-		
-		myf=open(self.settings["chroot_path"]+"/etc/make.conf","w")
-
+	def portage_config(self):
+		self.cmd("/bin/rm -f "+self.settings["chrootdir"]+"/etc/make.conf","Could not remove "+self.settings["chrootdir"]+"/etc/make.conf")
+		myf=open(self.settings["chrootdir"]+"/etc/make.conf","w")
 		myf.write("# These settings were set by the catalyst build script that automatically\n# built this stage.\n")
 		myf.write("# Please consult /etc/make.conf.example for a more detailed example.\n")
-
 		for opt in ["CFLAGS","CXXFLAGS","LDFLAGS","CBUILD","CHOST","ACCEPT_KEYWORDS","USE"]:
 			if self.settings.has_key(opt):
 				myf.write(opt+'="'+self.settings[opt]+'"\n')
-
-		# SET UP USE VARS
-		
-		myusevars=[]
-		if self.settings.has_key("HOSTUSE"):
-			myusevars.extend(self.settings["HOSTUSE"])
-	
-		if self.settings.has_key("use"):
-			myusevars.extend(self.settings["use"])
-			myf.write('USE="'+string.join(myusevars)+'"\n')
-
 		myf.close()
-	
+
+	def chroot_setup(self):
+		print "Setting up chroot..."
+		self.proxy_config()
+		self.locale_config()
+		self.network_config()
+		self.portage_config()
+
 	def clean(self):
-		# drobbins add
-	    	if self.settings["destpath"] == self.settings["chroot_path"]:
-		# clean up possibly sensitive proxy settings that we set up in the chroot
+
+		# Philosophy: Catalyst should only do the bare minimum cleanup in Python. The bulk of the cleanup work should be defined in
+		# the spec file so that it is not hard-coded into the Catalyst tool itself.
+
+	    	# We only need to clean the following things if we were merging to our own filesystem: (ROOT=="/"). Otherwise cleanup is not
+		# necessary as these changes won't get stuck inside our stage tarball.
+		
+		if self.settings["ROOT"]=="/":
+
 			for x in ["/etc/profile.env","/etc/csh.env","/etc/env.d/99zzcatalyst"]:
-				if os.path.exists(self.settings["chroot_path"]+x):
+				if os.path.exists(self.settings["chrootdir"]+x):
 					print "Cleaning chroot: "+x+"... " 
-					cmd("rm -f "+self.settings["chroot_path"]+x)
-		# drobbins add end
-		for x in self.settings["cleanables"]: 
-			print "Cleaning chroot: "+x+"... "
-			cmd("rm -rf "+self.settings["destpath"]+x,"Couldn't clean "+x,env=self.env)
+					self.cmd("rm -f "+self.settings["chrootdir"]+x)
 
-		# put /etc/hosts back into place
-		if os.path.exists(self.settings["chroot_path"]+"/etc/hosts.bck"):
-			cmd("mv -f "+self.settings["chroot_path"]+"/etc/hosts.bck "+self.settings["chroot_path"]+"/etc/hosts", "Could not replace /etc/hosts",env=self.env)
+			for file in [ "/etc/resolv.conf", "/etc/hosts" ]:
+				self.cmd("mv -f "+self.settings["chrootdir"]+file+".bck "+self.settings["chrootdir"]+file, "Couldn't restore "+file)
 
-		# clean up old and obsoleted files in /etc
-		if os.path.exists(self.settings["stage_path"]+"/etc"):
-			cmd("find "+self.settings["stage_path"]+"/etc -maxdepth 1 -name \"*-\" | xargs rm -f", "Could not remove stray files in /etc",env=self.env)
+		# Run our "clean" bash script, which should do all of the heavy lifting...
 
-		if os.path.exists(self.settings["controller_file"]):
-			cmd("/bin/bash "+self.settings["controller_file"]+" clean","clean script failed.",env=self.env)
-	
-	def empty(self):		
-		if self.settings.has_key(self.settings["target"]+"/empty"):
-		    if type(self.settings[self.settings["target"]+"/empty"])==types.StringType:
-			self.settings[self.settings["target"]+"/empty"]=self.settings[self.settings["target"]+"/empty"].split()
-		    for x in self.settings[self.settings["target"]+"/empty"]:
-			myemp=self.settings["destpath"]+x
-			if not os.path.isdir(myemp):
-			    print x,"not a directory or does not exist, skipping 'empty' operation."
-			    continue
-			print "Emptying directory",x
-			# stat the dir, delete the dir, recreate the dir and set
-			# the proper perms and ownership
-			mystat=os.stat(myemp)
-			shutil.rmtree(myemp)
-			os.makedirs(myemp,0755)
-			os.chown(myemp,mystat[ST_UID],mystat[ST_GID])
-			os.chmod(myemp,mystat[ST_MODE])
-	
-	def remove(self):
-		if self.settings.has_key(self.settings["target"]+"/rm"):
-		    for x in self.settings[self.settings["target"]+"/rm"]:
-			# we're going to shell out for all these cleaning operations,
-			# so we get easy glob handling
-			print "livecd: removing "+x
-			os.system("rm -rf "+self.settings["chroot_path"]+x)
-		try:
-		    if os.path.exists(self.settings["controller_file"]):
-			    cmd("/bin/bash "+self.settings["controller_file"]+" clean",\
-				"Clean  failed.",env=self.env)
-		except:
-		    self.unbind()
-		    raise
-	
+		self.controller("clean")
+
 	def preclean(self):
+		self.controller("preclean")
+	
+	def run_local(self):
+		self.controller("run_local")
+
+	def controller(self,stage):
+		if not os.path.exists(self.settings["controller_file"]):
+			raise CatalystError,"Controller file "+self.settings["controller_file"]+" not found. Aborting."
 		try:
-			if os.path.exists(self.settings["controller_file"]):
-		    		cmd("/bin/bash "+self.settings["controller_file"]+" preclean","preclean script failed.",env=self.env)
+			cmd("/bin/bash "+self.settings["controller_file"]+" "+stage,stage+" script failed.",env=self.env)
 		except:
 			self.unbind()
-			raise CatalystError, "Build failed, could not execute preclean"
+			raise CatalystError, "Build failed, could not execute "+stage
+	
+	def kill_chroot_pids(self):
+		print "Checking for processes running in chroot and killing them."
+		cmdpath=self.settings["sharedir"]+"/targets/support/kill-chroot-pids.sh")
+		if not os.path.exists(cmdpath):
+			raise CatalystError,"Couldn't find "+cmdpath+" - Exiting."
+		self.cmd("/bin/bash "+cmdpath, "kill-chroot-pids script failed.")
+	
 
 	def capture(self):
 		"""capture target in a tarball"""
 		# IF TARGET EXISTS, REMOVE IT - WE WILL CREATE A NEW ONE
-		if os.path.isfile(self.settings["target_path"]):
-			cmd("rm -f "+self.settings["target_path"], "Could not remove existing file: "+self.settings["target_path"],env=self.env)
-		mypath=self.settings["target_path"].split("/")
-		# remove filename from path
-		mypath=string.join(mypath[:-1],"/")
-		# now make sure path exists
-		if not os.path.exists(mypath):
-			os.makedirs(mypath)
+		if os.path.exists(self.settings["storedir/deststage"]):
+			if os.path.isfile(self.settings["storedir/deststage"]):
+				self.cmd("rm -f "+self.settings["storedir/deststage"], "Could not remove existing file: "+self.settings["storedir/deststage"])
+			else:
+				raise CatalystError,"Can't remove existing "+self.settings["storedir/deststage"]+" - not a file. Aborting."
+
+		grabpath=os.path.normpath(self.settings["chrootdir"]+self.settings["ROOT"])
+		
+		# Ensure target stage directory exists (might be several subdirectories that need to be created)
+		if not os.path.exists(os.path.dirname(self.settings["storedir/deststage"])):
+			os.makedirs(os.path.dirname(self.settings["storedir/deststage"]))
+
 		print "Creating stage tarball..."
-		cmd("tar cjpf "+self.settings["target_path"]+" -C "+self.settings["stage_path"]+" .","Couldn't create stage tarball",env=self.env,badval=2)
-
-	def run_local(self):
-		try:
-			if os.path.exists(self.settings["controller_file"]):
-		    		cmd("/bin/bash "+self.settings["controller_file"]+" run","run script failed.",env=self.env)
-
-		except CatalystError:
-			self.unbind()
-			raise CatalystError,"Stage build aborting due to error."
-	
-	
-	def unmerge(self):
-		if self.settings.has_key(self.settings["target"]+"/unmerge"):
-		    if type(self.settings[self.settings["target"]+"/unmerge"])==types.StringType:
-			self.settings[self.settings["target"]+"/unmerge"]=[self.settings[self.settings["target"]+"/unmerge"]]
-		    myunmerge=self.settings[self.settings["target"]+"/unmerge"][:]
-		    
-		    for x in range(0,len(myunmerge)):
-		    #surround args with quotes for passing to bash,
-		    #allows things like "<" to remain intact
-		        myunmerge[x]="'"+myunmerge[x]+"'"
-		    myunmerge=string.join(myunmerge)
-		    
-		    #before cleaning, unmerge stuff:
-		    try:
-			cmd("/bin/bash "+self.settings["controller_file"]+" unmerge "+ myunmerge,\
-				"Unmerge script failed.",env=self.env)
-			#cmd("/bin/bash "+self.settings["sharedir"]+"/targets/" \
-			#	+self.settings["target"]+"/unmerge.sh "+myunmerge,"Unmerge script failed.",env=self.env)
-			print "unmerge shell script"
-		    except CatalystError:
-			self.unbind()
-			raise
-	def clear_chroot(self):
-		self.clear_dir(self.settings["chroot_path"])
-
-	def purge(self):
-		self.clear_chroot()
-
+		self.cmd("tar cjpf "+self.settings["storedir/deststage"]+" -C "+grabpath+" .","Couldn't create stage tarball",badval=2)
 
 class stage3(stage):
 
@@ -587,43 +455,27 @@ class stage3(stage):
 		
 		# set standard hard-coded variables for this stage
 		self.settings["ROOT"]="/"
+		self.settings["rootdir"] = self.settings["workdir"]
 		self.settings["source"] = "stage2"
-		# TODO: extend parser so we can easily augment this list from the specfile if we want:
-		self.settings["cleanables"] = "/etc/portage /etc/resolv.conf /var/tmp/* /tmp/* /root/* /usr/portage" 
-
-	def run(self):
-		self.settings.debugdump("hi")
 
 class stage2(stage):
+
 	def __init__(self,settings):
 		stage.__init__(self,settings)
 
-"""
-source_path: $[storedir]/builds/$[source_subpath].tar.bz2
-cleanables: $[cleanables] /etc/portage
-"""
-
-
+		self.settings["ROOT"] = "/"
+		self.settings["rootdir"] = self.settings["workdir"]
+		self.settings["source"] = "stage1"
 
 class stage1(stage):
+
 	def __init__(self,settings):
 		stage.__init__(self,settings)
-		"""
-		stage_path: $[chroot_path]$[ROOT]
-		ROOT: /tmp/stage1root
-		cleanables: /usr/share/gettext /usr/lib/python2.?/test /usr/lib/python2.?/email /usr/lib/python2.?/lib-tk /usr/share/zoneinfo
-		"""
-	def run(self):
-		# stage_path/proc probably doesn't exist yet, so create it
-		if not os.path.exists(self.settings["stage_path"]+"/proc"):
-			os.makedirs(self.settings["stage_path"]+"/proc")
-		
-		stage.run(self)
-		# alter the mount mappings to bind mount proc onto it
-		# self.mounts.append("/tmp/stage1root/proc")
-		# self.mountmap["/tmp/stage1root/proc"]="/proc"
-		# This appears to break baselayout-2.0's makefile, who tries to write to /tmp/stage1root/proc/.keep, so I'm removing it and will see how the build goes
-directory = { "stage1" : stage1, "stage2" : stage2, "stage3" : stage3 , "snapshot" : snapshot }
 
+		self.settings["ROOT"] = "/tmp/stage1root"
+		self.settings["rootdir"] = self.settings["workdir"]+"/tmp/stage1root"
+		self.settings["source"] = "stage3"
+	
+directory = { "stage1" : stage1, "stage2" : stage2, "stage3" : stage3 , "snapshot" : snapshot }
 
 #vim: ts=4 sw=4 sta et sts=4 ai
