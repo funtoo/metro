@@ -456,7 +456,7 @@ class stage(chroot):
 	
 	def kill_chroot_pids(self):
 		print "Checking for processes running in chroot and killing them."
-		cmdpath=self.settings["sharedir"]+"/targets/support/kill-chroot-pids.sh")
+		cmdpath=self.settings["sharedir"]+"/misc/kill-chroot-pids.sh")
 		if not os.path.exists(cmdpath):
 			raise CatalystError,"Couldn't find "+cmdpath+" - Exiting."
 		self.cmd("/bin/bash "+cmdpath, "kill-chroot-pids script failed.")
