@@ -74,8 +74,6 @@ def spawn_bash(mycommand,env={},debug=False,opt_name=None,**keywords):
 	args=[BASH_BINARY]
 	if not opt_name:
 	    opt_name=mycommand.split()[0]
-	if not env.has_key("BASH_ENV"):
-	    env["BASH_ENV"] = "/etc/spork/is/not/valid/profile.env"
 	if debug:
 	    args.append("-x")
 	args.append("-c")

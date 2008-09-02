@@ -65,6 +65,7 @@ if __name__ == "__main__":
 	verbose=False
 	myopts=[]
 	strict=True
+	readconfig=True
 
 	# check preconditions
 	if len(args) == 0:
@@ -81,6 +82,9 @@ if __name__ == "__main__":
 		if o in ("-V", "--version"):
 			print "Catalyst version "+__version__
 			sys.exit(1)
+		if o == "--noconfig":
+			print "Warning: --noconfig option specified - skipping /etc/catalyst.conf..."
+			readconfig=False
 		if o in ("-d", "--debug"):
 			debug=True
 			print "DEBUG: opts",opts
@@ -103,6 +107,13 @@ if __name__ == "__main__":
 		settings["hostarch"] = "amd64"
 	elif host in [ "i386", "i486", "i586", "i686" ]:
 		settings["hostarch"] = "x86"
+
+	if readconfig:
+		if os.path.exists("/etc/catalyst.conf"):
+			print "Reading in configuration from /etc/catalyst.conf..."
+			settings.collect("/etc/catalyst.conf")
+		else:
+			print "Warning: /etc/catalyst.conf not found."
 
 	# the new version of catalyst does not have any configuration file
 	# parse command-line supplied configuration files and spec files in the order they were specified

@@ -1,4 +1,4 @@
-target: stage3
+target: stage2
 
 # stuff we specify - our info:
 version: 2008.08.29 
@@ -9,6 +9,12 @@ portname: funtoo
 subarch: ~amd64
 # RECOMMENDED, otherwise use HOSTUSE.
 USE: $[HOSTUSE]
+# arch stuff
+arch: amd64
+CFLAGS: -O2 -pipe
+CHOST: x86_64-pc-linux-gnu
+HOSTUSE: mmx sse sse2
+profile: default/linux/$[arch]/2008.0
 
 chroot/setup: [
 	/usr/sbin/env-update
@@ -58,11 +64,6 @@ chroot/clean: [
 
 chroot/run: [
 	$[chroot/setup]
-	export FEATURES="$[FEATURES]"
-	export USE="$[USE] bindist"
-	[ -e /var/tmp/ccache ] && emerge --oneshot --nodeps ccache
-	USE="build" emerge --oneshot --nodeps portage
-	emerge -e system
-	rm -f /var/lib/portage/world
-	touch /var/lib/portage/world
+	/usr/portage/scripts/bootstrap.sh -p
+	/usr/portage/scripts/bootstrap.sh || exit 1
 ]

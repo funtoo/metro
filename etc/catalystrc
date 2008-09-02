@@ -1,1 +1,0 @@
-export MAKEOPTS="-j3"

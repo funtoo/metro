@@ -90,6 +90,32 @@ class target:
 			raise
 
 class chroot(target):
+
+	def exec_in_chroot(self,key):
+
+		if not self.settings.has_key(key):
+			raise CatalystError, "exec_in_chroot: key \""+key+"\" not found."
+	
+		if type(self.settings[key]) != types.ListType:
+			raise CatalystError, "exec_in_chroot: key \""+key+"\" is not a multi-line element."
+
+		outfile = self.settings["chrootdir"]+"/tmp/"+key+".sh"
+		outdir = os.path.dirname(outfile)
+
+		if not os.path.exists(outdir):
+			os.makedirs(outdir)
+		outfd = open(outfile,"w")
+		
+		for x in self.settings[key]:
+			outfd.write(x+"\n")
+
+		outfd.close()
+
+		retval = spawn(["/bin/bash", outfile ], env=self.env )
+
+		return retval
+
+
 	def __init__(self,settings):
 		target.__init__(self,settings)
 
@@ -100,7 +126,7 @@ class chroot(target):
 
 		# CCACHE SUPPORT FOR CHROOTS
 
-		if self.settings.has_key("CCACHE"):
+		if self.settings.has_key("options") and "ccache" in self.settings["options"].split():
 			if os.environ.has_key("CCACHE_DIR"):
 				ccdir=os.environ["CCACHE_DIR"]
 				del os.environ["CCACHE_DIR"]
@@ -112,6 +138,7 @@ class chroot(target):
 			self.mountmap["/var/tmp/ccache"]=ccdir
 	
 	def bind(self):
+		""" Perform bind mounts """
 		for x in self.mounts: 
 			if not os.path.exists(self.settings["chrootdir"]+x):
 				os.makedirs(self.settings["chrootdir"]+x,0755)
@@ -126,6 +153,7 @@ class chroot(target):
 			    
 	
 	def unbind(self):
+		""" Attempt to unmount bind mounts"""
 		ouch=0
 		mypath=self.settings["chrootdir"]
 		myrevmounts=self.mounts[:]
@@ -159,6 +187,7 @@ class chroot(target):
 			from wiping our bind mounts.
 			"""
 			raise CatalystError,"Couldn't umount one or more bind-mounts; aborting for safety."
+
 	def mount_safety_check(self):
 		mypath=self.settings["chrootdir"]
 		
@@ -187,7 +216,6 @@ class chroot(target):
 				except CatalystError:
 					raise CatalystError, "Unable to auto-unbind "+x
 
-
 class snapshot(target):
 	def __init__(self,settings):
 		target.__init__(self,settings)
@@ -212,7 +240,6 @@ class snapshot(target):
 		# rsync options
 		rsync_opts = "-a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/"
 		rsync_cmd = self.bin("rsync") + " " + rsync_opts + " " + os.path.normpath(self.settings["portdir"])+"/ " + os.path.normpath(self.settings["workdir"]+"/portage")+"/"
-	
 		self.cmd(rsync_cmd,"Snapshot failure")
 		
 		self.cmd( self.bin("tar") + " -cjf " + self.settings["storedir/snapshot"]+" -C "+self.settings["workdir"]+" portage","Snapshot creation failure")
@@ -278,17 +305,27 @@ class stage(chroot):
 			print "Removing existing temporary work directory..."
 			self.cmd( self.bin("rm") + " -rf " + self.settings["workdir"] )
 		try:
+
 			self.unpack()
 			self.unpack_snapshot()
-			self.config_profile_link()
-			self.bind()
+
+			# network config, etc.
 			self.chroot_setup()
-			self.run_local()
-			self.preclean()
+
+			self.bind()
+
+			self.exec_in_chroot("chroot/run")
+			self.exec_in_chroot("chroot/postrun")
+			
 			self.unbind()
-			self.clean()
-			# OK SO FAR
+			
+			self.exec_in_chroot("chroot/clean")
+			
+			# remove our tweaks ...
+			self.chroot_cleanup()
+		
 		except:
+		
 			self.kill_chroot_pids()
 			self.mount_safety_check()
 			raise
@@ -384,8 +421,9 @@ class stage(chroot):
 		self.locale_config()
 		self.network_config()
 		self.portage_config()
+		self.config_profile_link()
 
-	def clean(self):
+	def chroot_cleanup(self):
 
 		# Philosophy: Catalyst should only do the bare minimum cleanup in Python. The bulk of the cleanup work should be defined in
 		# the spec file so that it is not hard-coded into the Catalyst tool itself.
@@ -406,12 +444,6 @@ class stage(chroot):
 		# Run our "clean" bash script, which should do all of the heavy lifting...
 
 		self.controller("clean")
-
-	def preclean(self):
-		self.controller("preclean")
-	
-	def run_local(self):
-		self.controller("run_local")
 
 	def controller(self,stage):
 		if not os.path.exists(self.settings["controller_file"]):
