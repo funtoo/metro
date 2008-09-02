@@ -1,12 +1,10 @@
 target: stage2
+subarch: ~amd64
 
 # stuff we specify - our info:
 version: 2008.08.29 
-portdir: /root/git/funtoo-portage
-portname: funtoo
 
 # REQUIRED:
-subarch: ~amd64
 # RECOMMENDED, otherwise use HOSTUSE.
 USE: $[HOSTUSE]
 # arch stuff
