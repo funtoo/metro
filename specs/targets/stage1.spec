@@ -1,9 +1,5 @@
 target: stage1
 
-subarch: ~amd64
-# stuff we specify - our info:
-version: 2008.08.29 
-
 # REQUIRED:
 # RECOMMENDED, otherwise use HOSTUSE.
 USE: $[HOSTUSE]
@@ -43,9 +39,9 @@ en_US.UTF-8 UTF-8
 # do any cleanup that you need with things bind mounted here:
 
 chroot/postrun: [
-	$[chroot/setup]
+	>> chroot/setup
 	[ -e /var/tmp/ccache ] && emerge -C dev-util/ccache
-[
+]
 
 # do the stuff here that you need to do, with bind mounts unmounted (for safety:)
 
@@ -91,7 +87,7 @@ print
 ]
 
 chroot/run: [
-$[chroot/setup]
+>> chroot/setup
 if [ -d /var/tmp/ccache ] 
 then
 	export CCACHE_DIR=/var/tmp/ccache
@@ -99,24 +95,28 @@ then
 fi
 
 cat > /tmp/build.py << EOF
-$[chroot/pythonjunk]
+>> chroot/pythonjunk
 EOF
 
 export buildpkgs="$(python /tmp/build.py)"
 export STAGE1_USE="$(portageq envvar STAGE1_USE)"
 export USE="-* bindist build ${STAGE1_USE}"
 export FEATURES="nodoc noman noinfo"
-
+[ -e /usr/bin/ccache ] && export FEATURES="ccache $FEATURES"
 ## Sanity check profile
-if [ -z "${clst_buildpkgs}" ]
+if [ -z "${buildpkgs}" ]
 then
 	echo "Your profile seems to be broken."
 	echo "Could not build a list of build packages."
 	echo "Double check your /etc/make.profile link and the 'packages' files."
 	exit 1
+else
+	echo "WE ARE BUILDING: ${buildpkgs}"
 fi
 
+export ROOT="$[ROOT]"
+install -d $[ROOT]
 emerge baselayout
-emerge --noreplace --oneshot ${clst_buildpkgs}
+emerge --noreplace --oneshot ${buildpkgs}
 
 ]

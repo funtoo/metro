@@ -1,8 +1,4 @@
 target: stage3
-subarch: ~amd64
-
-# stuff we specify - our info:
-version: 2008.08.29 
 
 # RECOMMENDED, otherwise use HOSTUSE.
 USE: $[HOSTUSE]
@@ -43,7 +39,7 @@ en_US.UTF-8 UTF-8
 # do any cleanup that you need with things bind mounted here:
 
 chroot/postrun: [
-	$[chroot/setup]
+<< chroot/setup
 	[ -e /var/tmp/ccache ] && emerge -C dev-util/ccache
 [
 

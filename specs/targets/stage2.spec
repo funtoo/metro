@@ -1,18 +1,6 @@
 target: stage2
-subarch: ~amd64
 
-# stuff we specify - our info:
-version: 2008.08.29 
-
-# REQUIRED:
-# RECOMMENDED, otherwise use HOSTUSE.
 USE: $[HOSTUSE]
-# arch stuff
-arch: amd64
-CFLAGS: -O2 -pipe
-CHOST: x86_64-pc-linux-gnu
-HOSTUSE: mmx sse sse2
-profile: default/linux/$[arch]/2008.0
 
 chroot/setup: [
 	/usr/sbin/env-update

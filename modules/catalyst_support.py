@@ -354,7 +354,7 @@ def ismount(path):
 	a.close()
 	for line in mylines:
 		mysplit=line.split()
-		if os.path.normpath(path) == os.path.normpath(mysplit2):
+		if os.path.normpath(path) == os.path.normpath(mysplit[2]):
 			print "popen shows",path,"still mounted. Line: ",line
 			return 1
 	return 0

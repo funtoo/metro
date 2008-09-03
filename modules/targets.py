@@ -64,8 +64,6 @@ class target:
 
 		self.require(["target","version"])
 
-		self.settings["workdir"]="/var/tmp/catalyst/$[target]-$[version]"
-
 		if not os.path.exists(self.settings["workdir"]):
 			os.makedirs(self.settings["workdir"])
 
@@ -75,7 +73,8 @@ class target:
 		self.cmd(self.bin("rm") + " -rf "+self.settings["workdir"])
 
 	def cmd(self,mycmd,myexc="",badval=None):
-		print "Executing \""+mycmd.split(" ")[0]+"\"..."
+		print "Executing \""+mycmd+"\"..."
+		#print "Executing \""+mycmd.split(" ")[0]+"\"..."
 		try:
 			sys.stdout.flush()
 			retval=spawn_bash(mycmd,self.env)
@@ -90,6 +89,21 @@ class target:
 			raise
 
 class chroot(target):
+
+	def kill_chroot_pids(self):
+		cdir=self.settings["chrootdir"]
+		for pid in os.listdir("/proc"):
+			if not os.path.isdir("/proc/"+pid):
+				continue
+			try:
+				mylink = os.readlink("/proc/"+pid+"/exe")
+			except OSError:
+				# not a pid directory
+				continue
+			if mylink[0:len(cdir)] == cdir:
+				#we got something in our chroot
+				print "Killing process "+pid+" ("+mylink+")"
+				self.cmd("/bin/kill -9 "+pid)
 
 	def exec_in_chroot(self,key):
 
@@ -111,10 +125,17 @@ class chroot(target):
 
 		outfd.close()
 
-		retval = spawn(["/bin/bash", outfile ], env=self.env )
+		if self.settings["arch"] == "x86" and os.uname[4] == "x86_64":
+			cmds = [self.bin("linux32"),self.bin("chroot"),self.settings["chrootdir"],self.bin("bash")]
+		else:
+			cmds = [self.bin("chroot"),self.settings["chrootdir"],self.bin("bash")]
 
-		return retval
+		cmds.append("/tmp/"+key+".sh")
 
+		retval = spawn(cmds, env=self.env )
+
+		if retval != 0:
+			raise CatalystError, "Command failure: "+" ".join(cmds)
 
 	def __init__(self,settings):
 		target.__init__(self,settings)
@@ -219,6 +240,11 @@ class chroot(target):
 class snapshot(target):
 	def __init__(self,settings):
 		target.__init__(self,settings)
+
+		if os.path.exists("/etc/catalyst/snapshot.spec"):
+			print "Reading in configuration from /etc/catalyst/snapshot.spec..."
+			self.settings.collect("/etc/catalyst/snapshot.spec")
+
 		self.require(["portname","portdir","version","target"])
 		self.require(["storedir/snapshot"])
 
@@ -228,9 +254,16 @@ class snapshot(target):
 			print "Removing existing temporary work directory..."
 			self.cmd( self.bin("rm") + " -rf " + self.settings["workdir"] )
 
-		# do not overwrite snapshot if it already exists
-		if os.path.exists(self.settings["storedir/snapshot"]):
-			raise CatalystError,"Snapshot "+self.settings["storedir/snapshot"]+" already exists. Aborting."
+		if "replace" in self.settings["options"].split():
+			if os.path.exists(self.settings["storedir/snapshot"]):
+				print "Removing existing snapshot..."
+				self.cmd( self.bin("rm") + " -f " + self.settings["storedir/snapshot"])
+
+		elif os.path.exists(self.settings["storedir/snapshot"]):
+			print "Snapshot already exists at "+self.settings["storedir/snapshot"]+". Skipping..."
+			return
+		else:
+			print self.settings["storedir/snapshot"],"does not exist - creating it..."
 				
 		# create required directories
 		for dir in [ os.path.dirname(self.settings["storedir/snapshot"]), self.settings["workdir"]+"/portage" ]:
@@ -241,8 +274,10 @@ class snapshot(target):
 		rsync_opts = "-a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/"
 		rsync_cmd = self.bin("rsync") + " " + rsync_opts + " " + os.path.normpath(self.settings["portdir"])+"/ " + os.path.normpath(self.settings["workdir"]+"/portage")+"/"
 		self.cmd(rsync_cmd,"Snapshot failure")
+		tmpfile=os.path.dirname(self.settings["storedir/snapshot"])+"/."+os.path.basename(self.settings["storedir/snapshot"])
 		
-		self.cmd( self.bin("tar") + " -cjf " + self.settings["storedir/snapshot"]+" -C "+self.settings["workdir"]+" portage","Snapshot creation failure")
+		self.cmd( self.bin("tar") + " -cjf " + tmpfile +" -C "+self.settings["workdir"]+" portage","Snapshot creation failure")
+		self.cmd( self.bin("mv") + " " + tmpfile + " " + self.settings["storedir/snapshot"], "Couldn't move snapshot to final position" )
 
 		# workdir cleanup is handled by catalyst calling our cleanup() method
 
@@ -250,19 +285,23 @@ class stage(chroot):
 
 	def __init__(self,settings):
 		chroot.__init__(self,settings)
-	
+
+		if os.path.exists("/etc/catalyst/stage.spec"):
+			print "Reading in configuration from /etc/catalyst/stage.spec..."
+			self.settings.collect("/etc/catalyst/stage.spec")
+
 		# In the constructor, we want to define settings but not reference them if we can help it, certain things
 		# like paths may not be able to be fully expanded yet until we define our goodies like "source", etc.
 
-		self.require(["arch","subarch","profile","storedir/srcstage","storedir/deststage","storedir/snapshot"])
+		self.require(["arch","subarch","profile","storedir/srcstage","storedir/deststage","storedir/snapshot","CHOST"])
 		
 		# look for user-specified USE, if none specified then fallback to HOSTUSE if specified
 		if not self.settings.has_key("USE"):
 			if self.settings.has_key("HOSTUSE"):
 				self.settings["USE"]="$[HOSTUSE]"
 
-		# If DISTDIR, USE or CFLAGS not specified, alert the user that they might be missing them
-		self.recommend(["DISTDIR","USE","CFLAGS","MAKEOPTS"])
+		# If distdir, USE or CFLAGS not specified, alert the user that they might be missing them
+		self.recommend(["distdir","USE","CFLAGS","MAKEOPTS"])
 
 		# We also use an initial "~" as a trigger to build an unstable version of the portage tree. This
 		# means we need to use ~arch rather than arch in ACCEPT_KEYWORDS. So if someone specified "~pentium4"
@@ -288,9 +327,19 @@ class stage(chroot):
 			self.mountmap["/usr/portage/distfiles"]=self.settings["distdir"]
 
 		self.settings["chrootdir"]="$[workdir]/chroot"
-		self.settings["controller_file"]="$[sharedir]/targets/$[target]/$[target]-controller.sh"
 
 	def run(self):
+
+		if "replace" in self.settings["options"].split():
+			if os.path.exists(settings["storedir/deststage"]):
+				print "Removing existing stage..."
+				self.cmd( self.bin("rm") + " -f " + self.settings["storedir/deststage"])
+		# do not overwrite snapshot if it already exists
+		elif os.path.exists(self.settings["storedir/deststage"]):
+			print "Stage "+repr(self.settings["storedir/deststage"])+" already exists - skipping..."
+			return
+			#raise CatalystError,"Snapshot "+self.settings["storedir/snapshot"]+" already exists. Aborting."
+
 		# look for required files
 		for loc in [ "storedir/srcstage", "storedir/snapshot" ]:
 			if not os.path.exists(self.settings[loc]):
@@ -314,16 +363,20 @@ class stage(chroot):
 
 			self.bind()
 
+			self.exec_in_chroot("chroot/prerun")
 			self.exec_in_chroot("chroot/run")
 			self.exec_in_chroot("chroot/postrun")
 			
 			self.unbind()
 			
+			# remove our tweaks...
+
+			self.chroot_cleanup()
+
+			# now let the spec-defined clean script do all the heavy lifting...
+
 			self.exec_in_chroot("chroot/clean")
 			
-			# remove our tweaks ...
-			self.chroot_cleanup()
-		
 		except:
 		
 			self.kill_chroot_pids()
@@ -348,7 +401,7 @@ class stage(chroot):
 		self.cmd(unpack_cmd,"Error unpacking source stage.")
 
 	def unpack_snapshot(self):
-		destdir=normpath(self.settings["chrootdir"]+"/usr/portage")
+		destdir=os.path.normpath(self.settings["chrootdir"]+"/usr/portage")
 		cleanup_errmsg="Error removing existing snapshot directory."
 		cleanup_msg="Cleaning up existing portage tree (This can take a long time) ..."
 		unpack_cmd="tar xjpf "+self.settings["storedir/snapshot"]+" -C "+self.settings["chrootdir"]+"/usr"
@@ -360,9 +413,6 @@ class stage(chroot):
 		print "Unpacking \""+self.settings["storedir/snapshot"]+" ..."
 		self.cmd(unpack_cmd,unpack_errmsg)
 
-	def config_profile_link(self):
-		self.controller("profile")
-	
 	def proxy_config(self):
 		# SETUP PROXY SETTINGS - ENVSCRIPT DOESN'T ALWAYS WORK. THIS DOES.
 		print "Writing out proxy settings..."
@@ -401,9 +451,10 @@ class stage(chroot):
 		# Back up original files.
 		for file in [ "/etc/resolv.conf", "/etc/hosts" ]:
 			respath=self.settings["chrootdir"]+file
-			if os.path.exists(respath):
-				self.cmd("/bin/cp "+respath+" "+respath+".bck","Couldn't back up "+file)
-			self.cmd("/bin/cp "+file+" "+respath,"Couldn't copy "+file+" into place.")
+			if os.path.exists(file):
+				if os.path.exists(respath):
+					self.cmd("/bin/cp "+respath+" "+respath+".bck","Couldn't back up "+file)
+				self.cmd("/bin/cp "+file+" "+respath,"Couldn't copy "+file+" into place.")
 
 	def portage_config(self):
 		self.cmd("/bin/rm -f "+self.settings["chrootdir"]+"/etc/make.conf","Could not remove "+self.settings["chrootdir"]+"/etc/make.conf")
@@ -421,8 +472,7 @@ class stage(chroot):
 		self.locale_config()
 		self.network_config()
 		self.portage_config()
-		self.config_profile_link()
-
+	
 	def chroot_cleanup(self):
 
 		# Philosophy: Catalyst should only do the bare minimum cleanup in Python. The bulk of the cleanup work should be defined in
@@ -442,25 +492,6 @@ class stage(chroot):
 				self.cmd("mv -f "+self.settings["chrootdir"]+file+".bck "+self.settings["chrootdir"]+file, "Couldn't restore "+file)
 
 		# Run our "clean" bash script, which should do all of the heavy lifting...
-
-		self.controller("clean")
-
-	def controller(self,stage):
-		if not os.path.exists(self.settings["controller_file"]):
-			raise CatalystError,"Controller file "+self.settings["controller_file"]+" not found. Aborting."
-		try:
-			cmd("/bin/bash "+self.settings["controller_file"]+" "+stage,stage+" script failed.",env=self.env)
-		except:
-			self.unbind()
-			raise CatalystError, "Build failed, could not execute "+stage
-	
-	def kill_chroot_pids(self):
-		print "Checking for processes running in chroot and killing them."
-		cmdpath=self.settings["sharedir"]+"/misc/kill-chroot-pids.sh")
-		if not os.path.exists(cmdpath):
-			raise CatalystError,"Couldn't find "+cmdpath+" - Exiting."
-		self.cmd("/bin/bash "+cmdpath, "kill-chroot-pids script failed.")
-	
 
 	def capture(self):
 		"""capture target in a tarball"""

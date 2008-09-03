@@ -20,10 +20,6 @@ mv $[foo] $[oni]
 class FlexDataError(Exception):
 	def __init__(self, message):
 		if message:
-			(type,value)=sys.exc_info()[:2]
-			if value!=None:
-				print 
-				print traceback.print_exc(file=sys.stdout)
 			print
 			print "!!! catalyst: "+message
 			print
@@ -46,7 +42,7 @@ class collection:
 
 		self.evaluated={}
 
-	def expandAll(self):
+	def expand_all(self):
 		# try to expand all variables to find any undefined elements, to record all blanks or throw an exception
 		for key in self.keys():
 			myvar = self[key]
@@ -78,11 +74,7 @@ class collection:
 				string = self.raw[myvar]
 
 		if type(string) != types.StringType:
-			raise FlexDataError("expandString received non-string: "+repr(string)+", myvar = "+repr(myvar))
-
-		if myvar == None:
-			# this is to make our exception error messages happy if they trigger
-			myvar = "(None)"
+			raise FlexDataError("expandString received non-string: "+repr(string)+", myvar = "+repr(myvar)+" (did you forget '>>' in front of multi-line reference?)")
 
 		mysplit = string.strip().split(" ")
 		if len(mysplit) == 2 and mysplit[0] == "<<":
@@ -109,12 +101,15 @@ class collection:
 			if varname in stack:
 				raise KeyError, "Circular reference of '"+varname+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
 			if self.evaluated.has_key(varname):
-				if type(self.evaluated[varname]) == types.ListType:
-					raise FlexDataError,"Trying to expand multi-line value \""+varname+"\" in single-line value \""+myvar+"\""
+				# if myvar == None, we are being called from self.expand_all() and we don't care where we are being expanded from
+				if myvar != None and type(self.evaluated[varname]) == types.ListType:
+					raise FlexDataError,"Trying to expand multi-line value "+repr(varname)+" in single-line value "+repr(myvar)
+				print "DEBUG: looking at self.evaluated["+varname+"]"
 				ex += self.evaluated[varname]
 			elif self.raw.has_key(varname):
-				if type(self.raw[varname]) == types.ListType:
-					raise FlexDataError,"Trying to expand multi-line value \""+varname+"\" in single-line value \""+myvar+"\""
+				# if myvar == None, we are being called from self.expand_all() and we don't care where we are being expanded from
+				if myvar != None and type(self.raw[varname]) == types.ListType:
+					raise FlexDataError,"Trying to expand multi-line value "+repr(varname)+" in single-line value "+repr(myvar)
 				newstack = stack[:]
 				newstack.append(varname)
 				ex += self.expandString(self.raw[varname],varname,newstack)
@@ -167,7 +162,7 @@ class collection:
 					raise FlexDataError,"Circular reference of '"+mysplit[1]+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
 				newstack = stack[:]
 				newstack.append(mysplit[1])
-				newlines += self.expandMulti(mysplit[1],newstack)
+				newlines += self.expandMulti(self.expandString(string=mysplit[1]),newstack)
 			else:	
 				newlines.append(self.expandString(string=line))
 		self.evaluated[myvar] = newlines
@@ -221,7 +216,7 @@ class collection:
 			else:
 				continue
 
-	def parseline(self,openfile=None):
+	def parseline(self,openfile=None,dups=False):
 		
 		# parseline() will parse a line and return None on EOF, return [] on a blank line with no data, or will
 		# return a list of string elements if there is data on the line, split along whitespace: [ "foo:", "bar", "oni" ]
@@ -260,7 +255,8 @@ class collection:
 		if len(mysplit) == 2 and mysplit[0][-1] == ":" and mysplit[1] == "[":
 			if self.debug:
 				print "DEBUG: MULTI-LINE BLOCK"
-			myvar = mysplit[0]
+			# for myvar, remove trailing colon:
+			myvar = mysplit[0][:-1]
 			mylines = []
 			while 1:
 				curline = openfile.readline()
@@ -271,6 +267,8 @@ class collection:
 					if self.debug:
 						print "DEBUG: end multi-line block"
 					# record value and quit
+					if not dups and self.raw.has_key(myvar):
+						raise FlexDataError,"Error - \""+myvar+"\" already defined."
 					self.raw[myvar] = mylines
 					break
 				else:
@@ -278,7 +276,10 @@ class collection:
 					mylines.append(curline[:-1])
 		elif mysplit[0][-1] == ":":
 			#basic element - rejoin all data elements with spaces and add to self.raw
-			self.raw[mysplit[0][:-1]] = " ".join(mysplit[1:])
+			mykey = mysplit[0][:-1]
+			if not dups and self.raw.has_key(mykey):
+				raise FlexDataError,"Error - \""+mykey+"\" already defined."
+			self.raw[mykey] = " ".join(mysplit[1:])
 		return mysplit	
 	
 	def collect(self,filename):

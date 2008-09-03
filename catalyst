@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "ldhvV", ["lax","debug","help", "verbose", "version" ])
+		opts,args = getopt.getopt(sys.argv[1:], "ldhvV", ["lax","debug","help", "verbose", "version","replace"])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 	verbose=False
 	myopts=[]
 	strict=True
-	readconfig=True
+	replace=False
 
 	# check preconditions
 	if len(args) == 0:
@@ -82,9 +82,9 @@ if __name__ == "__main__":
 		if o in ("-V", "--version"):
 			print "Catalyst version "+__version__
 			sys.exit(1)
-		if o == "--noconfig":
-			print "Warning: --noconfig option specified - skipping /etc/catalyst.conf..."
-			readconfig=False
+		if o == "--replace":
+			print "Warning: --replace option specified - any existing output stage will be replaced..."
+			replace=True
 		if o in ("-d", "--debug"):
 			debug=True
 			print "DEBUG: opts",opts
@@ -108,15 +108,21 @@ if __name__ == "__main__":
 	elif host in [ "i386", "i486", "i586", "i686" ]:
 		settings["hostarch"] = "x86"
 
-	if readconfig:
-		if os.path.exists("/etc/catalyst.conf"):
-			print "Reading in configuration from /etc/catalyst.conf..."
-			settings.collect("/etc/catalyst.conf")
+	if os.path.exists("/etc/catalyst/global.spec"):
+		print "Reading in configuration from /etc/catalyst/global.spec..."
+		settings.collect("/etc/catalyst/global.spec")
+	else:
+		print "Warning: /etc/catalyst/global.spec not found."
+	
+	if replace:	
+		if settings.has_key("options"):
+			settings["options"] = settings["options"] + " replace"
 		else:
-			print "Warning: /etc/catalyst.conf not found."
+			settings["options"] = "replace"
 
 	# the new version of catalyst does not have any configuration file
 	# parse command-line supplied configuration files and spec files in the order they were specified
+
 	for arg in args:
 		settings.collect(arg)
 
