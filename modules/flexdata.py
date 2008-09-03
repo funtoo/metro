@@ -74,7 +74,10 @@ class collection:
 				string = self.raw[myvar]
 
 		if type(string) != types.StringType:
-			raise FlexDataError("expandString received non-string: "+repr(string)+", myvar = "+repr(myvar)+" (did you forget '>>' in front of multi-line reference?)")
+			if len(stack) >=1:
+				raise FlexDataError("expandString received non-string when expanding "+repr(myvar)+" ( stack = "+repr(stack)+")")
+			else:
+				raise FlexDataError("expandString received non-string")
 
 		mysplit = string.strip().split(" ")
 		if len(mysplit) == 2 and mysplit[0] == "<<":
@@ -104,7 +107,6 @@ class collection:
 				# if myvar == None, we are being called from self.expand_all() and we don't care where we are being expanded from
 				if myvar != None and type(self.evaluated[varname]) == types.ListType:
 					raise FlexDataError,"Trying to expand multi-line value "+repr(varname)+" in single-line value "+repr(myvar)
-				print "DEBUG: looking at self.evaluated["+varname+"]"
 				ex += self.evaluated[varname]
 			elif self.raw.has_key(varname):
 				# if myvar == None, we are being called from self.expand_all() and we don't care where we are being expanded from

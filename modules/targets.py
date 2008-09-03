@@ -105,7 +105,10 @@ class chroot(target):
 				print "Killing process "+pid+" ("+mylink+")"
 				self.cmd("/bin/kill -9 "+pid)
 
-	def exec_in_chroot(self,key):
+	def exec_in_chroot(self,key,chrootdir=None):
+
+		if chrootdir == None:
+			chrootdir = self.settings["chrootdir"]
 
 		if not self.settings.has_key(key):
 			raise CatalystError, "exec_in_chroot: key \""+key+"\" not found."
@@ -113,7 +116,7 @@ class chroot(target):
 		if type(self.settings[key]) != types.ListType:
 			raise CatalystError, "exec_in_chroot: key \""+key+"\" is not a multi-line element."
 
-		outfile = self.settings["chrootdir"]+"/tmp/"+key+".sh"
+		outfile = chrootdir+"/tmp/"+key+".sh"
 		outdir = os.path.dirname(outfile)
 
 		if not os.path.exists(outdir):
@@ -136,6 +139,8 @@ class chroot(target):
 
 		if retval != 0:
 			raise CatalystError, "Command failure: "+" ".join(cmds)
+
+		os.unlink(outfile)
 
 	def __init__(self,settings):
 		target.__init__(self,settings)
@@ -312,14 +317,6 @@ class stage(chroot):
 		else:
 			self.settings["ACCEPT_KEYWORDS"] = self.settings["arch"]
 
-		# All the ~x86, ~pentium4, etc. unstable subarch build logic should be done now. Now we need to make
-		# sure that we use the new variables for paths, below...
-
-		if self.settings["hostarch"] == "amd64" and self.settings["arch"] == "x86":
-			self.settings["chroot"]=self.bin("linux32")+" "+self.bin("chroot")
-		else:
-			self.settings["chroot"]=self.bin("chroot")
-
 		# DEFINE GENTOO MOUNTS
 
 		if self.settings.has_key("distdir"):
@@ -375,7 +372,10 @@ class stage(chroot):
 
 			# now let the spec-defined clean script do all the heavy lifting...
 
-			self.exec_in_chroot("chroot/clean")
+			if self.settings["target"] == "stage1":
+				self.exec_in_chroot("chroot/clean",self.settings["chrootdir"]+self.settings["ROOT"])
+			else:
+				self.exec_in_chroot("chroot/clean")
 			
 		except:
 		
@@ -428,23 +428,23 @@ class stage(chroot):
 		a.close()
 	
 	def locale_config(self):
-		if self.settings.has_key("locales"):
-			# our locale.gen template (nothing in it except comments: )
-			srcfile=self.settings["sharedir"]+"/misc/locale.gen"
-			# our destination locale.gen file:
-			locfile=self.settings["chrootdir"]+"/etc/locale.gen"
-			cmd("rm -f "+locfile)
-			cmd("install -m0644 -o root -g root "+srcfile+" "+locfile)
+		if self.settings.has_key("chroot/files/locale.gen"):
+			print "Configuring locale.gen..."
+			if self.settings.has_key("ROOT") and self.settings["ROOT"] != "/":
+				locfile=self.settings["chrootdir"]+"/etc/locale.gen"
+			else:
+				locfile=self.settings["chrootdir"]+self.settings["ROOT"]+"/etc/locale.gen"
 			try:
 				#open to append locale entries
-				a=open(locfile,"a")
+				a=open(locfile,"w")
 			except:
 				raise CatalystError,"Couldn't open "+locfile+" for writing."
-			for localepair in self.settings["locales"]:
-				locale,charmap = localepair.split("/")
-				a.write(locale+" "+charmap+"\n")
+			for line in self.settings["chroot/files/locale.gen"]:
+				a.write(line + "\n")
 			#all done writing out our locales/charmaps
 			a.close()
+		else:
+			print "Warning: chroot/files/locale.gen not found, not configuring..."
 
 	def network_config(self):
 		# Copy over /etc/resolv.conf and /etc/hosts from our root filesystem since we may need them for network connectivity.
