@@ -140,14 +140,7 @@ class chroot(target):
 	
 
 		if retval != 0:
-			print 'DEBUG: exec_in_chroot '+" ".join(cmds)+" retval = "+repr(retval)
-			#raise CatalystError, "Command failure: "+" ".join(cmds)
-
-		try:
-			os.unlink(outfile)
-		except OSError:
-			# it's possible our script was cleaned up itself ("clean" script), thus erasing it from the filesystem
-			pass
+			raise CatalystError, "Command failure: "+" ".join(cmds)
 
 	def __init__(self,settings):
 		target.__init__(self,settings)
