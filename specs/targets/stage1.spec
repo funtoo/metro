@@ -1,5 +1,4 @@
 target: stage1
-USE: $[HOSTUSE]
 
 chroot/pythonjunk: [
 #!/usr/bin/python
@@ -37,7 +36,6 @@ print
 
 chroot/run: [
 >> chroot/setup
-[ -d /var/tmp/ccache ] && [ -e /usr/bin/ccache ] && emerge --nodeps --oneshot dev-util/ccache
 
 cat > /tmp/build.py << EOF
 >> chroot/pythonjunk
@@ -46,8 +44,7 @@ EOF
 export buildpkgs="$(python /tmp/build.py)"
 export STAGE1_USE="$(portageq envvar STAGE1_USE)"
 export USE="-* bindist build ${STAGE1_USE}"
-export FEATURES="nodoc noman noinfo"
-[ -e /usr/bin/ccache ] && export FEATURES="ccache $FEATURES"
+export FEATURES="$FEATURES nodoc noman noinfo"
 ## Sanity check profile
 if [ -z "${buildpkgs}" ]
 then

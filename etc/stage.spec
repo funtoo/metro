@@ -2,6 +2,7 @@ storedir/srcstage: $[storedir]/$[subarch]/$[portname]-$[subarch]-$[lastdate]/$[s
 storedir/deststage: $[storedir]/$[subarch]/$[portname]-$[subarch]-$[version]/$[target]-$[subarch]-$[version].tar.bz2 
 lastdate: << $[storedir]/$[arch]/.control/lastdate
 profile: default/linux/$[arch]/2008.0
+USE: $[HOSTUSE]
 
 chroot/prerun: [
 	rm -f /etc/make.profile
@@ -16,7 +17,12 @@ chroot/setup: [
 	export EBEEP_IGNORE=0
 	export EPAUSE_IGNORE=0
 	export CONFIG_PROTECT="-*"
-	[ -d /var/tmp/ccache ] && export CCACHE_DIR=/var/tmp/ccache
+	if [ -d /var/tmp/ccache ] 
+	then
+		! [ -e /usr/bin/ccache ] && emerge --oneshot --nodeps ccache
+		export CCACHE_DIR=/var/tmp/ccache
+		export FEATURES="ccache"
+	fi
 ]
 
 chroot/clean: [
@@ -29,10 +35,16 @@ chroot/clean: [
 
 chroot/postrun: [
 	>> chroot/setup
-	[ "$[target]" != "stage1" ] && [ -e /var/tmp/ccache ] && emerge -C dev-util/ccache
+	if [ "$[target]" != "stage1" ] 
+	then
+		if [ -e /var/tmp/ccache ] 
+		then
+			emerge -C dev-util/ccache 
+		fi
+	fi
 ]
 
-chroot/files/locale.gen [
+chroot/files/locale.gen: [
 # /etc/locale.gen: list all of the locales you want to have on your system
 #
 # The format of each line:

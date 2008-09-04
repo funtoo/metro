@@ -137,10 +137,17 @@ class chroot(target):
 
 		retval = spawn(cmds, env=self.env )
 
-		if retval != 0:
-			raise CatalystError, "Command failure: "+" ".join(cmds)
+	
 
-		os.unlink(outfile)
+		if retval != 0:
+			print 'DEBUG: exec_in_chroot '+" ".join(cmds)+" retval = "+repr(retval)
+			#raise CatalystError, "Command failure: "+" ".join(cmds)
+
+		try:
+			os.unlink(outfile)
+		except OSError:
+			# it's possible our script was cleaned up itself ("clean" script), thus erasing it from the filesystem
+			pass
 
 	def __init__(self,settings):
 		target.__init__(self,settings)
@@ -424,7 +431,7 @@ class stage(chroot):
 			if os.environ.has_key(x):
 				a.write(x+"=\""+os.environ[x]+"\"\n")
 			else:
-				a.write("# "+x+" is not set")
+				a.write("# "+x+" is not set\n")
 		a.close()
 	
 	def locale_config(self):
@@ -453,7 +460,7 @@ class stage(chroot):
 			respath=self.settings["chrootdir"]+file
 			if os.path.exists(file):
 				if os.path.exists(respath):
-					self.cmd("/bin/cp "+respath+" "+respath+".bck","Couldn't back up "+file)
+					self.cmd("/bin/cp "+respath+" "+respath+".orig","Couldn't back up "+file)
 				self.cmd("/bin/cp "+file+" "+respath,"Couldn't copy "+file+" into place.")
 
 	def portage_config(self):
@@ -489,7 +496,12 @@ class stage(chroot):
 					self.cmd("rm -f "+self.settings["chrootdir"]+x)
 
 			for file in [ "/etc/resolv.conf", "/etc/hosts" ]:
-				self.cmd("mv -f "+self.settings["chrootdir"]+file+".bck "+self.settings["chrootdir"]+file, "Couldn't restore "+file)
+				if os.path.exists(self.settings["chrootdir"]+file):
+					# remove our copy
+					self.cmd("rm -f "+self.settings["chrootdir"]+file)
+				if os.path.exists(self.settings["chrootdir"]+file+".orig"):
+					# restore original if it exists
+					self.cmd("mv -f "+self.settings["chrootdir"]+file+".orig "+self.settings["chrootdir"]+file, "Couldn't restore "+file)
 
 		# Run our "clean" bash script, which should do all of the heavy lifting...
 

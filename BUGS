@@ -17,3 +17,10 @@ subarch: foo
 Will result in bar not being defined.
 
 CHOST needs to be required for bash scripts
+
+More robust parser - this does not throw an exception and just silently keeps foo undefined:
+
+foo [
+# missing colon!
+
+]
