@@ -51,14 +51,14 @@ chroot/setup: [
 	export CLEAN_DELAY=0
 	export EBEEP_IGNORE=0
 	export EPAUSE_IGNORE=0
-	export CONFIG_PROTECT="-*"
+	export CONFIG_PROTECT="-* /etc/locale.gen"
 	if [ -d /var/tmp/ccache ] 
 	then
 		! [ -e /usr/bin/ccache ] && emerge --oneshot --nodeps ccache
 		export CCACHE_DIR=/var/tmp/ccache
 		export FEATURES="ccache"
 	fi
-	>> chroot/probe
+#	>> chroot/probe
 ]
 
 chroot/clean: [

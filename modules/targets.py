@@ -147,8 +147,10 @@ class chroot(target):
 
 		# DEFINE GENERAL LINUX CHROOT MOUNTS
 
-		self.mounts=[ "/proc","/dev", "/dev/pts" ]
-		self.mountmap={"/proc":"/proc", "/dev":"/dev", "/dev/pts":"/dev/pts"}
+		self.mounts=[ "/proc" ]
+		#,"/dev", "/dev/pts" ]
+		self.mountmap={"/proc":"/proc" }
+		#"/dev":"/dev", "/dev/pts":"/dev/pts"}
 
 		# CCACHE SUPPORT FOR CHROOTS
 
