@@ -9,6 +9,41 @@ chroot/prerun: [
 	ln -sf ../usr/portage/profiles/$[profile] /etc/make.profile
 ]
 
+# put the debug probe in /usr/bin so it doesn't get cleaned
+probe/outfile: /usr/bin/debug/probe.out
+
+probe/bashrc: [
+#!/bin/bash
+SANDBOX_ON=0
+install -d `dirname $[probe/outfile]`
+if [ "\$EBUILD_PHASE" != "depend" ]
+then 
+	echo -n "\$P.\$EBUILD_PHASE -"  >> $[probe/outfile]
+	# if there are less than 100 device nodes....
+	if [ \`ls /dev | wc -l\` -lt 100 ]
+	then
+		{ cd /dev; find > $[probe/outfile].\$P.\$EBUILD_PHASE.log; }
+		echo " *** TRUE *** - logged to $[probe/outfile].\$P.\$EBUILD_PHASE.log" >> $[probe/outfile]
+	else
+		echo " false " >> $[probe/outfile]
+	fi
+fi
+SANDBOX_ON=1
+]
+
+chroot/probe: [
+# This is a useful piece of code to debug various build issues. May add it as a "probes" feature
+# in the future. I used it to find that baselayout-2.0.0 was totally frying /usr/lib/gcc if it
+# was merged after gcc. Now fixed temporarily by forcing baselayout to merge first- zmedico is
+# working on a correct fix.
+
+             # debug GCC issue
+install -d /etc/portage
+cat << EOF > /etc/portage/bashrc
+>> probe/bashrc
+EOF
+]
+
 chroot/setup: [
 	/usr/sbin/env-update
 	source /etc/profile
@@ -23,6 +58,7 @@ chroot/setup: [
 		export CCACHE_DIR=/var/tmp/ccache
 		export FEATURES="ccache"
 	fi
+	>> chroot/probe
 ]
 
 chroot/clean: [
