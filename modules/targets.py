@@ -110,6 +110,8 @@ class chroot(target):
 		if chrootdir == None:
 			chrootdir = self.settings["chrootdir"]
 
+		print "Running "+repr(key)+" in "+chrootdir+"..."
+
 		if not self.settings.has_key(key):
 			raise CatalystError, "exec_in_chroot: key \""+key+"\" not found."
 	
@@ -129,15 +131,13 @@ class chroot(target):
 		outfd.close()
 
 		if self.settings["arch"] == "x86" and os.uname[4] == "x86_64":
-			cmds = [self.bin("linux32"),self.bin("chroot"),self.settings["chrootdir"],self.bin("bash")]
+			cmds = [self.bin("linux32"),self.bin("chroot"),chrootdir,self.bin("bash")]
 		else:
-			cmds = [self.bin("chroot"),self.settings["chrootdir"],self.bin("bash")]
+			cmds = [self.bin("chroot"),chrootdir,self.bin("bash")]
 
 		cmds.append("/tmp/"+key+".sh")
 
 		retval = spawn(cmds, env=self.env )
-
-	
 
 		if retval != 0:
 			raise CatalystError, "Command failure: "+" ".join(cmds)
