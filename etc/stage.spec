@@ -1,6 +1,6 @@
-storedir/srcstage: $[storedir]/$[subarch]/$[portname]-$[subarch]-$[lastdate]/$[source]-$[subarch]-$[lastdate].tar.bz2 
+storedir/srcstage: $[storedir]/$[subarch]/$[portname]-$[subarch]-$[sourceversion]/$[source]-$[subarch]-$[sourceversion].tar.bz2 
 storedir/deststage: $[storedir]/$[subarch]/$[portname]-$[subarch]-$[version]/$[target]-$[subarch]-$[version].tar.bz2 
-lastdate: << $[storedir]/$[arch]/.control/lastdate
+lastdate: << $[storedir]/$[subarch]/.control/lastdate
 profile: default/linux/$[arch]/2008.0
 USE: $[HOSTUSE]
 
@@ -9,8 +9,7 @@ chroot/prerun: [
 	ln -sf ../usr/portage/profiles/$[profile] /etc/make.profile
 ]
 
-# put the debug probe in /usr/bin so it doesn't get cleaned
-probe/outfile: /usr/bin/debug/probe.out
+probe/outfile: /usr/portage/distfiles/probe/log
 
 probe/bashrc: [
 #!/bin/bash
@@ -58,7 +57,7 @@ chroot/setup: [
 		export CCACHE_DIR=/var/tmp/ccache
 		export FEATURES="ccache"
 	fi
-#	>> chroot/probe
+	>> chroot/probe
 ]
 
 chroot/clean: [

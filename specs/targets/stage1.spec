@@ -1,4 +1,5 @@
 target: stage1
+sourceversion: $[lastdate]
 
 chroot/pythonjunk: [
 #!/usr/bin/python

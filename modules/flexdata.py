@@ -229,10 +229,9 @@ class collection:
 			return None
 		# get list of words separated by whitespace
 		mysplit = curline[:-1].strip().split(" ")
-		if len(mysplit) == 1:
-			if mysplit[0] == '':
-				# blank line
-				return []
+		if len(mysplit) == 1 and  mysplit[0] == '':
+			# blank line
+			return []
 		#strip comments
 		spos = 0
 		while 1:

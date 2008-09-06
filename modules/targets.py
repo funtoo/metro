@@ -130,7 +130,7 @@ class chroot(target):
 
 		outfd.close()
 
-		if self.settings["arch"] == "x86" and os.uname[4] == "x86_64":
+		if self.settings["arch"] == "x86" and os.uname()[4] == "x86_64":
 			cmds = [self.bin("linux32"),self.bin("chroot"),chrootdir,self.bin("bash")]
 		else:
 			cmds = [self.bin("chroot"),chrootdir,self.bin("bash")]
@@ -150,6 +150,8 @@ class chroot(target):
 		self.mounts=[ "/proc" ]
 		#,"/dev", "/dev/pts" ]
 		self.mountmap={"/proc":"/proc" }
+		
+		
 		#"/dev":"/dev", "/dev/pts":"/dev/pts"}
 
 		# CCACHE SUPPORT FOR CHROOTS
@@ -545,6 +547,15 @@ class stage1(stage):
 		self.settings["ROOT"] = "/tmp/stage1root"
 		self.settings["rootdir"] = self.settings["workdir"]+"/tmp/stage1root"
 		self.settings["source"] = "stage3"
+
+		# This following section causes /dev and /dev/pts to be bind mounted inside our chroot. We only do this for stage1 so we can
+		# bootstrap from broken stage3 tarballs with no device nodes. Technically shouldn't be needed. /dev and /dev/pts should not
+		# normally be bind mounted so that baselayout can create device nodes on the filesystem which will end up in the stage tarball.
+
+		self.mounts.append("/dev")
+		self.mounts.append("/dev/pts")
+		self.mountmap["/dev"] = "/dev"
+		self.mountmap["/dev/pts"] = "/dev/pts"
 	
 directory = { "stage1" : stage1, "stage2" : stage2, "stage3" : stage3 , "snapshot" : snapshot }
 
