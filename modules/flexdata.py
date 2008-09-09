@@ -34,6 +34,8 @@ class collection:
 		# lax means: if a key isn't found, pretend it exists but return the empty string.
 		self.lax=True
 		self.blanks={}
+		# self.collected holds the names of files we've collected (parsed)
+		self.collected=[]
 
 	def clear(self):
 		self.raw={}
@@ -295,7 +297,9 @@ class collection:
 			if out == None:
 				break
 		openfile.close()
-
+		# add to our list of parsed files
+		self.collected.append(os.path.normpath(filename))
+	
 if __name__ == "__main__":
 	coll = collection(debug=True)
 	for arg in sys.argv[1:]:

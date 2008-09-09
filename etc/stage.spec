@@ -45,6 +45,7 @@ EOF
 
 chroot/setup: [
 	/usr/sbin/env-update
+	gcc-config 1
 	source /etc/profile
 	export EMERGE_WARNING_DELAY=0
 	export CLEAN_DELAY=0
