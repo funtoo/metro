@@ -1,5 +1,5 @@
-storedir/srcstage: $[storedir]/$[subarch]/$[portname]-$[subarch]-$[sourceversion]/$[source]-$[subarch]-$[sourceversion].tar.bz2 
-storedir/deststage: $[storedir]/$[subarch]/$[portname]-$[subarch]-$[version]/$[target]-$[subarch]-$[version].tar.bz2 
+storedir/srcstage: $[storedir]/$[subarch]/funtoo-$[subarch]-$[sourceversion]/$[source]-$[subarch]-$[sourceversion].tar.bz2 
+storedir/deststage: $[storedir]/$[subarch]/funtoo-$[subarch]-$[version]/$[target]-$[subarch]-$[version].tar.bz2 
 lastdate: << $[storedir]/$[subarch]/.control/lastdate
 profile: default/linux/$[arch]/2008.0
 USE: $[HOSTUSE]
