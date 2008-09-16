@@ -59,6 +59,12 @@ chroot/setup: [
 		export FEATURES="ccache"
 	fi
 	>> chroot/probe
+
+	if [ `emerge --help | grep "\--jobs"` != "" ]
+	then
+		# if we have the emerge/jobs option, then use it.
+		export EMERGE_DEFAULT_OPTS="--jobs $[emerge/jobs]"
+	fi
 ]
 
 chroot/clean: [
