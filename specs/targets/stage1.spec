@@ -60,5 +60,5 @@ fi
 export ROOT="$[ROOT]"
 install -d $[ROOT]
 #emerge baselayout || exit 1
-emerge --noreplace --oneshot ${buildpkgs} || exit 1
+emerge --noreplace --oneshot $[emerge/options] ${buildpkgs} || exit 1
 ]

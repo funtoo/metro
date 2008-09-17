@@ -6,4 +6,3 @@ storedir/snapshot: $[storedir]/snapshots/$[portname]-$[version].tar.bz2
 workdir: /var/tmp/catalyst/$[subarch]/$[version]/$[target]
 chrootdir: $[workdir]/chroot
 MAKEOPTS: -j3
-emerge/jobs: 3
