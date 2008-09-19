@@ -22,10 +22,10 @@ def usage():
 	print "catalyst stage1-specfile.spec"
 
 def version():
-	print "Catalyst, version "+__version__
-	print "Copyright 2003-2007 Gentoo Foundation"
-	print "Copyright 2008 Funtoo Technologies, LLC"
-	print "Distributed under the GNU General Public License version 2\n"
+	print os.path.basename(sys.argv[0])+" "+__version__
+	print
+	print " Copyright 2008 Funtoo Technologies, LLC; Copyright 2003-2007 Gentoo Foundation"
+	print " Distributed under the GNU General Public License version 2\n"
 
 def parse_config(myconfig):
 	# FOR COMPATIBILITY THIS IS GOOD - drobbins
@@ -35,11 +35,11 @@ def parse_config(myconfig):
 			settings[opt.upper()]="1"
 
 def find_target(settings):
-	if not targets.directory.has_key(settings["target"]):
-		raise CatalystError, "Target "+settings["target"]+" not supported."
-	else:
-		# create instance of new target
-		return targets.directory[settings["target"]](settings)
+	if not targets.__dict__.has_key(settings["metro/class"]):
+		raise CatalystError, "Metro class "+settings["metro/class"]+" not defined in modules/targets.py."
+	if type(targets.__dict__[settings["metro/class"]]) != types.ClassType:
+		raise CatalystError, "Metro class "+settings["metro/class"]+" does not appear to be a class."
+	return targets.__dict__[settings["metro/class"]](settings)
 
 if __name__ == "__main__":
 	version()
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "ldhvV", ["lax","debug","help", "verbose", "version","replace"])
+		opts,args = getopt.getopt(sys.argv[1:], "ldhvVe", ["lax","debug","help", "verbose", "version","expand"])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -73,23 +73,27 @@ if __name__ == "__main__":
 		usage()
 		sys.exit(2)
 
+	expandme=None
 	for opt,optarg in opts:
-		if opt in ("-l","--lax"):
+		print "DEBUG: OPTSTUFF",opt,optarg
+		if opt in ("-e","--expand"):
+			expandme=optarg
+		elif opt in ("-l","--lax"):
 			strict=False		
-		if opt in ("-h","--help"):
+		elif opt in ("-h","--help"):
 			usage()
 			sys.exit(1)
-		if o in ("-V", "--version"):
+		elif opt in ("-V", "--version"):
 			print "Catalyst version "+__version__
 			sys.exit(1)
-		if o == "--replace":
+		elif opt == "--replace":
 			print "Warning: --replace option specified - any existing output stage will be replaced..."
 			replace=True
-		if o in ("-d", "--debug"):
+		elif opt in ("-d", "--debug"):
 			debug=True
 			print "DEBUG: opts",opts
 			print "DEBUG: args",args
-		if o in ("-v","--verbose"):
+		elif opt in ("-v","--verbose"):
 			verbose=True
 
 	# import configuration file and import our main module using those settings
@@ -125,7 +129,9 @@ if __name__ == "__main__":
 
 	for arg in args:
 		settings.collect(arg)
-
+	if expandme:
+		print settings[expandme]
+		sys.exit(0)
 	if not settings.has_key("target"):
 		raise CatalystError("Please specify a target.")
 	

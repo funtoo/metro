@@ -520,43 +520,4 @@ class stage(chroot):
 		print "Creating stage tarball..."
 		self.cmd("tar cjpf "+self.settings["storedir/deststage"]+" -C "+grabpath+" .","Couldn't create stage tarball",badval=2)
 
-class stage3(stage):
-
-	def __init__(self,settings):
-		stage.__init__(self,settings)
-		
-		# set standard hard-coded variables for this stage
-		self.settings["ROOT"]="/"
-		self.settings["rootdir"] = self.settings["workdir"]
-		self.settings["source"] = "stage2"
-
-class stage2(stage):
-
-	def __init__(self,settings):
-		stage.__init__(self,settings)
-
-		self.settings["ROOT"] = "/"
-		self.settings["rootdir"] = self.settings["workdir"]
-		self.settings["source"] = "stage1"
-
-class stage1(stage):
-
-	def __init__(self,settings):
-		stage.__init__(self,settings)
-
-		self.settings["ROOT"] = "/tmp/stage1root"
-		self.settings["rootdir"] = self.settings["workdir"]+"/tmp/stage1root"
-		self.settings["source"] = "stage3"
-
-		# This following section causes /dev and /dev/pts to be bind mounted inside our chroot. We only do this for stage1 so we can
-		# bootstrap from broken stage3 tarballs with no device nodes. Technically shouldn't be needed. /dev and /dev/pts should not
-		# normally be bind mounted so that baselayout can create device nodes on the filesystem which will end up in the stage tarball.
-
-		self.mounts.append("/dev")
-		self.mounts.append("/dev/pts")
-		self.mountmap["/dev"] = "/dev"
-		self.mountmap["/dev/pts"] = "/dev/pts"
-	
-directory = { "stage1" : stage1, "stage2" : stage2, "stage3" : stage3 , "snapshot" : snapshot }
-
 #vim: ts=4 sw=4 sta et sts=4 ai
