@@ -1,3 +1,5 @@
+metro/class: chroot 
+source: stage3
 target: openvz
 author: Daniel Robbins <drobbins@funtoo.org>
 template/name: gentoo-openvz-$[subarch]-$[version]

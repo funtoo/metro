@@ -59,7 +59,7 @@ class collection:
 				return self.expandString(myvar=myvar)
 		elif self.lax:
 			# record that we looked up an undefined element
-			self.blanks[element]=True
+			self.blanks[myvar]=True
 			return ""
 		else:
 			raise FlexDataError,"Variable \""+myvar+"\" not found"
