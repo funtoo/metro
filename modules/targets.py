@@ -302,7 +302,7 @@ class stage(chroot):
 		# In the constructor, we want to define settings but not reference them if we can help it, certain things
 		# like paths may not be able to be fully expanded yet until we define our goodies like "source", etc.
 
-		self.require(["arch","subarch","profile","storedir/srcstage","storedir/deststage","storedir/snapshot","CHOST"])
+		self.require(["ROOT","target","source","arch","subarch","profile","storedir/srcstage","storedir/deststage","storedir/snapshot","CHOST"])
 		
 		# look for user-specified USE, if none specified then fallback to HOSTUSE if specified
 		if not self.settings.has_key("USE"):
@@ -328,6 +328,14 @@ class stage(chroot):
 			self.mountmap["/usr/portage/distfiles"]=self.settings["distdir"]
 
 		self.settings["chrootdir"]="$[workdir]/chroot"
+
+		if self.settings["ROOT"] != "/":
+			# this seems to be needed for libperl to build (x2p) during stage1 - so we'll mount it....
+			self.mounts.append("/dev")
+			self.mounts.append("/dev/pts")
+			self.mountmap["/dev"] = "/dev"
+			self.mountmap["/dev/pts"] = "/dev/pts"
+
 
 	def run(self):
 
