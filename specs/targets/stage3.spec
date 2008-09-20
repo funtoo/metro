@@ -12,5 +12,6 @@ chroot/run: [
 	emerge $[emerge/options] -e system || exit 1
 	if [ "$[emerge/packages]" != "" ]
 	then
-	emerge $[emerge/options] $[emerge/packages] || exit 1
+		emerge $[emerge/options] $[emerge/packages] || exit 1
+	fi
 ]
