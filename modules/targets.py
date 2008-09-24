@@ -254,8 +254,11 @@ class snapshot(target):
 			print "Reading in configuration from /etc/metro/snapshot.spec..."
 			self.settings.collect("/etc/metro/snapshot.spec")
 
-		self.require(["snapshot/type","portname","snapshot/path","snapshot/branch","version","target"])
+		self.require(["snapshot/type","portname","snapshot/path","version","target"])
 		self.require(["storedir/snapshot"])
+
+		if self.settings["snapshot/type"] == "git":
+			self.require(["snapshot/branch"])
 
 	def run(self):
 
