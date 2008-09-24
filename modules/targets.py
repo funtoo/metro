@@ -470,7 +470,10 @@ class stage(chroot):
 		myf.write("# Please consult /etc/make.conf.example for a more detailed example.\n")
 		for opt in ["CFLAGS","CXXFLAGS","LDFLAGS","CBUILD","CHOST","ACCEPT_KEYWORDS","USE"]:
 			if self.settings.has_key(opt):
-				myf.write(opt+'="'+self.settings[opt]+'"\n')
+				if opt == "USE":
+					myf.write("USE=\""+self.settings["USE"] + " " + self.settings["HOSTUSE"]+"\"\n")
+				else:
+					myf.write(opt+'="'+self.settings[opt]+'"\n')
 		myf.close()
 
 	def chroot_setup(self):

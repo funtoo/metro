@@ -20,6 +20,11 @@ bar: [
 ls -l /
 mv $[foo] $[bar]
 >> oni
+<?python
+print "Hello from python!"
+if settings["foo"] != "bar":
+	print settings["foo"]
+?>
 ]
 
 ... defines key "bar" to have the multi-line value of a small shell script. The ">> onit" line inserts
@@ -31,6 +36,10 @@ is not important, so the following snippet of code works fine:
 
 foo: $[bar]
 bar: hi there! 
+
+The <?python and ?> tags, appearing by themselves on a line, indicate an embedded python section of the
+multi-line block. Python code in this block will be executed and stdout will be appended to the result
+string.
 
 """
 
@@ -168,6 +177,8 @@ class collection:
 
 
 	def expandMulti(self,myvar,stack=[]):
+
+		mylocals = {}
 		# Expand all variables in a multi-line value. stack is used internally to detect circular references.
 		if self.debug:
 			print "DEBUG: in expandMulti"
@@ -186,16 +197,29 @@ class collection:
 
 		newlines=[]
 
-		for line in multi:
-			mysplit = line.strip().split(" ")
+		pos=0
+		while pos<len(multi):
+			mysplit = multi[pos].strip().split(" ")
 			if len(mysplit) == 2 and mysplit[0] == ">>":
 				if mysplit[1] in stack:
 					raise FlexDataError,"Circular reference of '"+mysplit[1]+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
 				newstack = stack[:]
 				newstack.append(mysplit[1])
 				newlines += self.expandMulti(self.expandString(string=mysplit[1]),newstack)
+			elif len(mysplit) >=1 and mysplit[0] == "<?python":
+				sys.stdout = StringIO.StringIO()
+				mycode=""
+				pos += 1
+				while (pos < len(multi)):
+					newsplit = multi[pos].split()
+					pos += 1
+					if len(newsplit) >= 1 and newsplit[0] == "?>":
+						break
+				exec mycode in { "settings" : self.settings }, mylocals
+				newlines += sys.stdout.getvalue().split('\n')
+				sys.stdout = sys.__stdout__
 			else:	
-				newlines.append(self.expandString(string=line))
+				newlines.append(self.expandString(string=multi[pos]))
 		self.evaluated[myvar] = newlines
 		return newlines
 
