@@ -250,9 +250,9 @@ class snapshot(target):
 	def __init__(self,settings):
 		target.__init__(self,settings)
 
-		if os.path.exists("/etc/catalyst/snapshot.spec"):
-			print "Reading in configuration from /etc/catalyst/snapshot.spec..."
-			self.settings.collect("/etc/catalyst/snapshot.spec")
+		if os.path.exists("/etc/metro/snapshot.spec"):
+			print "Reading in configuration from /etc/metro/snapshot.spec..."
+			self.settings.collect("/etc/metro/snapshot.spec")
 
 		self.require(["portname","portdir","version","target"])
 		self.require(["storedir/snapshot"])
@@ -295,9 +295,9 @@ class stage(chroot):
 	def __init__(self,settings):
 		chroot.__init__(self,settings)
 
-		if os.path.exists("/etc/catalyst/stage.spec"):
-			print "Reading in configuration from /etc/catalyst/stage.spec..."
-			self.settings.collect("/etc/catalyst/stage.spec")
+		if os.path.exists("/etc/metro/stage.spec"):
+			print "Reading in configuration from /etc/metro/stage.spec..."
+			self.settings.collect("/etc/metro/stage.spec")
 
 		# In the constructor, we want to define settings but not reference them if we can help it, certain things
 		# like paths may not be able to be fully expanded yet until we define our goodies like "source", etc.
@@ -429,9 +429,9 @@ class stage(chroot):
 		# SETUP PROXY SETTINGS - ENVSCRIPT DOESN'T ALWAYS WORK. THIS DOES.
 		print "Writing out proxy settings..."
 		try:
-			a=open(self.settings["chrootdir"]+"/etc/env.d/99zzcatalyst","w")
+			a=open(self.settings["chrootdir"]+"/etc/env.d/99zzmetro","w")
 		except:
-			raise MetroError,"Couldn't open "+self.settings["chrootdir"]+"/etc/env.d/99zzcatalyst for writing"
+			raise MetroError,"Couldn't open "+self.settings["chrootdir"]+"/etc/env.d/99zzmetro for writing"
 		for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
 			if os.environ.has_key(x):
 				a.write(x+"=\""+os.environ[x]+"\"\n")
@@ -495,7 +495,7 @@ class stage(chroot):
 		
 		if self.settings["ROOT"]=="/":
 
-			for x in ["/etc/profile.env","/etc/csh.env","/etc/env.d/99zzcatalyst"]:
+			for x in ["/etc/profile.env","/etc/csh.env","/etc/env.d/99zzmetro"]:
 				if os.path.exists(self.settings["chrootdir"]+x):
 					print "Cleaning chroot: "+x+"... " 
 					self.cmd("rm -f "+self.settings["chrootdir"]+x)
