@@ -32,20 +32,6 @@ class target:
 		for item in missing:
 			print "Warning: recommended value \""+item+"\" not defined."
 
-	def clear_dir(self,path):
-	    if not os.path.isdir(path):
-	    	return
-		print "Emptying directory",path
-		# stat the dir, delete the dir, recreate the dir and set the proper perms and ownership
-		mystat=os.stat(path)
-		if os.uname()[0] == "FreeBSD": # There's no easy way to change flags recursively in python
-			os.system("chflags -R noschg "+path)
-		shutil.rmtree(path)
-		os.makedirs(path,0755)
-		os.chown(path,mystat[ST_UID],mystat[ST_GID])
-		os.chmod(path,mystat[ST_MODE])
-
-
 	def bin(self,myc):
 		"""look through the environmental path for an executable file named whatever myc is"""
 		# this sucks. badly.
@@ -148,12 +134,8 @@ class chroot(target):
 		# DEFINE GENERAL LINUX CHROOT MOUNTS
 
 		self.mounts=[ "/proc" ]
-		#,"/dev", "/dev/pts" ]
 		self.mountmap={"/proc":"/proc" }
 		
-		
-		#"/dev":"/dev", "/dev/pts":"/dev/pts"}
-
 		# CCACHE SUPPORT FOR CHROOTS
 
 		if self.settings.has_key("options") and "ccache" in self.settings["options"].split():
