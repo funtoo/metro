@@ -168,13 +168,13 @@ if __name__ == "__main__":
 
 		# We're all done.
 
-		print "Catalyst complete."
+		print __app__,"complete."
 		print
 	except MetroError:
 		print "ERROR - exiting."
 		sys.exit(1)
 	except KeyboardInterrupt:
-		print "\nCatalyst build aborted due to user interrupt ( Ctrl-C )"
+		print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
 		print
-		print "Catalyst aborting...."
+		print __app__,"aborting..."
 		sys.exit(2)

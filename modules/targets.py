@@ -487,8 +487,8 @@ class stage(chroot):
 	
 	def chroot_cleanup(self):
 
-		# Philosophy: Catalyst should only do the bare minimum cleanup in Python. The bulk of the cleanup work should be defined in
-		# the spec file so that it is not hard-coded into the Catalyst tool itself.
+		# Philosophy: Metro/Catalyst should only do the bare minimum cleanup in Python. The bulk of the cleanup work should be defined in
+		# the spec file so that it is not hard-coded into the Metro tool itself.
 
 	    	# We only need to clean the following things if we were merging to our own filesystem: (ROOT=="/"). Otherwise cleanup is not
 		# necessary as these changes won't get stuck inside our stage tarball.
