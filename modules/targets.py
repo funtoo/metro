@@ -159,7 +159,6 @@ class chroot(target):
 		if self.settings.has_key("options") and "ccache" in self.settings["options"].split():
 			if os.environ.has_key("CCACHE_DIR"):
 				ccdir=os.environ["CCACHE_DIR"]
-				del os.environ["CCACHE_DIR"]
 			else:
 				ccdir="/root/.ccache"
 			if not os.path.isdir(ccdir):
