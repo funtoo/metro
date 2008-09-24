@@ -67,3 +67,7 @@ metro
 
 metro --run stage3
 metro --eval st
+
+Usage: metro [--collection x] [--eval "string"] TARGET...
+
+

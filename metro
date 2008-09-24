@@ -125,12 +125,6 @@ if __name__ == "__main__":
 	settings["metro_version"]=__version__
 	settings["sharedir"]=sharedir
 
-	host=os.uname()[4]
-	if host == "x86_64":
-		settings["hostarch"] = "amd64"
-	elif host in [ "i386", "i486", "i586", "i686" ]:
-		settings["hostarch"] = "x86"
-
 	if os.path.exists("/etc/metro/global.spec"):
 		print "Reading in configuration from /etc/metro/global.spec..."
 		settings.collect("/etc/metro/global.spec")
