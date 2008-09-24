@@ -294,7 +294,12 @@ class snapshot(target):
 
 		# the rest of the code is the same for git and rsync
 		outfile=os.path.dirname(self.settings["storedir/snapshot"])+"/."+os.path.basename(self.settings["storedir/snapshot"])
-		self.cmd( self.bin("tar") + " --exclude .git -cjf " + outfile +" -C "+self.settings["workdir"]+" portage","Snapshot creation failure")
+		try:
+			self.cmd( self.bin("tar") + " --exclude .git -cjf " + outfile +" -C "+self.settings["workdir"]+" portage","Snapshot creation failure")
+		except:
+			# clean up if there is a problem of any kind so we don't leave stray tempfiles, then reraise exception
+			self.cmd( self.bin("rm -f") + " " + outfile )
+			raise
 		self.cmd( self.bin("mv") + " " + outfile + " " + self.settings["storedir/snapshot"], "Couldn't move snapshot to final position" )
 
 		# workdir cleanup is handled by catalyst calling our cleanup() method
