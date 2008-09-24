@@ -32,10 +32,20 @@ def version():
 	print __copyright__
 
 def parse_config(myconfig):
-	for opt in [ "ccache" ]:
+	"""
+		options: ccache
+
+		Enables ccache support. The gentoo stage class will mount /root/.ccache to /var/tmp/ccache.
+		The rest (emerging ccache, etc.) is up to the spec file recipe to do.
+
+		options: replace
+
+		Will cause snapshots and stages to be regenerated (any existing ones that might have been used
+		in storedir are deleted.).
+	"""
+	for opt in [ "ccache", "replace" ]:
 		if opt in string.split(settings["options"]):
 			print opt,"support enabled."
-			settings[opt.upper()]="1"
 
 def find_target(settings):
 	""" 

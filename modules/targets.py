@@ -254,7 +254,7 @@ class snapshot(target):
 			print "Reading in configuration from /etc/metro/snapshot.spec..."
 			self.settings.collect("/etc/metro/snapshot.spec")
 
-		self.require(["portname","portdir","branch","version","target"])
+		self.require(["snapshot/type","portname","snapshot/path","snapshot/branch","version","target"])
 		self.require(["storedir/snapshot"])
 
 	def run(self):
@@ -262,6 +262,7 @@ class snapshot(target):
 		if os.path.exists(self.settings["workdir"]):
 			print "Removing existing temporary work directory..."
 			self.cmd( self.bin("rm") + " -rf " + self.settings["workdir"] )
+			os.makedirs(self.settings["workdir"])
 
 		if "replace" in self.settings["options"].split():
 			if os.path.exists(self.settings["storedir/snapshot"]):
@@ -273,25 +274,25 @@ class snapshot(target):
 			return
 		else:
 			print self.settings["storedir/snapshot"],"does not exist - creating it..."
-				
-		# create required directories
-		for dir in [ os.path.dirname(self.settings["storedir/snapshot"]), self.settings["workdir"]+"/portage" ]:
-			if not os.path.exists(dir):
-				os.makedirs(dir)
 	
-		# rsync options
-		#rsync_opts = "-a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/"
-		#rsync_cmd = self.bin("rsync") + " " + rsync_opts + " " + os.path.normpath(self.settings["portdir"])+"/ " + os.path.normpath(self.settings["workdir"]+"/portage")+"/"
-		#self.cmd(rsync_cmd,"Snapshot failure")
-		git_clone = "clone "+self.settings["portdir"]+" "+os.path.normpath(self.settings["workdir"]+"/portage")
-		git_checkout ="checkout "+self.settings["branch"]
-		# clone repo, checkout branch
-		self.cmd(self.bin("git") + " " + git_clone)
-		self.cmd(self.bin("git") + " " + git_checkout)
+		if self.settings["snapshot/type"] == "rsync":
+			rsync_opts = "-a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/"
+			rsync_cmd = self.bin("rsync") + " " + rsync_opts + " " + os.path.normpath(self.settings["snapshot/path"])+"/ " + os.path.normpath(self.settings["workdir"]+"/portage")+"/"
+			self.cmd(rsync_cmd,"Snapshot failure")
+		elif self.settings["snapshot/type"] == "git":
+			git_newrepo = os.path.normpath(self.settings["workdir"]+"/portage")
+			git_clone = "clone "+self.settings["snapshot/path"]+" "+git_newrepo
+			git_checkout ="checkout "+self.settings["snapshot/branch"]
+			# clone repo, checkout branch
+			self.cmd(self.bin("git") + " " + git_clone)
+			self.cmd("{ cd "+git_newrepo+"; "+self.bin("git") + " " + git_checkout + "; }")
+		else:
+			raise MetroError, "snapshot/type of \""+self.settings["snapshot/type"]+"\" not recognized."
+
+		# the rest of the code is the same for git and rsync
 		outfile=os.path.dirname(self.settings["storedir/snapshot"])+"/."+os.path.basename(self.settings["storedir/snapshot"])
-		
 		self.cmd( self.bin("tar") + " --exclude .git -cjf " + outfile +" -C "+self.settings["workdir"]+" portage","Snapshot creation failure")
-		self.cmd( self.bin("mv") + " " + tmpfile + " " + self.settings["storedir/snapshot"], "Couldn't move snapshot to final position" )
+		self.cmd( self.bin("mv") + " " + outfile + " " + self.settings["storedir/snapshot"], "Couldn't move snapshot to final position" )
 
 		# workdir cleanup is handled by catalyst calling our cleanup() method
 
