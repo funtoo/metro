@@ -1,6 +1,5 @@
 metro/class: stage
 ROOT: /
-rootdir: $[workdir]
 source: stage1
 target: stage2 
 sourceversion: $[version]
