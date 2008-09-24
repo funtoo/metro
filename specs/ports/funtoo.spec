@@ -1,4 +1,5 @@
-portdir: /root/git/funtoo-portage
+portdir: /root/git/portage
+branch: funtoo.org
 portname: funtoo
 emerge/packages:
 
