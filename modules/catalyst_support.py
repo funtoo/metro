@@ -59,7 +59,7 @@ class MetroError(Exception):
 				print 
 				print traceback.print_exc(file=sys.stdout)
 			print
-			print "!!! catalyst: "+message
+			print "!!! metro: "+message
 			print
 			
 def die(msg=None):
@@ -67,7 +67,7 @@ def die(msg=None):
 	sys.exit(1)
 
 def warn(msg):
-	print "!!! catalyst: "+msg
+	print "!!! metro: "+msg
 
 def spawn_bash(mycommand,env={},debug=False,opt_name=None,**keywords):
 	"""spawn mycommand as an arguement to bash"""

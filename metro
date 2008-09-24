@@ -12,7 +12,7 @@ __status__="Development"
 __version__="0.5"
 
 # we need to define this here because we need to add a module to our path so we can load the config file in /etc
-sharedir="/usr/lib/catalyst"
+sharedir="/usr/lib/metro"
 
 def usage():
 	print "Usage:",__app__,"[options] specfile1 [specfile2...]"
@@ -55,8 +55,7 @@ def find_target(settings):
 if __name__ == "__main__":
 	version()
 	if os.getuid() != 0:
-		# catalyst cannot be run as a normal user due to chroots, mounts, etc
-		print "!!! catalyst: This script requires root privileges to operate"
+		print __app__ + ": This script requires root privileges to operate."
 		sys.exit(2)
 
 	# we need some options in order to work correctly
@@ -80,7 +79,7 @@ if __name__ == "__main__":
 
 	# check preconditions
 	if len(args) == 0:
-		print "!!! catalyst: please specify at least one file to read\n"
+		print __app__+": please specify at least one file to read\n"
 		usage()
 		sys.exit(2)
 
@@ -113,7 +112,7 @@ if __name__ == "__main__":
 	import targets
 
 	settings=flexdata.collection()
-	settings["catalyst_version"]=__version__
+	settings["metro_version"]=__version__
 	settings["sharedir"]=sharedir
 
 	host=os.uname()[4]
@@ -122,11 +121,11 @@ if __name__ == "__main__":
 	elif host in [ "i386", "i486", "i586", "i686" ]:
 		settings["hostarch"] = "x86"
 
-	if os.path.exists("/etc/catalyst/global.spec"):
-		print "Reading in configuration from /etc/catalyst/global.spec..."
-		settings.collect("/etc/catalyst/global.spec")
+	if os.path.exists("/etc/metro/global.spec"):
+		print "Reading in configuration from /etc/metro/global.spec..."
+		settings.collect("/etc/metro/global.spec")
 	else:
-		print "Warning: /etc/catalyst/global.spec not found."
+		print "Warning: /etc/metro/global.spec not found."
 	
 	if replace:	
 		if settings.has_key("options"):
@@ -134,7 +133,7 @@ if __name__ == "__main__":
 		else:
 			settings["options"] = "replace"
 
-	# the new version of catalyst does not have any configuration file
+	# the new version of metro/catalyst does not have any configuration file
 	# parse command-line supplied configuration files and spec files in the order they were specified
 
 	for arg in args:

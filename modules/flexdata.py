@@ -38,7 +38,7 @@ class FlexDataError(Exception):
 	def __init__(self, message):
 		if message:
 			print
-			print "!!! catalyst: "+message
+			print "Metro Parser: "+message
 			print
 	
 class collection:

@@ -471,7 +471,7 @@ class stage(chroot):
 	def portage_config(self):
 		self.cmd("/bin/rm -f "+self.settings["chrootdir"]+"/etc/make.conf","Could not remove "+self.settings["chrootdir"]+"/etc/make.conf")
 		myf=open(self.settings["chrootdir"]+"/etc/make.conf","w")
-		myf.write("# These settings were set by the catalyst build script that automatically\n# built this stage.\n")
+		myf.write("# These settings were set by the metro build script that automatically\n# built this stage.\n")
 		myf.write("# Please consult /etc/make.conf.example for a more detailed example.\n")
 		for opt in ["CFLAGS","CXXFLAGS","LDFLAGS","CBUILD","CHOST","ACCEPT_KEYWORDS","USE"]:
 			if self.settings.has_key(opt):
