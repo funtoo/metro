@@ -51,7 +51,7 @@ def cleanup(pids,block_exceptions=True):
 
 verbosity=1
 
-class CatalystError(Exception):
+class MetroError(Exception):
 	def __init__(self, message):
 		if message:
 			(type,value)=sys.exc_info()[:2]
@@ -331,14 +331,14 @@ def file_locate(settings,filelist,expand=1):
 			pass
 		else:
 		    if len(settings[myfile])==0:
-			    raise CatalystError, "File variable \""+myfile+"\" has a length of zero (not specified.)"
+			    raise MetroError, "File variable \""+myfile+"\" has a length of zero (not specified.)"
 		    if settings[myfile][0]=="/":
 			    if not os.path.exists(settings[myfile]):
-				    raise CatalystError, "Cannot locate specified "+myfile+": "+settings[myfile]
+				    raise MetroError, "Cannot locate specified "+myfile+": "+settings[myfile]
 		    elif expand and os.path.exists(os.getcwd()+"/"+settings[myfile]):
 			    settings[myfile]=os.getcwd()+"/"+settings[myfile]
 		    else:
-			    raise CatalystError, "Cannot locate specified "+myfile+": "+settings[myfile]+" (2nd try)"
+			    raise MetroError, "Cannot locate specified "+myfile+": "+settings[myfile]+" (2nd try)"
 
 def msg(mymsg,verblevel=1):
 	if verbosity>=verblevel:
@@ -364,4 +364,4 @@ def touch(myfile):
 		myf=open(myfile,"w")
 		myf.close()
 	except IOError:
-		raise CatalystError, "Could not touch "+myfile+"."
+		raise MetroError, "Could not touch "+myfile+"."

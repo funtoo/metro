@@ -20,12 +20,12 @@ class target:
 			print warnmsg+"value \""+element+"\" was referenced but not defined."
 			failcount += 1
 		if strict and failcount:
-			raise CatalystError, "Total config errors: "+`failcount`+" - stopping."
+			raise MetroError, "Total config errors: "+`failcount`+" - stopping."
 
 	def require(self,mylist):
 		missing=self.settings.missing(mylist)
 		if missing:
-			raise CatalystError,"Missing required configuration values "+`missing`
+			raise MetroError,"Missing required configuration values "+`missing`
 
 	def recommend(self,mylist):
 		missing=self.settings.missing(mylist)
@@ -54,7 +54,7 @@ class target:
 			#if it exists, and is executable
 			if os.path.exists("%s/%s" % (x,myc)) and os.stat("%s/%s" % (x,myc))[0] & 0x0248:
 				return "%s/%s" % (x,myc)
-		raise CatalystError, "Can't find command "+myc
+		raise MetroError, "Can't find command "+myc
 
 	def __init__(self,settings):
 	
@@ -81,10 +81,10 @@ class target:
 			if badval:
 				# This code is here because tar has a retval of 1 for non-fatal warnings
 				if retval == badval:
-					raise CatalystError,myexc
+					raise MetroError,myexc
 			else:
 				if retval != 0:
-					raise CatalystError,myexc
+					raise MetroError,myexc
 		except:
 			raise
 
@@ -113,10 +113,10 @@ class chroot(target):
 		print "Running "+repr(key)+" in "+chrootdir+"..."
 
 		if not self.settings.has_key(key):
-			raise CatalystError, "exec_in_chroot: key \""+key+"\" not found."
+			raise MetroError, "exec_in_chroot: key \""+key+"\" not found."
 	
 		if type(self.settings[key]) != types.ListType:
-			raise CatalystError, "exec_in_chroot: key \""+key+"\" is not a multi-line element."
+			raise MetroError, "exec_in_chroot: key \""+key+"\" is not a multi-line element."
 
 		outfile = chrootdir+"/tmp/"+key+".sh"
 		outdir = os.path.dirname(outfile)
@@ -140,7 +140,7 @@ class chroot(target):
 		retval = spawn(cmds, env=self.env )
 
 		if retval != 0:
-			raise CatalystError, "Command failure: "+" ".join(cmds)
+			raise MetroError, "Command failure: "+" ".join(cmds)
 
 	def __init__(self,settings):
 		target.__init__(self,settings)
@@ -163,7 +163,7 @@ class chroot(target):
 			else:
 				ccdir="/root/.ccache"
 			if not os.path.isdir(ccdir):
-					raise CatalystError, "Compiler cache support can't be enabled (can't find "+ccdir+")"
+					raise MetroError, "Compiler cache support can't be enabled (can't find "+ccdir+")"
 			self.mounts.append("/var/tmp/ccache")
 			self.mountmap["/var/tmp/ccache"]=ccdir
 	
@@ -179,7 +179,7 @@ class chroot(target):
 			src=self.mountmap[x]
 			if os.system("/bin/mount --bind "+src+" "+self.settings["chrootdir"]+x) != 0:
 				self.unbind()
-				raise CatalystError,"Couldn't bind mount "+src
+				raise MetroError,"Couldn't bind mount "+src
 			    
 	
 	def unbind(self):
@@ -216,7 +216,7 @@ class chroot(target):
 			this to potentially prevent an upcoming bash stage cleanup script
 			from wiping our bind mounts.
 			"""
-			raise CatalystError,"Couldn't umount one or more bind-mounts; aborting for safety."
+			raise MetroError,"Couldn't umount one or more bind-mounts; aborting for safety."
 
 	def mount_safety_check(self):
 		mypath=self.settings["chrootdir"]
@@ -240,11 +240,11 @@ class chroot(target):
 					# try to umount stuff ourselves
 					self.unbind()
 					if ismount(mypath+x):
-						raise CatalystError, "Auto-unbind failed for "+x
+						raise MetroError, "Auto-unbind failed for "+x
 					else:
 						print "Auto-unbind successful..."
-				except CatalystError:
-					raise CatalystError, "Unable to auto-unbind "+x
+				except MetroError:
+					raise MetroError, "Unable to auto-unbind "+x
 
 class snapshot(target):
 	def __init__(self,settings):
@@ -347,12 +347,12 @@ class stage(chroot):
 		elif os.path.exists(self.settings["storedir/deststage"]):
 			print "Stage "+repr(self.settings["storedir/deststage"])+" already exists - skipping..."
 			return
-			#raise CatalystError,"Snapshot "+self.settings["storedir/snapshot"]+" already exists. Aborting."
+			#raise MetroError,"Snapshot "+self.settings["storedir/snapshot"]+" already exists. Aborting."
 
 		# look for required files
 		for loc in [ "storedir/srcstage", "storedir/snapshot" ]:
 			if not os.path.exists(self.settings[loc]):
-				raise CatalystError,"Required file "+self.settings[loc]+" not found. Aborting."
+				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
 
 		# BEFORE WE CLEAN UP - MAKE SURE WE ARE UNMOUNTED
 		self.kill_chroot_pids()
@@ -431,7 +431,7 @@ class stage(chroot):
 		try:
 			a=open(self.settings["chrootdir"]+"/etc/env.d/99zzcatalyst","w")
 		except:
-			raise CatalystError,"Couldn't open "+self.settings["chrootdir"]+"/etc/env.d/99zzcatalyst for writing"
+			raise MetroError,"Couldn't open "+self.settings["chrootdir"]+"/etc/env.d/99zzcatalyst for writing"
 		for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
 			if os.environ.has_key(x):
 				a.write(x+"=\""+os.environ[x]+"\"\n")
@@ -450,7 +450,7 @@ class stage(chroot):
 				#open to append locale entries
 				a=open(locfile,"w")
 			except:
-				raise CatalystError,"Couldn't open "+locfile+" for writing."
+				raise MetroError,"Couldn't open "+locfile+" for writing."
 			for line in self.settings["chroot/files/locale.gen"]:
 				a.write(line + "\n")
 			#all done writing out our locales/charmaps
@@ -517,7 +517,7 @@ class stage(chroot):
 			if os.path.isfile(self.settings["storedir/deststage"]):
 				self.cmd("rm -f "+self.settings["storedir/deststage"], "Could not remove existing file: "+self.settings["storedir/deststage"])
 			else:
-				raise CatalystError,"Can't remove existing "+self.settings["storedir/deststage"]+" - not a file. Aborting."
+				raise MetroError,"Can't remove existing "+self.settings["storedir/deststage"]+" - not a file. Aborting."
 
 		grabpath=os.path.normpath(self.settings["chrootdir"]+self.settings["ROOT"])
 		

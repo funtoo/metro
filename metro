@@ -47,9 +47,9 @@ def find_target(settings):
 	
 	"""
 	if not targets.__dict__.has_key(settings["metro/class"]):
-		raise CatalystError, "Metro class "+settings["metro/class"]+" not defined in modules/targets.py."
+		raise MetroError, "Metro class "+settings["metro/class"]+" not defined in modules/targets.py."
 	if type(targets.__dict__[settings["metro/class"]]) != types.ClassType:
-		raise CatalystError, "Metro class "+settings["metro/class"]+" does not appear to be a class."
+		raise MetroError, "Metro class "+settings["metro/class"]+" does not appear to be a class."
 	return targets.__dict__[settings["metro/class"]](settings)
 
 if __name__ == "__main__":
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 		print settings[expandme]
 		sys.exit(0)
 	if not settings.has_key("target"):
-		raise CatalystError("Please specify a target.")
+		raise MetroError("Please specify a target.")
 	
 	try:
 		target = find_target(settings)
@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
 		print "Catalyst complete."
 		print
-	except CatalystError:
+	except MetroError:
 		print "ERROR - exiting."
 		sys.exit(1)
 	except KeyboardInterrupt:
