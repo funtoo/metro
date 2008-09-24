@@ -85,7 +85,6 @@ if __name__ == "__main__":
 	verbose=False
 	myopts=[]
 	strict=True
-	replace=False
 
 	# check preconditions
 	if len(args) == 0:
@@ -105,9 +104,6 @@ if __name__ == "__main__":
 		elif opt in ("-V", "--version"):
 			version()
 			sys.exit(1)
-		elif opt == "--replace":
-			print "Warning: --replace option specified - any existing output stage will be replaced..."
-			replace=True
 		elif opt in ("-d", "--debug"):
 			debug=True
 			print "DEBUG: opts",opts
@@ -131,12 +127,6 @@ if __name__ == "__main__":
 	else:
 		print "Warning: /etc/metro/global.spec not found."
 	
-	if replace:	
-		if settings.has_key("options"):
-			settings["options"] = settings["options"] + " replace"
-		else:
-			settings["options"] = "replace"
-
 	# the new version of metro/catalyst does not have any configuration file
 	# parse command-line supplied configuration files and spec files in the order they were specified
 

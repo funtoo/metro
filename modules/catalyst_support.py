@@ -321,25 +321,6 @@ def process_exit_code(retval,throw_signals=False):
                         raise SystemExit()
                 return (retval & 0xff) << 8 # interrupted by signal
 
-
-def file_locate(settings,filelist,expand=1):
-	#if expand=1, non-absolute paths will be accepted and
-	# expanded to os.getcwd()+"/"+localpath if file exists
-	for myfile in filelist:
-		if not settings.has_key(myfile):
-			#filenames such as cdtar are optional, so we don't assume the variable is defined.
-			pass
-		else:
-		    if len(settings[myfile])==0:
-			    raise MetroError, "File variable \""+myfile+"\" has a length of zero (not specified.)"
-		    if settings[myfile][0]=="/":
-			    if not os.path.exists(settings[myfile]):
-				    raise MetroError, "Cannot locate specified "+myfile+": "+settings[myfile]
-		    elif expand and os.path.exists(os.getcwd()+"/"+settings[myfile]):
-			    settings[myfile]=os.getcwd()+"/"+settings[myfile]
-		    else:
-			    raise MetroError, "Cannot locate specified "+myfile+": "+settings[myfile]+" (2nd try)"
-
 def msg(mymsg,verblevel=1):
 	if verbosity>=verblevel:
 		print mymsg

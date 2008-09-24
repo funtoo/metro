@@ -48,8 +48,6 @@ EOF
 	repo ports /usr/portage
 ]
 
-
-
 # get $[version]
 
 metro --eval "$[version]" [collection]
@@ -70,4 +68,10 @@ metro --eval st
 
 Usage: metro [--collection x] [--eval "string"] TARGET...
 
+/etc/metro/collections/funtoo
+/etc/metro/collections/default -> funtoo
+
+funtoo:
+
+metro/sharedir: /usr/lib/metro
 
