@@ -2,7 +2,6 @@ storedir/srcstage: $[storedir]/$[subarch]/funtoo-$[subarch]-$[sourceversion]/$[s
 storedir/deststage: $[storedir]/$[subarch]/funtoo-$[subarch]-$[version]/$[target]-$[subarch]-$[version].tar.bz2 
 lastdate: << $[storedir]/$[subarch]/.control/lastdate
 profile: default/linux/$[arch]/2008.0
-USE: $[HOSTUSE]
 
 chroot/prerun: [
 	rm -f /etc/make.profile
@@ -78,6 +77,24 @@ chroot/postrun: [
 			emerge -C dev-util/ccache 
 		fi
 	fi
+]
+
+#an example use of the embedded python interpreter
+chroot/files/make.conf: [
+# These settings were set by the metro build script that automatically
+# built this stage.
+# Please consult /etc/make.conf.example for a more detailed example.
+<?python
+for opt in ["CFLAGS","CXXFLAGS","LDFLAGS","CHOST","ACCEPT_KEYWORDS"]:
+	if settings.has_key(opt) and settings[opt]!="":
+		print opt+'="'+self.settings[opt]+'"'
+combouse=[]
+if settings.has_key["USE"]
+	combouse += settings["USE"].split()
+if settings.has_key["HOSTUSE"]
+	combouse += settings["HOSTUSE"].split()
+print "USE=\""+" ".join(combouse)+"\""
+?>
 ]
 
 chroot/files/locale.gen: [

@@ -266,10 +266,9 @@ class snapshot(target):
 		elif self.settings["snapshot/type"] == "git":
 			git_newrepo = os.path.normpath(self.settings["workdir"]+"/portage")
 			git_clone = "clone "+self.settings["snapshot/path"]+" "+git_newrepo
-			git_checkout ="checkout "+self.settings["snapshot/branch"]
-			# clone repo, checkout branch
+			# switch to the branch we want in the original repo, clone repo (current branch in original will become the main branch in the clone)
+			self.cmd("{ cd "+self.settings["snapshot/path"]+"; "+self.bin("git") + " checkout " + self.settings["snapshot/branch"] + "; }")
 			self.cmd(self.bin("git") + " " + git_clone)
-			self.cmd("{ cd "+git_newrepo+"; "+self.bin("git") + " " + git_checkout + "; }")
 		else:
 			raise MetroError, "snapshot/type of \""+self.settings["snapshot/type"]+"\" not recognized."
 
@@ -468,7 +467,7 @@ class stage(chroot):
 		myf=open(self.settings["chrootdir"]+"/etc/make.conf","w")
 		myf.write("# These settings were set by the metro build script that automatically\n# built this stage.\n")
 		myf.write("# Please consult /etc/make.conf.example for a more detailed example.\n")
-		for opt in ["CFLAGS","CXXFLAGS","LDFLAGS","CBUILD","CHOST","ACCEPT_KEYWORDS","USE"]:
+		for opt in ["CFLAGS","LDFLAGS","CHOST","ACCEPT_KEYWORDS","USE"]:
 			if self.settings.has_key(opt):
 				if opt == "USE":
 					myf.write("USE=\""+self.settings["USE"] + " " + self.settings["HOSTUSE"]+"\"\n")
