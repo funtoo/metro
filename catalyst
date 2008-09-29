@@ -29,7 +29,7 @@ def version():
 
 def parse_config(myconfig):
 	# FOR COMPATIBILITY THIS IS GOOD - drobbins
-	for opt in [ "ccache", "distcc", "icecream", "kerncache", "pkgcache", "purge", "metadata_overlay", "envscript" ]:
+	for opt in [ "ccache" ]:
 		if opt in string.split(settings["options"]):
 			print opt,"support enabled."
 			settings[opt.upper()]="1"
