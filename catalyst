@@ -32,13 +32,20 @@ def version():
 	print __copyright__
 
 def parse_config(myconfig):
-	# FOR COMPATIBILITY THIS IS GOOD - drobbins
 	for opt in [ "ccache" ]:
 		if opt in string.split(settings["options"]):
 			print opt,"support enabled."
 			settings[opt.upper()]="1"
 
 def find_target(settings):
+	""" 
+	
+	Use the "metro/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
+	
+	The targets.__dict__ dictionary contains all the objects in the targets module. We look inside it to see if the class
+	defined in "metro/class" exists in there and is a class. If not, we raise an exception.
+	
+	"""
 	if not targets.__dict__.has_key(settings["metro/class"]):
 		raise CatalystError, "Metro class "+settings["metro/class"]+" not defined in modules/targets.py."
 	if type(targets.__dict__[settings["metro/class"]]) != types.ClassType:
@@ -87,7 +94,7 @@ if __name__ == "__main__":
 			usage()
 			sys.exit(1)
 		elif opt in ("-V", "--version"):
-			print "Catalyst version "+__version__
+			version()
 			sys.exit(1)
 		elif opt == "--replace":
 			print "Warning: --replace option specified - any existing output stage will be replaced..."

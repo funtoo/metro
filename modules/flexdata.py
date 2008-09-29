@@ -4,16 +4,33 @@ import sys,os,types
 
 """
 
-<<
+This module contains Metro's parsing code. It supports the following syntax:
+
+foo: bar
+
+... defines key "foo" to have value "bar". Multiple whitespace-separated values can be specified after
+"bar" if desired.
 
 foo: << bar
+
+... defines key "foo" to have the value of the contents of the file "bar" (all newlines removed)
 
 bar: [
 #!/bin/bash
 ls -l /
-mv $[foo] $[oni]
->> bar
+mv $[foo] $[bar]
+>> oni
 ]
+
+... defines key "bar" to have the multi-line value of a small shell script. The ">> onit" line inserts
+the multi-line contents of the variable "oni". On the "mv $[foo] $[bar]" line, the variables $[foo]
+and $[bar] will be expanded to the values of foo and bar, respectively.
+
+The parser is designed to eliminate side-effects. keys can be defined only once. The order of definition
+is not important, so the following snippet of code works fine:
+
+foo: $[bar]
+bar: hi there! 
 
 """
 
@@ -25,6 +42,18 @@ class FlexDataError(Exception):
 			print
 	
 class collection:
+	""" The collection class holds our parser.
+	
+	__init__() contains several important variable definitions.
+
+	self.immutable - if set to true, the parser will throw a warning if a variable is redefined. Otherwise it will not.
+	This variable can be toggled at any time, so a collection can start out in a mutable state and then be switched to
+	immutable for parsing of additional files.
+
+	self.lax = the "lax" option, if True, will allow for a undefined single-line variable to expand to the empty string.
+	If lax is False, then the parser will throw an exception if an undefined single-line variable is expanded.
+
+	"""
 	def __init__(self,debug=False):
 		self.clear()
 		self.debug=debug
@@ -39,10 +68,8 @@ class collection:
 
 	def clear(self):
 		self.raw={}
-
-		# self.evaluated holds our already-evaluated variables
-
 		self.evaluated={}
+		self.blanks={}
 
 	def expand_all(self):
 		# try to expand all variables to find any undefined elements, to record all blanks or throw an exception
