@@ -1,16 +1,21 @@
 #!/usr/bin/python -OO
 
-import os,sys,imp,string,getopt
-import pdb
+import os,sys,string,getopt
 
+__app__=os.path.basename(sys.argv[0])
+__author__="Daniel Robbins <drobbins@funtoo.org>"
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
-__version__="2112.0-funtoo"
+__copyright__="Copyright 2008 Funtoo Technologies, LLC; Copyright 2003-2007 Gentoo Foundation"
+
+__license__="GPL-2 - Distributed under the GNU General Public License version 2"
+__status__="Development"
+__version__="0.5"
 
 # we need to define this here because we need to add a module to our path so we can load the config file in /etc
 sharedir="/usr/lib/catalyst"
 
 def usage():
-	print "Usage catalyst [options] specfile1 [specfile2...]"
+	print "Usage:",__app__,"[options] specfile1 [specfile2...]"
 	print " -d --debug		enable debugging"
 	print " -h --help		print this help message"
 	print " -V --version		display version information"
@@ -19,13 +24,12 @@ def usage():
 	print "Usage examples:"
 	print
 	print "Using the specfile option (-f, --file) to build a stage target:"
-	print "catalyst stage1-specfile.spec"
+	print __app__,"stage1-specfile.spec"
 
 def version():
-	print os.path.basename(sys.argv[0])+" "+__version__
-	print
-	print " Copyright 2008 Funtoo Technologies, LLC; Copyright 2003-2007 Gentoo Foundation"
-	print " Distributed under the GNU General Public License version 2\n"
+	print __app__,__version__
+	print "Author:",__author__
+	print __copyright__
 
 def parse_config(myconfig):
 	# FOR COMPATIBILITY THIS IS GOOD - drobbins
@@ -75,7 +79,6 @@ if __name__ == "__main__":
 
 	expandme=None
 	for opt,optarg in opts:
-		print "DEBUG: OPTSTUFF",opt,optarg
 		if opt in ("-e","--expand"):
 			expandme=optarg
 		elif opt in ("-l","--lax"):

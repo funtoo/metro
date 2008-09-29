@@ -1,5 +1,5 @@
 
-import sys,string,os,types,re,signal,traceback,time
+import sys,string,os,types,re,signal,traceback
 #import md5,sha
 selinux_capable = False
 #userpriv_capable = (os.getuid() == 0)
