@@ -2,7 +2,6 @@ metro/class: stage
 ROOT: /
 source: stage1
 target: stage2 
-sourceversion: $[version]
 
 chroot/run: [
 	>> chroot/setup

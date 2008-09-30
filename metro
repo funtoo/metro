@@ -170,4 +170,5 @@ if __name__ == "__main__":
 		print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
 		print
 		print __app__,"aborting..."
+		raise
 		sys.exit(2)

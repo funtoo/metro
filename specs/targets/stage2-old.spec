@@ -1,5 +1,4 @@
 target: stage2
-sourceversion: $[version]
 
 chroot/run: [
 	>> chroot/setup

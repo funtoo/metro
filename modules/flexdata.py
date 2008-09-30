@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys,os,types
+import sys,os,types,StringIO
 
 """
 
@@ -212,14 +212,17 @@ class collection:
 				pos += 1
 				while (pos < len(multi)):
 					newsplit = multi[pos].split()
-					pos += 1
 					if len(newsplit) >= 1 and newsplit[0] == "?>":
 						break
-				exec mycode in { "settings" : self.settings }, mylocals
-				newlines += sys.stdout.getvalue().split('\n')
+					else:
+						mycode += multi[pos] + "\n"
+						pos += 1
+				exec mycode in { "settings" : self }, mylocals
+				newlines.append(sys.stdout.getvalue())
 				sys.stdout = sys.__stdout__
 			else:	
 				newlines.append(self.expandString(string=multi[pos]))
+			pos += 1
 		self.evaluated[myvar] = newlines
 		return newlines
 

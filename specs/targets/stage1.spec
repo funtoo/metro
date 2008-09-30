@@ -2,7 +2,6 @@ metro/class: stage
 ROOT: /tmp/stage1root
 source: stage3
 target: stage1 
-sourceversion: $[lastdate]
 
 chroot/pythonjunk: [
 #!/usr/bin/python

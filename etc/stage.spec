@@ -1,6 +1,8 @@
-storedir/srcstage: $[storedir]/$[subarch]/funtoo-$[subarch]-$[sourceversion]/$[source]-$[subarch]-$[sourceversion].tar.bz2 
+storedir/srcstage: $[storedir]/$[source/subarch]/funtoo-$[source/subarch]-$[source/lastdate]/$[source]-$[source/subarch]-$[source/lastdate].tar.bz2 
 storedir/deststage: $[storedir]/$[subarch]/funtoo-$[subarch]-$[version]/$[target]-$[subarch]-$[version].tar.bz2 
-lastdate: << $[storedir]/$[subarch]/.control/lastdate
+controldir: $[storedir]/$[subarch]/.control
+source/lastdate: << $[controldir]/lastdate
+source/subarch: << $[controldir]/subarch
 profile: default/linux/$[arch]/2008.0
 
 chroot/prerun: [
@@ -87,11 +89,11 @@ chroot/files/make.conf: [
 <?python
 for opt in ["CFLAGS","CXXFLAGS","LDFLAGS","CHOST","ACCEPT_KEYWORDS"]:
 	if settings.has_key(opt) and settings[opt]!="":
-		print opt+'="'+self.settings[opt]+'"'
+		print opt+'="'+settings[opt]+'"'
 combouse=[]
-if settings.has_key["USE"]
+if settings.has_key("USE"):
 	combouse += settings["USE"].split()
-if settings.has_key["HOSTUSE"]
+if settings.has_key("HOSTUSE"):
 	combouse += settings["HOSTUSE"].split()
 print "USE=\""+" ".join(combouse)+"\""
 ?>

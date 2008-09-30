@@ -1,6 +1,6 @@
 snapshot/type: git
 snapshot/path: /root/git/portage-new
-snapshot/branch: master
+snapshot/branch: gentoo.org
 portname: portage
 emerge/packages: 
 USE: 

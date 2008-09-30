@@ -3,7 +3,6 @@ source: stage3
 target: mystuff
 ROOT: /
 rootdir: $[workdir]
-sourceversion: $[version]
 
 chroot/run: [
 	>> chroot/setup
