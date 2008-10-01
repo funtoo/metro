@@ -1,7 +1,7 @@
 metro/class: stage
 source: stage2
-source/lastdate: << $[version]
-source/subarch: << $[subarch]
+source/lastdate: $[version]
+source/subarch: $[subarch]
 target: stage3
 ROOT: /
 
