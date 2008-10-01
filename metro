@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "ldhvVe", ["lax","debug","help", "verbose", "version","expand"])
+		opts,args = getopt.getopt(sys.argv[1:], "ldhvVe:", ["lax","debug","help", "verbose", "version","expand"])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -95,6 +95,8 @@ if __name__ == "__main__":
 	expandme=None
 	for opt,optarg in opts:
 		if opt in ("-e","--expand"):
+			print "DOING VARIABLE EXPANSION"
+			print "DEBUG: opt, optarg", opt, optarg
 			expandme=optarg
 		elif opt in ("-l","--lax"):
 			strict=False		
@@ -165,7 +167,7 @@ if __name__ == "__main__":
 		print
 	except MetroError:
 		print "ERROR - exiting."
-		sys.exit(1)
+		raise
 	except KeyboardInterrupt:
 		print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
 		print

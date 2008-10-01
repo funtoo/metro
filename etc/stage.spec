@@ -1,8 +1,6 @@
 storedir/srcstage: $[storedir]/$[source/subarch]/funtoo-$[source/subarch]-$[source/lastdate]/$[source]-$[source/subarch]-$[source/lastdate].tar.bz2 
 storedir/deststage: $[storedir]/$[subarch]/funtoo-$[subarch]-$[version]/$[target]-$[subarch]-$[version].tar.bz2 
 controldir: $[storedir]/$[subarch]/.control
-source/lastdate: << $[controldir]/lastdate
-source/subarch: << $[controldir]/subarch
 profile: default/linux/$[arch]/2008.0
 
 chroot/prerun: [
@@ -58,6 +56,30 @@ chroot/setup: [
 		! [ -e /usr/bin/ccache ] && emerge --oneshot --nodeps ccache
 		export CCACHE_DIR=/var/tmp/ccache
 		export FEATURES="ccache"
+
+		# The ccache ebuild has a bug where it will install links in /usr/lib/ccache/bin to reflect the current setting of CHOST.
+		# But the current setting of CHOST may not reflect the current compiler available (remember, CHOST can be overridden in /etc/make.conf)
+		
+		# This causes problems with ebuilds (such as ncurses) who may find an "i686-pc-linux-gnu-gcc" symlink in /usr/lib/ccache/bin and 
+		# assume that an "i686-pc-linux-gnu-gcc" compiler is actually installed, when we really have an i486-pc-linux-gnu-gcc compiler 
+		# installed. For some reason, ncurses ends up looking for the compiler in /usr/bin and it fails - no compiler found.
+
+		# It's a weird problem but the next few ccache-config lines takes care of it by removing bogus ccache symlinks and installing
+		# valid ones that reflect the compiler that is actually installed on the system - so if ncurses sees an "i686-pc-linux-gnu-gcc"
+		# in /usr/lib/ccache/bin, it looks for (and finds)  a real i686-pc-linux-gnu-gcc installed in /usr/bin.
+
+		# I am including these detailed notes so that people are aware of the issue and so we can look for a more elegant solution to
+		# this problem in the future. This problem crops up when you are using an i486-pc-linux-gnu CHOST stage3 to create an 
+		# i686-pc-linux-gnu CHOST stage1. It will probably crop up whenever the CHOST gets changed. For now, it's fixed :)
+
+		for x in i386 i486 i586 i686 x86_64
+		do
+			ccache-config --remove-links $x-pc-linux-gnu
+		done
+		gccprofile="`gcc-config -c`"
+		gccchost=`gcc-config -S $gccprofile | cut -f1 -d" "`
+		echo "Setting ccache links to: $gccchost"
+		ccache-config --install-links $gccchos
 	fi
 	>> chroot/probe
 ]
@@ -91,6 +113,7 @@ for opt in ["CFLAGS","CXXFLAGS","LDFLAGS","CHOST","ACCEPT_KEYWORDS"]:
 	if settings.has_key(opt) and settings[opt]!="":
 		print opt+'="'+settings[opt]+'"'
 combouse=[]
+# Make sure our USE= setting in /etc/make.conf contains the values from HOSTUSE *and* USE
 if settings.has_key("USE"):
 	combouse += settings["USE"].split()
 if settings.has_key("HOSTUSE"):

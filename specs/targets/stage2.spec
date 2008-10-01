@@ -1,6 +1,8 @@
 metro/class: stage
 ROOT: /
 source: stage1
+source/lastdate: $[version]
+source/subarch: $[subarch]
 target: stage2 
 
 chroot/run: [
