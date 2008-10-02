@@ -64,5 +64,6 @@ fi
 export ROOT="$[ROOT]"
 install -d $[ROOT]
 #emerge baselayout || exit 1
-emerge --noreplace --oneshot $[emerge/options] ${buildpkgs} || exit 1
+# removing emerge/options for now because some source stages don't support --jobs yet
+emerge --noreplace --oneshot ${buildpkgs} || exit 1
 ]
