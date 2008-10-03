@@ -1,4 +1,5 @@
 # /etc/catalyst.conf
+specdir: /usr/lib/metro/specs
 distdir: /usr/portage/distfiles
 options: ccache
 storedir: /home/mirror/linux
