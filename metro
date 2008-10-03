@@ -3,49 +3,45 @@
 import os,sys,string,getopt
 
 __app__=os.path.basename(sys.argv[0])
-__author__="Daniel Robbins <drobbins@funtoo.org>"
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
-__copyright__="Copyright 2008 Funtoo Technologies, LLC; Copyright 2003-2007 Gentoo Foundation"
 
-__license__="GPL-2 - Distributed under the GNU General Public License version 2"
+__license__=""" Distributed under the terms of the GNU General Public License version 2
+ Metro comes with ABSOLUTELY NO WARRANTY; This is free software, and you are welcome to
+ redistribute it under certain conditions. See /usr/lib/metro/LICENSE for details.
+"""
 __status__="Development"
-__version__="0.5"
+__version__="iteration 1 version 0.5 (1.0.5)"
 
 # we need to define this here because we need to add a module to our path so we can load the config file in /etc
 sharedir="/usr/lib/metro"
 
 def usage():
-	print "Usage:",__app__,"[options] specfile1 [specfile2...]"
-	print " -d --debug		enable debugging"
-	print " -h --help		print this help message"
-	print " -V --version		display version information"
-	print " -v --verbose		verbose output"
-	print
-	print "Usage examples:"
-	print
-	print "Using the specfile option (-f, --file) to build a stage target:"
-	print __app__,"stage1-specfile.spec"
+	version()
+	print """ metro [OPTION]... [FILE]...
+
+ -h, --help			Print this message
+ -V, --version			Display version information
+ 
+ -d, --debug			Enable debug mode
+ -v, --verbose			Verbose mode
+ -l, --lax			Lax variable expansion
+ 
+ -k [key], --key [key]		Print value of [key], ie. "distfiles"
+ -e [string], --eval [string]	Evaluate string, ie. '$[distfiles]' (remember to use single-quotes)
+
+ [FILE]				File(s) to parse and evaluate
+"""
 
 def version():
-	print __app__,__version__
-	print "Author:",__author__
-	print __copyright__
-
-def parse_config(myconfig):
-	"""
-		options: ccache
-
-		Enables ccache support. The gentoo stage class will mount /root/.ccache to /var/tmp/ccache.
-		The rest (emerging ccache, etc.) is up to the spec file recipe to do.
-
-		options: replace
-
-		Will cause snapshots and stages to be regenerated (any existing ones that might have been used
-		in storedir are deleted.).
-	"""
-	for opt in [ "ccache", "replace" ]:
-		if opt in string.split(settings["options"]):
-			print opt,"support enabled."
+	print " "+__app__,"-",__version__
+	print
+	print " Copyright 2008 Funtoo Technologies, LLC; Portions copyright 2003-2007 Gentoo Foundation"
+	print " Maintainer:",__maintainer__
+	print
+	print " Web: http://www.funtoo.org"
+	print " Project: http://github.com/funtoo/metro/wikis"
+	print
+	print __license__
 
 def find_target(settings):
 	""" 
@@ -63,7 +59,6 @@ def find_target(settings):
 	return targets.__dict__[settings["metro/class"]](settings)
 
 if __name__ == "__main__":
-	version()
 	if os.getuid() != 0:
 		print __app__ + ": This script requires root privileges to operate."
 		sys.exit(2)
@@ -75,7 +70,7 @@ if __name__ == "__main__":
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "ldhvVe:", ["lax","debug","help", "verbose", "version","expand"])
+		opts,args = getopt.getopt(sys.argv[1:], "ldhvxVk:e:", ["lax","debug","help", "verbose", "version","key=","eval="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -87,31 +82,53 @@ if __name__ == "__main__":
 	strict=True
 
 	# check preconditions
-	if len(args) == 0:
-		print __app__+": please specify at least one file to read\n"
-		usage()
-		sys.exit(2)
 
-	expandme=None
+	valueme=None
+	evalme=None
+	optdict={}
 	for opt,optarg in opts:
-		if opt in ("-e","--expand"):
-			print "DOING VARIABLE EXPANSION"
-			print "DEBUG: opt, optarg", opt, optarg
-			expandme=optarg
-		elif opt in ("-l","--lax"):
-			strict=False		
-		elif opt in ("-h","--help"):
-			usage()
-			sys.exit(1)
-		elif opt in ("-V", "--version"):
-			version()
-			sys.exit(1)
-		elif opt in ("-d", "--debug"):
-			debug=True
-			print "DEBUG: opts",opts
-			print "DEBUG: args",args
-		elif opt in ("-v","--verbose"):
-			verbose=True
+		optdict[opt]=optarg
+
+	# Step 1: check for "special" help/version options, handle them and exit:
+
+	if optdict.has_key("-h") or optdict.has_key("--help"):
+		usage()
+		sys.exit(1)
+	elif optdict.has_key("-V") or optdict.has_key("--version"):
+		version()
+		sys.exit(1)
+
+	# Step 2: parse optional arguments that affect behavior of the program
+
+	if optdict.has_key("-l") or optdict.has_key("--lax"):
+		strict=False
+	if optdict.has_key("-d") or optdict.has_key("--debug"):
+		debug=True
+	if optdict.has_key("-v") or optdict.has_key("--verbose"):
+		verbose=True
+
+	# Step 3: check for duplicate main options, which is an error
+
+	mainargs=0
+	for x in [ "-k", "--key", "-e", "--eval" ]:
+		if optdict.has_key(x):
+			mainargs += 1
+	if mainargs > 1:
+		print "Please specify only one -k, --key, -e or --eval option at a time."
+		sys.exit(1)
+
+	# Step 4: parse main options
+
+	if optdict.has_key("-k") or optdict.has_key("--key"):
+		if optdict.has_key("-k"):
+			valueme=optdict["-k"]
+		else:
+			valueme=optdict["--key"]
+	if optdict.has_key("-e") or optdict.has_key("--eval"):
+		if optdict.has_key("-e"):
+			evalme=optdict["-e"]
+		else:
+			evalme=optdict["--eval"]
 
 	# import configuration file and import our main module using those settings
 	sys.path.append(sharedir+"/modules")
@@ -124,7 +141,6 @@ if __name__ == "__main__":
 	settings["sharedir"]=sharedir
 
 	if os.path.exists("/etc/metro/global.spec"):
-		print "Reading in configuration from /etc/metro/global.spec..."
 		settings.collect("/etc/metro/global.spec")
 	else:
 		print "Warning: /etc/metro/global.spec not found."
@@ -134,8 +150,11 @@ if __name__ == "__main__":
 
 	for arg in args:
 		settings.collect(arg)
-	if expandme:
-		print settings[expandme]
+	if valueme:
+		print settings[valueme]
+		sys.exit(0)
+	elif evalme:
+		print settings.expandString(string=evalme)
 		sys.exit(0)
 	if not settings.has_key("target"):
 		raise MetroError("Please specify a target.")
