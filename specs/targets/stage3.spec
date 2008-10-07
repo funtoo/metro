@@ -4,16 +4,6 @@
 class: stage
 subarch: $[subarch]
 version: 2008.10.10
-
-[section source]
-
-: stage2
-version: $[target/version]
-subarch: $[subarch]
-
-[section chroot]
-
-ROOT: /
 run: [
 	>> files/setup
 	USE="build" emerge --oneshot --nodeps portage || exit 1
@@ -24,3 +14,15 @@ run: [
 		emerge $[emerge/options] $[emerge/packages] || exit 1
 	fi
 ]
+
+[section source]
+
+: stage2
+version: $[target/version]
+subarch: $[subarch]
+
+[section portage]
+
+ROOT: /
+
+
