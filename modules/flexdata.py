@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-import sys,os,types,StringIO
+import sys,os,types,StringIO,string
 
 """
+BUG: EMBEDDED PYTHON MAY EXPAND VARIABLES THAT ARE NOT DEFINED YET
 
 This module contains Metro's parsing code. It supports the following syntax:
 
@@ -71,10 +72,12 @@ class collection:
 		self.immutable=False
 		# lax means: if a key isn't found, pretend it exists but return the empty string.
 		self.lax=True
+		self.laxstring="[BLANK var=%s]"
 		self.blanks={}
 		# self.collected holds the names of files we've collected (parsed)
 		self.collected=[]
-
+		self.section=""
+		self.sectionfor={}
 	def clear(self):
 		self.raw={}
 		self.evaluated={}
@@ -96,7 +99,7 @@ class collection:
 		elif self.lax:
 			# record that we looked up an undefined element
 			self.blanks[myvar]=True
-			return ""
+			return self.laxstring % myvar
 		else:
 			raise FlexDataError,"Variable \""+myvar+"\" not found"
 
@@ -133,11 +136,19 @@ class collection:
 				unex = ""
 				continue
 			ex += unex[0:varpos]
-			unex = unex[varpos+len(self.pre):] # remove "${"
+			unex = unex[varpos+len(self.pre):] # remove "$["
 			endvarpos = unex.find(self.suf)
 			if endvarpos == -1:
 				raise KeyError,"Error expanding variable for '"+string+"'"
 			varname = unex[0:endvarpos]
+			self.sectionfor[varname] = self.section
+			# $[] expansion
+			# FIXME
+			if varname == "":
+				if self.sectionfor.has_key(myvar):
+					varname = self.sectionfor[myvar]
+				else:
+					raise FlexDataError, "no section name for "+myvar+" in "+string
 			unex = unex[endvarpos+len(self.suf):]
 			if varname in stack:
 				raise KeyError, "Circular reference of '"+varname+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
@@ -159,6 +170,7 @@ class collection:
 				else:
 					# record variables that we attempted to expand but were blank, so we can inform the user of possible bugs
 					self.blanks[varname] = True
+					ex += self.laxstring % varname
 		if fromfile == False:
 			self.evaluated[myvar] = ex
 			return ex
@@ -182,7 +194,6 @@ class collection:
 		# Expand all variables in a multi-line value. stack is used internally to detect circular references.
 		if self.debug:
 			print "DEBUG: in expandMulti"
-	
 		if self.evaluated.has_key(myvar):
 			element = self.evaluated[myvar]
 			if type(element) != types.ListType:
@@ -193,7 +204,11 @@ class collection:
 			if type(multi) != types.ListType:
 				raise FlexDataError("expandMulti received non-multi")
 		else:
-			raise FlexDataError("referenced variable \""+myvar+"\" not found")
+			if self.lax:
+				self.blanks[myvar] = True
+				return [self.laxstring % myvar]
+			else:
+				raise FlexDataError("referenced variable \""+myvar+"\" not found")
 
 		newlines=[]
 
@@ -217,7 +232,7 @@ class collection:
 					else:
 						mycode += multi[pos] + "\n"
 						pos += 1
-				exec mycode in { "settings" : self }, mylocals
+				exec mycode in { "settings" : self, "os": os }, mylocals
 				newlines.append(sys.stdout.getvalue())
 				sys.stdout = sys.__stdout__
 			else:	
@@ -257,8 +272,6 @@ class collection:
 		return missing
 
 	def debugdump(self,desc=""):
-		print
-		print "DEBUG: "+desc
 		for key in self.keys():
 			print key, self[key]
 		print
@@ -314,6 +327,8 @@ class collection:
 				print "DEBUG: MULTI-LINE BLOCK"
 			# for myvar, remove trailing colon:
 			myvar = mysplit[0][:-1]
+			if self.section:
+				myvar = self.section+"/"+myvar
 			mylines = []
 			while 1:
 				curline = openfile.readline()
@@ -331,9 +346,25 @@ class collection:
 				else:
 					# append new line
 					mylines.append(curline[:-1])
+		elif mysplit[0][0]=="[" and mysplit[-1][-1]=="]":
+			# possible section
+			mysplit[0] = mysplit[0][1:]
+			mysplit[-1] = mysplit[-1][:-1] 
+			mysection=string.join(mysplit).split()
+			if len(mysection) != 2:
+				raise FlexDataError,"Invalid section specifier: "+curline[:-1]
+			if mysection[0] != "section":
+				raise FlexDataError,"Expected \"section\" in: "+curline[:-1]
+			self.section = mysection[1]
 		elif mysplit[0][-1] == ":":
 			#basic element - rejoin all data elements with spaces and add to self.raw
 			mykey = mysplit[0][:-1]
+			if mykey == "":
+				# ":" tag
+				mykey = self.section
+			elif self.section:
+				mykey = self.section+"/"+mykey
+			self.sectionfor[mykey]=self.section
 			if not dups and self.raw.has_key(mykey):
 				raise FlexDataError,"Error - \""+mykey+"\" already defined."
 			self.raw[mykey] = " ".join(mysplit[1:])
@@ -345,7 +376,7 @@ class collection:
 		if not os.path.isfile(filename):
 			raise IOError, "File to be parsed '"+filename+"' is not a regular file."
 		openfile = open(filename,"r")
-
+		self.section=""
 		while 1:
 			out=self.parseline(openfile)
 			if out == None:
@@ -355,10 +386,9 @@ class collection:
 		self.collected.append(os.path.normpath(filename))
 	
 if __name__ == "__main__":
-	coll = collection(debug=True)
+	coll = collection(debug=False)
 	for arg in sys.argv[1:]:
 		coll.collect(arg)
-	print coll.raw
 	coll.debugdump()
 	sys.exit(0)
 

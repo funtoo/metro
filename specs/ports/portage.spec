@@ -8,12 +8,10 @@ branch: gentoo.org
 [section portage]
 
 USE: 
-keyword/prefix:
-ACCEPT_KEYWORDS: $[keyword/prefix]$[arch]
-profile: default/linux/$[arch]/2008.0
+prefix:
+ACCEPT_KEYWORDS: $[portage/prefix]$[subarch]
+profile: default/linux/$[subarch/arch]/2008.0
 
 [section emerge]
 
 packages: 
-options: 
-
