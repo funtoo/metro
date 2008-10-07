@@ -258,30 +258,10 @@ class snapshot(target):
 			return
 		else:
 			print self.settings["storedir/snapshot"],"does not exist - creating it..."
-	
-		if self.settings["snapshot/type"] == "rsync":
-			rsync_opts = "-a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/"
-			rsync_cmd = self.bin("rsync") + " " + rsync_opts + " " + os.path.normpath(self.settings["snapshot/path"])+"/ " + os.path.normpath(self.settings["workdir"]+"/portage")+"/"
-			self.cmd(rsync_cmd,"Snapshot failure")
-		elif self.settings["snapshot/type"] == "git":
-			git_newrepo = os.path.normpath(self.settings["workdir"]+"/portage")
-			git_clone = "clone "+self.settings["snapshot/path"]+" "+git_newrepo
-			# switch to the branch we want in the original repo, clone repo (current branch in original will become the main branch in the clone)
-			self.cmd("{ cd "+self.settings["snapshot/path"]+"; "+self.bin("git") + " checkout " + self.settings["snapshot/branch"] + "; }")
-			self.cmd(self.bin("git") + " " + git_clone)
-		else:
-			raise MetroError, "snapshot/type of \""+self.settings["snapshot/type"]+"\" not recognized."
 
-		# the rest of the code is the same for git and rsync
-		outfile=os.path.dirname(self.settings["storedir/snapshot"])+"/."+os.path.basename(self.settings["storedir/snapshot"])
-		try:
-			self.cmd( self.bin("tar") + " --exclude .git -cjf " + outfile +" -C "+self.settings["workdir"]+" portage","Snapshot creation failure")
-		except:
-			# clean up if there is a problem of any kind so we don't leave stray tempfiles, then reraise exception
-			self.cmd( self.bin("rm -f") + " " + outfile )
-			raise
-		self.cmd( self.bin("mv") + " " + outfile + " " + self.settings["storedir/snapshot"], "Couldn't move snapshot to final position" )
-
+		# TODO - add check to ensure that run/rysnc or run/git has been defined, here or in constructor
+		self.exec("run/"+self.settings["snapshot/type"])
+		#raise MetroError, "snapshot/type of \""+self.settings["snapshot/type"]+"\" not recognized."
 		# workdir cleanup is handled by catalyst calling our cleanup() method
 
 class stage(chroot):
@@ -298,22 +278,8 @@ class stage(chroot):
 
 		self.require(["ROOT","target","source","arch","subarch","profile","storedir/srcstage","storedir/deststage","storedir/snapshot","CHOST"])
 		
-		# look for user-specified USE, if none specified then fallback to HOSTUSE if specified
-		if not self.settings.has_key("USE"):
-			if self.settings.has_key("HOSTUSE"):
-				self.settings["USE"]="$[HOSTUSE]"
-
 		# If distdir, USE or CFLAGS not specified, alert the user that they might be missing them
 		self.recommend(["distdir","USE","CFLAGS","MAKEOPTS"])
-
-		# We also use an initial "~" as a trigger to build an unstable version of the portage tree. This
-		# means we need to use ~arch rather than arch in ACCEPT_KEYWORDS. So if someone specified "~pentium4"
-		# as subarch, we would set ACCEPT_KEYWORDS to "~x86" and later write this into make.conf.
-		
-		if self.settings["subarch"][0] == "~":
-			self.settings["ACCEPT_KEYWORDS"] = "~"+self.settings["arch"]
-		else:
-			self.settings["ACCEPT_KEYWORDS"] = self.settings["arch"]
 
 		# DEFINE GENTOO MOUNTS
 
@@ -357,12 +323,10 @@ class stage(chroot):
 			print "Removing existing temporary work directory..."
 			self.cmd( self.bin("rm") + " -rf " + self.settings["workdir"] )
 		try:
-
-			self.unpack()
+			self.mount_safety_check()
+			self.exec("unpack")
+			self.exec("unpack/post")
 			self.unpack_snapshot()
-
-			# network config, etc.
-			self.chroot_setup()
 
 			self.bind()
 
@@ -391,122 +355,7 @@ class stage(chroot):
 
 		# Now, grab the fruits of our labor.
 		self.capture()
-
-	def unpack(self):
-		unpack_cmd=self.bin("tar")+" xjpf "+self.settings["storedir/srcstage"]+" -C "+self.settings["chrootdir"]
-		
-		self.mount_safety_check()
-			
-		if not os.path.exists(self.settings["chrootdir"]):
-			os.makedirs(self.settings["chrootdir"])
-
-		# Ensure /tmp exists in chroot - may not be required anymore
-		if not os.path.exists(self.settings["chrootdir"]+"/tmp"):
-			os.makedirs(self.settings["chrootdir"]+"/tmp",1777)
-			
-		self.cmd(unpack_cmd,"Error unpacking source stage.")
-
-	def unpack_snapshot(self):
-		destdir=os.path.normpath(self.settings["chrootdir"]+"/usr/portage")
-		cleanup_errmsg="Error removing existing snapshot directory."
-		cleanup_msg="Cleaning up existing portage tree (This can take a long time) ..."
-		unpack_cmd="tar xjpf "+self.settings["storedir/snapshot"]+" -C "+self.settings["chrootdir"]+"/usr"
-		unpack_errmsg="Error unpacking snapshot"
 	
-		if not os.path.exists(destdir):
-			os.makedirs(destdir,0755)
-		    	
-		print "Unpacking \""+self.settings["storedir/snapshot"]+" ..."
-		self.cmd(unpack_cmd,unpack_errmsg)
-
-	def proxy_config(self):
-		# SETUP PROXY SETTINGS - ENVSCRIPT DOESN'T ALWAYS WORK. THIS DOES.
-		print "Writing out proxy settings..."
-		try:
-			a=open(self.settings["chrootdir"]+"/etc/env.d/99zzmetro","w")
-		except:
-			raise MetroError,"Couldn't open "+self.settings["chrootdir"]+"/etc/env.d/99zzmetro for writing"
-		for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
-			if os.environ.has_key(x):
-				a.write(x+"=\""+os.environ[x]+"\"\n")
-			else:
-				a.write("# "+x+" is not set\n")
-		a.close()
-	
-	def locale_config(self):
-		if self.settings.has_key("chroot/files/locale.gen"):
-			print "Configuring locale.gen..."
-			if self.settings.has_key("ROOT") and self.settings["ROOT"] != "/":
-				locfile=self.settings["chrootdir"]+"/etc/locale.gen"
-			else:
-				locfile=self.settings["chrootdir"]+self.settings["ROOT"]+"/etc/locale.gen"
-			try:
-				#open to append locale entries
-				a=open(locfile,"w")
-			except:
-				raise MetroError,"Couldn't open "+locfile+" for writing."
-			for line in self.settings["chroot/files/locale.gen"]:
-				a.write(line + "\n")
-			#all done writing out our locales/charmaps
-			a.close()
-		else:
-			print "Warning: chroot/files/locale.gen not found, not configuring..."
-
-	def network_config(self):
-		# Copy over /etc/resolv.conf and /etc/hosts from our root filesystem since we may need them for network connectivity.
-		# Back up original files.
-		for file in [ "/etc/resolv.conf", "/etc/hosts" ]:
-			respath=self.settings["chrootdir"]+file
-			if os.path.exists(file):
-				if os.path.exists(respath):
-					self.cmd("/bin/cp "+respath+" "+respath+".orig","Couldn't back up "+file)
-				self.cmd("/bin/cp "+file+" "+respath,"Couldn't copy "+file+" into place.")
-
-	def portage_config(self):
-		self.cmd("/bin/rm -f "+self.settings["chrootdir"]+"/etc/make.conf","Could not remove "+self.settings["chrootdir"]+"/etc/make.conf")
-		myf=open(self.settings["chrootdir"]+"/etc/make.conf","w")
-		myf.write("# These settings were set by the metro build script that automatically\n# built this stage.\n")
-		myf.write("# Please consult /etc/make.conf.example for a more detailed example.\n")
-		for opt in ["CFLAGS","LDFLAGS","CHOST","ACCEPT_KEYWORDS","USE"]:
-			if self.settings.has_key(opt):
-				if opt == "USE":
-					myf.write("USE=\""+self.settings["USE"] + " " + self.settings["HOSTUSE"]+"\"\n")
-				else:
-					myf.write(opt+'="'+self.settings[opt]+'"\n')
-		myf.close()
-
-	def chroot_setup(self):
-		print "Setting up chroot..."
-		self.proxy_config()
-		self.locale_config()
-		self.network_config()
-		self.portage_config()
-	
-	def chroot_cleanup(self):
-
-		# Philosophy: Metro/Catalyst should only do the bare minimum cleanup in Python. The bulk of the cleanup work should be defined in
-		# the spec file so that it is not hard-coded into the Metro tool itself.
-
-	    	# We only need to clean the following things if we were merging to our own filesystem: (ROOT=="/"). Otherwise cleanup is not
-		# necessary as these changes won't get stuck inside our stage tarball.
-		
-		if self.settings["ROOT"]=="/":
-
-			for x in ["/etc/profile.env","/etc/csh.env","/etc/env.d/99zzmetro"]:
-				if os.path.exists(self.settings["chrootdir"]+x):
-					print "Cleaning chroot: "+x+"... " 
-					self.cmd("rm -f "+self.settings["chrootdir"]+x)
-
-			for file in [ "/etc/resolv.conf", "/etc/hosts" ]:
-				if os.path.exists(self.settings["chrootdir"]+file):
-					# remove our copy
-					self.cmd("rm -f "+self.settings["chrootdir"]+file)
-				if os.path.exists(self.settings["chrootdir"]+file+".orig"):
-					# restore original if it exists
-					self.cmd("mv -f "+self.settings["chrootdir"]+file+".orig "+self.settings["chrootdir"]+file, "Couldn't restore "+file)
-
-		# Run our "clean" bash script, which should do all of the heavy lifting...
-
 	def capture(self):
 		"""capture target in a tarball"""
 		# IF TARGET EXISTS, REMOVE IT - WE WILL CREATE A NEW ONE

@@ -1,14 +1,21 @@
-metro/class: stage
-source: stage2
-source/lastdate: $[version]
-source/subarch: $[subarch]
-target: stage3
-ROOT: /
+[section target]
 
-chroot/run: [
-	>> chroot/setup
-	export USE="$[USE] bindist"
+: stage3
+class: stage
+
+[section source]
+
+: stage2
+version: $[target/version]
+subarch: $[target/subarch]
+
+[section chroot]
+
+ROOT: /
+run: [
+	>> files/setup
 	USE="build" emerge --oneshot --nodeps portage || exit 1
+	export USE="$[portage/USE] $[arch/HOSTUSE] bindist"
 	emerge $[emerge/options] -e system || exit 1
 	if [ "$[emerge/packages]" != "" ]
 	then
