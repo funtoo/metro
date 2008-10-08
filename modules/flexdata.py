@@ -273,7 +273,14 @@ class collection:
 
 	def debugdump(self,desc=""):
 		for key in self.keys():
-			print key, self[key]
+			if type(self[key]) == types.ListType:
+				pos = 0
+				for line in self[key]:
+					print key+".%04d" % pos,
+					print line
+					pos += 1
+			else:
+				print key, self[key]
 		print
 
 	def skipblock(self,openfile=None):
