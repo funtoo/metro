@@ -173,7 +173,6 @@ class collection:
 			varname = unex[0:endvarpos]
 			# $[] expansion
 			if varname == "" or varname == ":":
-				print "DEBUG: expanding $[] or $[:]",self.sectionfor[myvar]
 				if self.sectionfor.has_key(myvar):
 					varname = self.sectionfor[myvar]
 				else:
@@ -396,12 +395,11 @@ class collection:
 				self.section = mysection[1]
 				# clear conditional:
 				self.conditional = None
-				print "DEBUG: cleared conditional"
 			elif mysection[0] == "when":
-				print "DEBUG: when", mysection
 				# conditional block
 				self.conditional=" ".join(mysection[1:])
-				print "DEBUG: set conditional to",self.conditional
+				if self.conditional == "*":
+					self.conditional = None
 			else:
 				raise FlexDataError,"Invalid annotation: %s in %s" % (mysection[0], curline[:-1])
 		elif mysplit[0][-1] == ":":
