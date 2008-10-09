@@ -1,11 +1,12 @@
 [section target]
 
-: stage3
 class: stage
-subarch: $[subarch]
-version: 2008.10.10
-run: [
-	>> files/setup
+# name is used in /etc/metro.conf for pathing constructs :) ! cool
+name: $[]-$[target/subarch]-$[target/version]
+#require: portage/ROOT target source subarch/arch subarch portage/profile path/mirror/srcstage path/mirror/deststage path/mirror/snapshot subarch/CHOST 
+#recommend: path/distfiles portage/USE subarch/CFLAGS portage/MAKEOPTS  
+
+run: 	>> files/setup
 	USE="build" emerge --oneshot --nodeps portage || exit 1
 	export USE="$[portage/USE] $[subarch/HOSTUSE] bindist"
 	emerge $[emerge/options] -e system || exit 1
@@ -19,7 +20,7 @@ run: [
 
 : stage2
 version: $[target/version]
-subarch: $[subarch]
+subarch: $[target/subarch]
 
 [section portage]
 

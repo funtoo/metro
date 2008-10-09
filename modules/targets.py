@@ -3,24 +3,28 @@ from catalyst_support import *
 from stat import *
 import os
 
+bin={
+	"linux32": "/usr/bin/linux32",
+	"rm": "/bin/rm",
+	"chroot": "/usr/bin/chroot",
+	"bash": "/bin/bash",
+	"mount": "/bin/mount",
+	"kill",:"/bin/kill"
+}
+
 class target:
 
-	def checkconfig(self,strict=True):
-
-		# notify user of any variable that were accessed but were not defined:
-		self.settings.expand_all()
-
-		failcount = 0
-		if strict:
-			warnmsg = "ERROR: "
+	def targetExists(self,key):
+		if "replace" in self.settings["metro/options"].split():
+			if os.path.exists(settings[key]):
+				print "Removing existing file %s..." % settings[key]
+				self.cmd( bin["rm"] + " -f " + self.settings[key])
+			return False
+		elif os.path.exists(self.settings[key]):
+			print "File %s already exists - skipping..." % settings[key]
+			return True
 		else:
-			warnmsg = "Warning: "
-	
-		for element in self.settings.blanks.keys():
-			print warnmsg+"value \""+element+"\" was referenced but not defined."
-			failcount += 1
-		if strict and failcount:
-			raise MetroError, "Total config errors: "+`failcount`+" - stopping."
+			return False
 
 	def require(self,mylist):
 		missing=self.settings.missing(mylist)
@@ -32,31 +36,17 @@ class target:
 		for item in missing:
 			print "Warning: recommended value \""+item+"\" not defined."
 
-	def bin(self,myc):
-		"""look through the environmental path for an executable file named whatever myc is"""
-		# this sucks. badly.
-		p=self.env["PATH"]
-		for x in p.split(":"):
-			#if it exists, and is executable
-			if os.path.exists("%s/%s" % (x,myc)) and os.stat("%s/%s" % (x,myc))[0] & 0x0248:
-				return "%s/%s" % (x,myc)
-		raise MetroError, "Can't find command "+myc
-
 	def __init__(self,settings):
-	
 		self.settings = settings
 		self.env = {}
 		self.env["PATH"] = "/bin:/sbin:/usr/bin:/usr/sbin"
 
-		self.require(["target","version"])
-
-		if not os.path.exists(self.settings["workdir"]):
-			os.makedirs(self.settings["workdir"])
-
-	def cleanup(self):
-		if os.path.exists(self.settings["workdir"]):
-			print "Cleaning up "+self.settings["workdir"]+"..."
-		self.cmd(self.bin("rm") + " -rf "+self.settings["workdir"])
+	def cleanWorkPath(self,recreate=False):
+		if os.path.exists(self.settings["path/work"]):
+			print "Cleaning up "+self.settings["path/work"]+"..."
+		self.cmd(bin["rm"]+" -rf "+self.settings["path/work"])
+		if recreate:
+			self.cmd(bin["install"]+" -d "+self.settings["path/work"])
 
 	def cmd(self,mycmd,myexc="",badval=None):
 		print "Executing \""+mycmd+"\"..."
@@ -77,7 +67,7 @@ class target:
 class chroot(target):
 
 	def kill_chroot_pids(self):
-		cdir=self.settings["chrootdir"]
+		cdir=self.settings["path/work"]
 		for pid in os.listdir("/proc"):
 			if not os.path.isdir("/proc/"+pid):
 				continue
@@ -89,12 +79,12 @@ class chroot(target):
 			if mylink[0:len(cdir)] == cdir:
 				#we got something in our chroot
 				print "Killing process "+pid+" ("+mylink+")"
-				self.cmd("/bin/kill -9 "+pid)
+				self.cmd(bin["kill"+" -9 "+pid)
 
 	def exec_in_chroot(self,key,chrootdir=None):
 
 		if chrootdir == None:
-			chrootdir = self.settings["chrootdir"]
+			chrootdir = self.settings["path/work"]
 
 		print "Running "+repr(key)+" in "+chrootdir+"..."
 
@@ -116,10 +106,10 @@ class chroot(target):
 
 		outfd.close()
 
-		if self.settings["arch"] == "x86" and os.uname()[4] == "x86_64":
-			cmds = [self.bin("linux32"),self.bin("chroot"),chrootdir,self.bin("bash")]
+		if self.settings["subarch/arch"] == "x86" and os.uname()[4] == "x86_64":
+			cmds = [bin["linux32"],bin["chroot"],chrootdir,bin["bash"]]
 		else:
-			cmds = [self.bin("chroot"),chrootdir,self.bin("bash")]
+			cmds = [bin["chroot"],chrootdir,bin["bash"]]
 
 		cmds.append("/tmp/"+key+".sh")
 
@@ -138,7 +128,7 @@ class chroot(target):
 		
 		# CCACHE SUPPORT FOR CHROOTS
 
-		if self.settings.has_key("options") and "ccache" in self.settings["options"].split():
+		if self.settings.has_key("metro/options") and "ccache" in self.settings["metro/options"].split():
 			if os.environ.has_key("CCACHE_DIR"):
 				ccdir=os.environ["CCACHE_DIR"]
 			else:
@@ -151,14 +141,14 @@ class chroot(target):
 	def bind(self):
 		""" Perform bind mounts """
 		for x in self.mounts: 
-			if not os.path.exists(self.settings["chrootdir"]+x):
-				os.makedirs(self.settings["chrootdir"]+x,0755)
+			if not os.path.exists(self.settings["path/work"]+x):
+				os.makedirs(self.settings["path/work"]+x,0755)
 			
 			if not os.path.exists(self.mountmap[x]):
 				os.makedirs(self.mountmap[x],0755)
 			
 			src=self.mountmap[x]
-			if os.system("/bin/mount --bind "+src+" "+self.settings["chrootdir"]+x) != 0:
+			if os.system(bin["mount"]+" --bind "+src+" "+self.settings["path/work"]+x) != 0:
 				self.unbind()
 				raise MetroError,"Couldn't bind mount "+src
 			    
@@ -166,7 +156,7 @@ class chroot(target):
 	def unbind(self):
 		""" Attempt to unmount bind mounts"""
 		ouch=0
-		mypath=self.settings["chrootdir"]
+		mypath=self.settings["path/work"]
 		myrevmounts=self.mounts[:]
 		myrevmounts.reverse()
 		# unmount in reverse order for nested bind-mounts
@@ -200,7 +190,7 @@ class chroot(target):
 			raise MetroError,"Couldn't umount one or more bind-mounts; aborting for safety."
 
 	def mount_safety_check(self):
-		mypath=self.settings["chrootdir"]
+		mypath=self.settings["path/work"]
 		
 		"""
 		check and verify that none of our paths in mypath are mounted. We don't want to clean
@@ -230,37 +220,15 @@ class chroot(target):
 class snapshot(target):
 	def __init__(self,settings):
 		target.__init__(self,settings)
-
-		if os.path.exists("/etc/metro/snapshot.spec"):
-			print "Reading in configuration from /etc/metro/snapshot.spec..."
-			self.settings.collect("/etc/metro/snapshot.spec")
-
-		self.require(["snapshot/type","portname","snapshot/path","version","target"])
-		self.require(["storedir/snapshot"])
-
-		if self.settings["snapshot/type"] == "git":
-			self.require(["snapshot/branch"])
-
+	
 	def run(self):
-
-		if os.path.exists(self.settings["workdir"]):
-			print "Removing existing temporary work directory..."
-			self.cmd( self.bin("rm") + " -rf " + self.settings["workdir"] )
-			os.makedirs(self.settings["workdir"])
-
-		if "replace" in self.settings["options"].split():
-			if os.path.exists(self.settings["storedir/snapshot"]):
-				print "Removing existing snapshot..."
-				self.cmd( self.bin("rm") + " -f " + self.settings["storedir/snapshot"])
-
-		elif os.path.exists(self.settings["storedir/snapshot"]):
-			print "Snapshot already exists at "+self.settings["storedir/snapshot"]+". Skipping..."
+		if self.targetExists("path/mirror/snapshot")
 			return
-		else:
-			print self.settings["storedir/snapshot"],"does not exist - creating it..."
+
+		self.cleanWorkPath(recreate=True)
 
 		# TODO - add check to ensure that run/rysnc or run/git has been defined, here or in constructor
-		self.exec("run/"+self.settings["snapshot/type"])
+		self.exec("snapshot/run/"+self.settings["snapshot/type"])
 		#raise MetroError, "snapshot/type of \""+self.settings["snapshot/type"]+"\" not recognized."
 		# workdir cleanup is handled by catalyst calling our cleanup() method
 
@@ -269,25 +237,10 @@ class stage(chroot):
 	def __init__(self,settings):
 		chroot.__init__(self,settings)
 
-		if os.path.exists("/etc/metro/stage.spec"):
-			print "Reading in configuration from /etc/metro/stage.spec..."
-			self.settings.collect("/etc/metro/stage.spec")
-
-		# In the constructor, we want to define settings but not reference them if we can help it, certain things
-		# like paths may not be able to be fully expanded yet until we define our goodies like "source", etc.
-
-		self.require(["ROOT","target","source","arch","subarch","profile","storedir/srcstage","storedir/deststage","storedir/snapshot","CHOST"])
-		
-		# If distdir, USE or CFLAGS not specified, alert the user that they might be missing them
-		self.recommend(["distdir","USE","CFLAGS","MAKEOPTS"])
-
 		# DEFINE GENTOO MOUNTS
-
-		if self.settings.has_key("distdir"):
+		if self.settings.has_key("path/distfiles"):
 			self.mounts.append("/usr/portage/distfiles")
-			self.mountmap["/usr/portage/distfiles"]=self.settings["distdir"]
-
-		self.settings["chrootdir"]="$[workdir]/chroot"
+			self.mountmap["/usr/portage/distfiles"]=self.settings["path/distfiles"]
 
 		if self.settings["ROOT"] != "/":
 			# this seems to be needed for libperl to build (x2p) during stage1 - so we'll mount it....
@@ -295,19 +248,9 @@ class stage(chroot):
 			self.mounts.append("/dev/pts")
 			self.mountmap["/dev"] = "/dev"
 			self.mountmap["/dev/pts"] = "/dev/pts"
-
-
 	def run(self):
-
-		if "replace" in self.settings["options"].split():
-			if os.path.exists(settings["storedir/deststage"]):
-				print "Removing existing stage..."
-				self.cmd( self.bin("rm") + " -f " + self.settings["storedir/deststage"])
-		# do not overwrite snapshot if it already exists
-		elif os.path.exists(self.settings["storedir/deststage"]):
-			print "Stage "+repr(self.settings["storedir/deststage"])+" already exists - skipping..."
+		if self.targetExists("path/mirror/deststage"):
 			return
-			#raise MetroError,"Snapshot "+self.settings["storedir/snapshot"]+" already exists. Aborting."
 
 		# look for required files
 		for loc in [ "storedir/srcstage", "storedir/snapshot" ]:
@@ -319,9 +262,7 @@ class stage(chroot):
 		self.mount_safety_check()
 
 		# BEFORE WE START - CLEAN UP ANY MESSES
-		if os.path.exists(self.settings["workdir"]):
-			print "Removing existing temporary work directory..."
-			self.cmd( self.bin("rm") + " -rf " + self.settings["workdir"] )
+		self.cleanWorkPath(recreate=True)
 		try:
 			self.mount_safety_check()
 			self.exec("unpack")
@@ -358,20 +299,14 @@ class stage(chroot):
 	
 	def capture(self):
 		"""capture target in a tarball"""
-		# IF TARGET EXISTS, REMOVE IT - WE WILL CREATE A NEW ONE
-		if os.path.exists(self.settings["storedir/deststage"]):
-			if os.path.isfile(self.settings["storedir/deststage"]):
-				self.cmd("rm -f "+self.settings["storedir/deststage"], "Could not remove existing file: "+self.settings["storedir/deststage"])
-			else:
-				raise MetroError,"Can't remove existing "+self.settings["storedir/deststage"]+" - not a file. Aborting."
-
-		grabpath=os.path.normpath(self.settings["chrootdir"]+self.settings["ROOT"])
+		# target should not exist - we removed it earlier if it did
+		grabpath=os.path.normpath(self.settings["path/work"]+self.settings["ROOT"])
 		
 		# Ensure target stage directory exists (might be several subdirectories that need to be created)
-		if not os.path.exists(os.path.dirname(self.settings["storedir/deststage"])):
-			os.makedirs(os.path.dirname(self.settings["storedir/deststage"]))
+		if not os.path.exists(os.path.dirname(self.settings["path/mirror/deststage"])):
+			os.makedirs(os.path.dirname(self.settings["path/mirror/deststage"]))
 
 		print "Creating stage tarball..."
-		self.cmd("tar cjpf "+self.settings["storedir/deststage"]+" -C "+grabpath+" .","Couldn't create stage tarball",badval=2)
+		self.cmd("tar cjpf "+self.settings["path/mirror//deststage"]+" -C "+grabpath+" .","Couldn't create stage tarball",badval=2)
 
 #vim: ts=4 sw=4 sta et sts=4 ai

@@ -1,20 +1,25 @@
 #what what I want
-[section snapshot]
+[section target]
 
-metro/class: snapshot
-target: snapshot
+class: snapshot
+#require: snapshot/type snapshot snapshot/path target/version target path/mirror/snapshot
 
 run/rsync: [
-	tmpname=`dirname $[storedir/snapshot]`/.`basename $[storedir/snapshot]`
-	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ $[snapshot/path]/ $[workdir]/portage/ || exit 1
-	tar -cjf $tmpname -C $[workdir]/portage || exit 1
+	tmpname=`dirname $[path/mirror/snapshot]`/.`basename $[path/mirror/snapshot]`
+	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ $[portage/path]/ $[path/work]/portage/ || exit 1
+	tar -cjf $tmpname -C $[path/work]/portage || exit 1
 ]
 
 run/git: [
-	tmpname=`dirname $[storedir/snapshot]`/.`basename $[storedir/snapshot]`
-	{ cd $[snapshot/path] || exit 1; git checkout $[snapshot/branch] || exit 1; }
-	{ cd $[snapshot/path] || exit 1; git archive --prefix=portage/ HEAD | gzip > $tmpname || exit 1; }
-	mv $tmpanme $[storedir/snapshot] || exit 1
+	if [ "$[portage/branch]" = "" ]
+	then
+		echo "snapshot/branch not defined. Please specify a branch."
+		exit 1
+	fi
+	tmpname=`dirname $[path/mirror/snapshot]`/.`basename $[path/mirror/snapshot]`
+	{ cd $[portage/path] || exit 1; git checkout $[path/mirror/snapshot] || exit 1; }
+	{ cd $[portage/path] || exit 1; git archive --prefix=portage/ HEAD | gzip > $tmpname || exit 1; }
+	mv $tmpanme $[path/mirror/snapshot] || exit 1
 ]
 
 

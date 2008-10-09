@@ -72,15 +72,17 @@ class collection:
 		self.immutable=False
 		# lax means: if a key isn't found, pretend it exists but return the empty string.
 		self.lax=True
-		self.laxstring="[BLANK var=%s]"
+		self.laxstring="[BLANK var=%s %s]"
 		self.blanks={}
 		# self.collected holds the names of files we've collected (parsed)
 		self.collected=[]
 		self.section=""
 		self.sectionfor={}
+		self.conditional=None
 	def clear(self):
 		self.raw={}
 		self.evaluated={}
+		self.conditionals={}
 		self.blanks={}
 
 	def expand_all(self):
@@ -96,10 +98,38 @@ class collection:
 				return self.expandMulti(myvar)
 			else:
 				return self.expandString(myvar=myvar)
-		elif self.lax:
+		elif self.conditionals.has_key(myvar):
+			# evaluate all conditionals - it's ok for them all to be false or one to be true.
+			# it's invalid for more than one to be true.
+			truekeys = []
+			for cond in self.conditionals[myvar].keys():
+				# one bug we are not going to tackle now are circular conditionals, I'll address that when I rewrite the parser
+				# for right now, you should not have something like this:
+				# [section foo]
+				# [when bar/foo]
+				# bar: oni
+				# [section bar]
+				# [when foo/bar]
+				# foo: oni
+				# we'll avoid this by not looking in self.conditionals for something when doing our conditional check.
+				# so you can only make something conditional on something that is itself not inside a conditional block.
+				if self.raw.has_key(cond):
+					truekeys.append(cond)
+			if len(truekeys) > 1:
+				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (myvar, repr(truekeys)) 
+			elif len(truekeys) == 1:
+				if type(self.raw[myvar]) == types.ListType:
+					return self.expandMulti(myvar)
+				else:
+					return self.expandString(myvar=myvar)
+			else:
+				# we had no "true" conditions, fall back to the lax evaluation block below
+				pass
+
+		if self.lax:
 			# record that we looked up an undefined element
 			self.blanks[myvar]=True
-			return self.laxstring % myvar
+			return self.laxstring % ( myvar, "foo" )
 		else:
 			raise FlexDataError,"Variable \""+myvar+"\" not found"
 
@@ -141,10 +171,9 @@ class collection:
 			if endvarpos == -1:
 				raise KeyError,"Error expanding variable for '"+string+"'"
 			varname = unex[0:endvarpos]
-			self.sectionfor[varname] = self.section
 			# $[] expansion
-			# FIXME
-			if varname == "":
+			if varname == "" or varname == ":":
+				print "DEBUG: expanding $[] or $[:]",self.sectionfor[myvar]
 				if self.sectionfor.has_key(myvar):
 					varname = self.sectionfor[myvar]
 				else:
@@ -170,7 +199,7 @@ class collection:
 				else:
 					# record variables that we attempted to expand but were blank, so we can inform the user of possible bugs
 					self.blanks[varname] = True
-					ex += self.laxstring % varname
+					ex += self.laxstring % ( varname, "bar" )
 		if fromfile == False:
 			self.evaluated[myvar] = ex
 			return ex
@@ -206,7 +235,7 @@ class collection:
 		else:
 			if self.lax:
 				self.blanks[myvar] = True
-				return [self.laxstring % myvar]
+				return [self.laxstring % ( myvar, "oni" ) ]
 			else:
 				raise FlexDataError("referenced variable \""+myvar+"\" not found")
 
@@ -336,6 +365,7 @@ class collection:
 			myvar = mysplit[0][:-1]
 			if self.section:
 				myvar = self.section+"/"+myvar
+				self.sectionfor[myvar] = self.section
 			mylines = []
 			while 1:
 				curline = openfile.readline()
@@ -356,13 +386,24 @@ class collection:
 		elif mysplit[0][0]=="[" and mysplit[-1][-1]=="]":
 			# possible section
 			mysplit[0] = mysplit[0][1:]
-			mysplit[-1] = mysplit[-1][:-1] 
+			mysplit[-1]= mysplit[-1][:-1]
 			mysection=string.join(mysplit).split()
-			if len(mysection) != 2:
-				raise FlexDataError,"Invalid section specifier: "+curline[:-1]
-			if mysection[0] != "section":
-				raise FlexDataError,"Expected \"section\" in: "+curline[:-1]
-			self.section = mysection[1]
+			if mysection[0] == "section":
+				if len(mysection) != 2:
+					raise FlexDataError,"Invalid section specifier: "+curline[:-1]
+				if mysection[0] != "section":
+					raise FlexDataError,"Expected \"section\" in: "+curline[:-1]
+				self.section = mysection[1]
+				# clear conditional:
+				self.conditional = None
+				print "DEBUG: cleared conditional"
+			elif mysection[0] == "when":
+				print "DEBUG: when", mysection
+				# conditional block
+				self.conditional=" ".join(mysection[1:])
+				print "DEBUG: set conditional to",self.conditional
+			else:
+				raise FlexDataError,"Invalid annotation: %s in %s" % (mysection[0], curline[:-1])
 		elif mysplit[0][-1] == ":":
 			#basic element - rejoin all data elements with spaces and add to self.raw
 			mykey = mysplit[0][:-1]
@@ -371,10 +412,18 @@ class collection:
 				mykey = self.section
 			elif self.section:
 				mykey = self.section+"/"+mykey
-			self.sectionfor[mykey]=self.section
+				self.sectionfor[mykey]=self.section
 			if not dups and self.raw.has_key(mykey):
 				raise FlexDataError,"Error - \""+mykey+"\" already defined."
-			self.raw[mykey] = " ".join(mysplit[1:])
+			myvalue = " ".join(mysplit[1:])
+			if self.conditional:
+				if not self.conditionals.has_key(mykey):
+					self.conditionals[mykey]={}
+				if self.conditionals[mykey].has_key(self.conditional):
+					raise FlexDataError,"Conditional element %s already defined for condition %s", (mykey, self.conditional)
+				self.conditionals[mykey][self.conditional] = myvalue
+			else:
+				self.raw[mykey] = myvalue
 		return mysplit	
 	
 	def collect(self,filename):
@@ -397,5 +446,7 @@ if __name__ == "__main__":
 	for arg in sys.argv[1:]:
 		coll.collect(arg)
 	coll.debugdump()
+	print coll.conditionals
+	print coll.sectionfor
 	sys.exit(0)
 
