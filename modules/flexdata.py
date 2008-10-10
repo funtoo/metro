@@ -79,6 +79,8 @@ class collection:
 		self.section=""
 		self.sectionfor={}
 		self.conditional=None
+		self.collector=[]
+
 	def clear(self):
 		self.raw={}
 		self.evaluated={}
@@ -118,11 +120,13 @@ class collection:
 			if len(truekeys) > 1:
 				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (myvar, repr(truekeys)) 
 			elif len(truekeys) == 1:
+				print 'DEBUG: condition TRUE: var %s condition %s' % ( myvar, truekeys[0] )
 				if type(self.raw[myvar]) == types.ListType:
 					return self.expandMulti(myvar)
 				else:
 					return self.expandString(myvar=myvar)
 			else:
+				print 'DEBUG: condition FALSE: var %s condition %s' % (myvar, repr(self.conditionals[myvar]))
 				# we had no "true" conditions, fall back to the lax evaluation block below
 				pass
 
@@ -139,9 +143,7 @@ class collection:
 		# Expand all variables in a basic value, ie. a string 
 
 		if string == None:
-			if self.evaluated.has_key(myvar):
-				return self.evaluated[myvar]
-			elif self.raw.has_key(myvar):
+			if self.raw.has_key(myvar):
 				string = self.raw[myvar]
 
 		if type(string) != types.StringType:
@@ -169,7 +171,7 @@ class collection:
 			unex = unex[varpos+len(self.pre):] # remove "$["
 			endvarpos = unex.find(self.suf)
 			if endvarpos == -1:
-				raise KeyError,"Error expanding variable for '"+string+"'"
+				raise FlexDataError,"Error expanding variable for '"+string+"'"
 			varname = unex[0:endvarpos]
 			# $[] expansion
 			if varname == "" or varname == ":":
@@ -180,18 +182,26 @@ class collection:
 			unex = unex[endvarpos+len(self.suf):]
 			if varname in stack:
 				raise KeyError, "Circular reference of '"+varname+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
-			if self.evaluated.has_key(varname):
-				# if myvar == None, we are being called from self.expand_all() and we don't care where we are being expanded from
-				if myvar != None and type(self.evaluated[varname]) == types.ListType:
-					raise FlexDataError,"Trying to expand multi-line value "+repr(varname)+" in single-line value "+repr(myvar)
-				ex += self.evaluated[varname]
-			elif self.raw.has_key(varname):
+			if self.raw.has_key(varname):
 				# if myvar == None, we are being called from self.expand_all() and we don't care where we are being expanded from
 				if myvar != None and type(self.raw[varname]) == types.ListType:
 					raise FlexDataError,"Trying to expand multi-line value "+repr(varname)+" in single-line value "+repr(myvar)
 				newstack = stack[:]
 				newstack.append(varname)
 				ex += self.expandString(self.raw[varname],varname,newstack)
+			elif self.conditionals.has_key(varname):
+			# FIXME
+				truekeys=[]
+				for cond in self.conditionals[varname].keys():
+					if self.raw.has_key(cond):
+						truekeys.append(cond)
+					if len(truekeys) > 1:
+						raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (myvar, repr(truekeys)) 
+					elif len(truekeys) == 1:
+						print 'DEBUG: condition TRUE: var %s condition %s' % ( myvar, truekeys[0] )
+						newstack=stack[:]
+						newstack.append(varname)
+						ex += self.expandString(self.conditionals[varname][truekeys[0]],varname,newstack)
 			else:
 				if not self.lax:
 					raise KeyError, "Cannot find variable '"+varname+"'"
@@ -200,7 +210,6 @@ class collection:
 					self.blanks[varname] = True
 					ex += self.laxstring % ( varname, "bar" )
 		if fromfile == False:
-			self.evaluated[myvar] = ex
 			return ex
 
 		#use "ex" as a filename
@@ -212,8 +221,7 @@ class collection:
 		for line in myfile.readlines():
 			outstring=outstring+line[:-1]+" "
 		myfile.close()
-		self.evaluated[myvar] = outstring[:-1]
-		return self.evaluated[myvar] 
+		return outstring[:-1]
 
 
 	def expandMulti(self,myvar,stack=[]):
@@ -222,11 +230,6 @@ class collection:
 		# Expand all variables in a multi-line value. stack is used internally to detect circular references.
 		if self.debug:
 			print "DEBUG: in expandMulti"
-		if self.evaluated.has_key(myvar):
-			element = self.evaluated[myvar]
-			if type(element) != types.ListType:
-				raise FlexDataError("expandMulti encountered non-multi")
-			return element
 		if self.raw.has_key(myvar):
 			multi = self.raw[myvar]
 			if type(multi) != types.ListType:
@@ -266,21 +269,17 @@ class collection:
 			else:	
 				newlines.append(self.expandString(string=multi[pos]))
 			pos += 1
-		self.evaluated[myvar] = newlines
 		return newlines
 
 	def __setitem__(self,key,value):
 		if self.immutable and self.raw.has_key(key):
 			raise IndexError, "Attempting to redefine "+key+" to "+value+" when immutable."
 		self.raw[key]=value
-		# invalidate any already-evaluated data
-		self.evaluated={}
 
 	def __delitem__(self,key):
 		if self.immutable and self.raw.has_key(key):
 			raise IndexError, "Attempting to delete "+key+" when immutable."
 		del self.raw[key]
-		self.evaluated={}
 
 	def __getitem__(self,element):
 		return self.expand(element)
@@ -400,6 +399,9 @@ class collection:
 				self.conditional=" ".join(mysection[1:])
 				if self.conditional == "*":
 					self.conditional = None
+			elif mysection[0] == "collect":
+				self.collector.append(mysection[1])
+				print "DEBUG: collector:",self.collector
 			else:
 				raise FlexDataError,"Invalid annotation: %s in %s" % (mysection[0], curline[:-1])
 		elif mysplit[0][-1] == ":":
@@ -415,6 +417,7 @@ class collection:
 				raise FlexDataError,"Error - \""+mykey+"\" already defined."
 			myvalue = " ".join(mysplit[1:])
 			if self.conditional:
+				print "DEBUG: doing CONDITIONAL for",mykey,"CONDITIONAL:", myvalue
 				if not self.conditionals.has_key(mykey):
 					self.conditionals[mykey]={}
 				if self.conditionals[mykey].has_key(self.conditional):
@@ -438,13 +441,41 @@ class collection:
 		openfile.close()
 		# add to our list of parsed files
 		self.collected.append(os.path.normpath(filename))
+
+	def runCollector(self):
+		# BUG? we may need to have an expandString option that will disable the ability to go to the evaluated dict,
+		# because as we parse new files, we have new data and some "lax" evals may evaluate correctly now.
 	
+		# BUG: detect if we are trying to collect a single file multiple times. :)
+
+		# contfails means "continuous expansion failures" - if we get to the point where we are not making progress,
+		# ie. contfails >= len(self.collector), then abort with a failure as we can't expand our cute little variable.
+		contfails = 0
+		oldlax = self.lax
+		self.lax = False
+		while len(self.collector) != 0 and contfails < len(self.collector):
+			myitem = self.collector[0]
+			myexpand = self.expandString(string=myitem)
+			if myexpand == None:
+				contfails += 1
+				# move failed item to back of list
+				self.collecot = self.collector[1:] + self.collector[0]
+			else:
+				# read in data:
+				self.collect(myexpand)
+				# we already parsed it, so remove filename from list:
+				self.collector = self.collector[1:]
+				# reset continuous fail counter, we are making progress:
+				contfails = 0
+		self.lax=oldlax
+		if len(self.collector) != 0:
+			raise FlexDataError, "Unable to collect all files - uncollected are: "+repr(self.collector)
+
 if __name__ == "__main__":
 	coll = collection(debug=False)
 	for arg in sys.argv[1:]:
 		coll.collect(arg)
-	coll.debugdump()
-	print coll.conditionals
-	print coll.sectionfor
+	coll.runCollector()	
+	coll.debugdump()	
 	sys.exit(0)
 
