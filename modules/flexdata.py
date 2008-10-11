@@ -80,7 +80,7 @@ class collection:
 		self.sectionfor={}
 		self.conditional=None
 		self.collector=[]
-
+		self.collectorcond={}
 	def clear(self):
 		self.raw={}
 		self.evaluated={}
@@ -400,7 +400,17 @@ class collection:
 				if self.conditional == "*":
 					self.conditional = None
 			elif mysection[0] == "collect":
-				self.collector.append(mysection[1])
+				if len(mysection)>3:
+					if mysection[2] == "when":
+						print "DEBUG: found COLLECT/WHEN %s" % repr(mysection)
+						self.collectorcond[mysection[1]]=mysection[3]
+						self.collector.append(mysection[1])
+					else:
+						raise FlexDataError,"Ow, [collect] clause seems invalid"
+				elif len(mysection)==2:
+					self.collector.append(mysection[1])
+				else:
+					raise FlexDataError,"Ow, [collect] expects 1 or 3 arguments."
 				print "DEBUG: collector:",self.collector
 			else:
 				raise FlexDataError,"Invalid annotation: %s in %s" % (mysection[0], curline[:-1])
@@ -455,18 +465,40 @@ class collection:
 		self.lax = False
 		while len(self.collector) != 0 and contfails < len(self.collector):
 			myitem = self.collector[0]
-			myexpand = self.expandString(string=myitem)
-			if myexpand == None:
-				contfails += 1
-				# move failed item to back of list
-				self.collecot = self.collector[1:] + self.collector[0]
+			print "DEBUG: doing COLLECTION ON %s" % myitem
+			if self.collectorcond.has_key(myitem):
+				print "DEBUG: collector cond for %s" % myitem
+				cond = self.collectorcond[myitem]
+				if not self.raw.has_key(cond):
+					print "DEBUG: collector cond fail for %s" % myitem
+					contfails += 1
+					self.collector = self.collector[1:] + self.collector[0]
+					continue
+				else:
+					try:
+						myexpand = self.expandString(string=myitem)
+					except KeyError:
+						contfails +=1
+						self.collector = self.collector[1:] + self.collector[0]
+						continue
+					print "DEBUG: collector cond success for %s" % myitem
+					self.collect(myexpand)
+					self.collector=self.collector[1:]
+					contfails = 0
 			else:
-				# read in data:
-				self.collect(myexpand)
-				# we already parsed it, so remove filename from list:
-				self.collector = self.collector[1:]
-				# reset continuous fail counter, we are making progress:
-				contfails = 0
+				try:
+					myexpand = self.expandString(string=myitem)
+				except KeyError:
+					contfails += 1
+					# move failed item to back of list
+					self.collector = self.collector[1:] + self.collector[0]
+				else:
+					# read in data:
+					self.collect(myexpand)
+					# we already parsed it, so remove filename from list:
+					self.collector = self.collector[1:]
+					# reset continuous fail counter, we are making progress:
+					contfails = 0
 		self.lax=oldlax
 		if len(self.collector) != 0:
 			raise FlexDataError, "Unable to collect all files - uncollected are: "+repr(self.collector)
