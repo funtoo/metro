@@ -288,9 +288,9 @@ class stage(chroot):
 
 			self.bind()
 
-			self.runScriptInChroot("steps/prerun")
-			self.runScriptInChroot("steps/run")
-			self.runScriptInChroot("steps/postrun")
+			self.runScriptInChroot("steps/chroot/prerun")
+			self.runScriptInChroot("steps/chroot/run")
+			self.runScriptInChroot("steps/chroot/postrun")
 			
 			self.unbind()
 			
@@ -300,7 +300,7 @@ class stage(chroot):
 
 			# now let the spec-defined clean script do all the heavy lifting...
 			# NEED A VARIABLE FOR THE "REAL" CHROOT:	
-			self.runScriptInChroot("steps/clean")
+			self.runScriptInChroot("steps/chroot/clean")
 			
 		except:
 		

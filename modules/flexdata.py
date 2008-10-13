@@ -283,7 +283,6 @@ class collection:
 		for x in self.conditionals:
 			mycond = self.get_condition_for(x)
 			if mycond != None:
-				print "DEBUG: got condition for",mycond
 				mylist.append(x)
 		return mylist
 
