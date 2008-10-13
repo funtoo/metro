@@ -46,17 +46,17 @@ def version():
 def find_target(settings):
 	""" 
 	
-	Use the "metro/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
+	Use the "target/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
 	
 	The targets.__dict__ dictionary contains all the objects in the targets module. We look inside it to see if the class
-	defined in "metro/class" exists in there and is a class. If not, we raise an exception.
+	defined in "target/class" exists in there and is a class. If not, we raise an exception.
 	
 	"""
-	if not targets.__dict__.has_key(settings["metro/class"]):
-		raise MetroError, "Metro class "+settings["metro/class"]+" not defined in modules/targets.py."
-	if type(targets.__dict__[settings["metro/class"]]) != types.ClassType:
-		raise MetroError, "Metro class "+settings["metro/class"]+" does not appear to be a class."
-	return targets.__dict__[settings["metro/class"]](settings)
+	if not targets.__dict__.has_key(settings["target/class"]):
+		raise MetroError, "Metro class "+settings["target/class"]+" not defined in modules/targets.py."
+	if type(targets.__dict__[settings["target/class"]]) != types.ClassType:
+		raise MetroError, "Metro class "+settings["target/class"]+" does not appear to be a class."
+	return targets.__dict__[settings["target/class"]](settings)
 
 if __name__ == "__main__":
 	if os.getuid() != 0:
@@ -140,16 +140,19 @@ if __name__ == "__main__":
 	settings["metro_version"]=__version__
 	settings["sharedir"]=sharedir
 
-	if os.path.exists("/etc/metro/global.spec"):
-		settings.collect("/etc/metro/global.spec")
+	if os.path.exists("/etc/metro/metro.conf"):
+		settings.collect("/etc/metro/metro.conf")
 	else:
-		print "Warning: /etc/metro/global.spec not found."
+		print "Warning: /etc/metro/metro.conf not found."
 	
 	# the new version of metro/catalyst does not have any configuration file
 	# parse command-line supplied configuration files and spec files in the order they were specified
 
 	for arg in args:
 		settings.collect(arg)
+	settings.runCollector()
+	if debug:
+		settings.debugdump()
 	if valueme:
 		print settings[valueme]
 		sys.exit(0)
@@ -169,24 +172,21 @@ if __name__ == "__main__":
 		# references in our spec data, like foo: $[bar] and not having bar defined. If we find problems, checkconfig() will alert
 		# the user and abort:
 
-		target.checkconfig(strict)
+		#target.checkconfig(strict)
 		
 		# OK, we have all required values - our config is good - now we can run the target
-
-		print "Running target \""+settings["target"]+"\"."
+		print __app__+": running target \""+settings["target"]+"\"."
 		target.run()
 
 		# Now that the target has run, we want to clean up our temporary work space. cleanup() does this.
-
-		target.cleanup()
+		# TODO: ADD SOMETHING HERE TO CLEAN UP ALL PATHS WE'VE USED...
+		#target.cleanPath()
 
 		# We're all done.
 
-		print __app__,"complete."
-		print
+		print __app__+": complete."
 	except MetroError:
 		print "ERROR - exiting."
-		raise
 	except KeyboardInterrupt:
 		print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
 		print

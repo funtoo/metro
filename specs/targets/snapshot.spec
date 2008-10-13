@@ -5,21 +5,33 @@ class: snapshot
 #require: snapshot/type snapshot snapshot/path target/version target path/mirror/snapshot
 
 run/rsync: [
-	tmpname=`dirname $[path/mirror/snapshot]`/.`basename $[path/mirror/snapshot]`
 	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ $[portage/path]/ $[path/work]/portage/ || exit 1
-	tar -cjf $tmpname -C $[path/work]/portage || exit 1
+	tar -cjf $[path/mirror/snapshot] -C $[path/work]/portage
+	if [ $? -ne 0 ]
+	then
+		rm -f $[path/mirror/snapshot]
+		exit 1
+	fi
 ]
 
 run/git: [
-	if [ "$[portage/branch]" = "" ]
+#!/bin/bash
+	cd $[path/work] || exit 1
+	git clone $[target/path] portage || exit 1
+	cd portage || exit 1
+	if [ "`git branch | grep ^* | cut -f2 -d" "`" != "$[target/branch]" ]
 	then
-		echo "snapshot/branch not defined. Please specify a branch."
+		echo "Local branch does not exist yet, Metro will create it..."
+		git checkout --track -b $[target/branch] origin/$[target/branch] || exit 1
+	fi
+	git archive --prefix=portage/ HEAD | bzip2 > $[path/mirror/snapshot]
+	if [ $? -ne 0 ]
+	then
+		rm -f $[path/mirror/snapshot]
 		exit 1
 	fi
-	tmpname=`dirname $[path/mirror/snapshot]`/.`basename $[path/mirror/snapshot]`
-	{ cd $[portage/path] || exit 1; git checkout $[path/mirror/snapshot] || exit 1; }
-	{ cd $[portage/path] || exit 1; git archive --prefix=portage/ HEAD | gzip > $tmpname || exit 1; }
-	mv $tmpanme $[path/mirror/snapshot] || exit 1
 ]
 
+[section portage]
 
+name: $[target/name]

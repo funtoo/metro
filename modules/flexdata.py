@@ -83,7 +83,6 @@ class collection:
 		self.collectorcond={}
 	def clear(self):
 		self.raw={}
-		self.evaluated={}
 		self.conditionals={}
 		self.blanks={}
 
@@ -92,50 +91,35 @@ class collection:
 		for key in self.keys():
 			myvar = self[key]
 
-	def expand(self,myvar):
-		if self.evaluated.has_key(myvar):
-			return self.evaluated[myvar]
-		elif self.raw.has_key(myvar):
-			if type(self.raw[myvar]) == types.ListType:
-				return self.expandMulti(myvar)
-			else:
-				return self.expandString(myvar=myvar)
-		elif self.conditionals.has_key(myvar):
-			# evaluate all conditionals - it's ok for them all to be false or one to be true.
-			# it's invalid for more than one to be true.
-			truekeys = []
-			for cond in self.conditionals[myvar].keys():
-				# one bug we are not going to tackle now are circular conditionals, I'll address that when I rewrite the parser
-				# for right now, you should not have something like this:
-				# [section foo]
-				# [when bar/foo]
-				# bar: oni
-				# [section bar]
-				# [when foo/bar]
-				# foo: oni
-				# we'll avoid this by not looking in self.conditionals for something when doing our conditional check.
-				# so you can only make something conditional on something that is itself not inside a conditional block.
-				if self.raw.has_key(cond):
-					truekeys.append(cond)
+	def get_condition_for(self,varname):
+		if not self.conditionals.has_key(varname):
+			return None
+		truekeys=[]
+		for cond in self.conditionals[varname].keys():
+			if self.raw.has_key(cond):
+				truekeys.append(cond)
 			if len(truekeys) > 1:
-				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (myvar, repr(truekeys)) 
-			elif len(truekeys) == 1:
-				print 'DEBUG: condition TRUE: var %s condition %s' % ( myvar, truekeys[0] )
-				if type(self.raw[myvar]) == types.ListType:
-					return self.expandMulti(myvar)
-				else:
-					return self.expandString(myvar=myvar)
-			else:
-				print 'DEBUG: condition FALSE: var %s condition %s' % (myvar, repr(self.conditionals[myvar]))
-				# we had no "true" conditions, fall back to the lax evaluation block below
-				pass
+				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (varname, repr(truekeys)) 
+		return self.conditionals[varname][truekeys[0]]
+			
 
-		if self.lax:
+	def expand(self,myvar):
+		if self.raw.has_key(myvar):
+			typetest = self.raw[myvar]
+		elif self.conditionals.has_key(myvar):
+			# test the type of the first conditional - in the future, we should ensure all conditional values are of the same type
+			typetest = self.conditionals[myvar][self.conditionals[myvar].keys()[0]]
+		elif self.lax:
 			# record that we looked up an undefined element
 			self.blanks[myvar]=True
 			return self.laxstring % ( myvar, "foo" )
 		else:
 			raise FlexDataError,"Variable \""+myvar+"\" not found"
+
+		if type(typetest) == types.ListType:
+			return self.expandMulti(myvar)
+		else:
+			return self.expandString(myvar=myvar)
 
 	def expandString(self,string=None,myvar=None,stack=[]):
 		if self.debug:
@@ -145,12 +129,16 @@ class collection:
 		if string == None:
 			if self.raw.has_key(myvar):
 				string = self.raw[myvar]
-
+			else:
+				string = self.get_condition_for(myvar)
+				if string == None:
+					raise KeyError
+			
 		if type(string) != types.StringType:
 			if len(stack) >=1:
 				raise FlexDataError("expandString received non-string when expanding "+repr(myvar)+" ( stack = "+repr(stack)+")")
 			else:
-				raise FlexDataError("expandString received non-string")
+				raise FlexDataError("expandString received non-string: %s" % repr(string) )
 
 		mysplit = string.strip().split(" ")
 		if len(mysplit) == 2 and mysplit[0] == "<<":
@@ -190,18 +178,12 @@ class collection:
 				newstack.append(varname)
 				ex += self.expandString(self.raw[varname],varname,newstack)
 			elif self.conditionals.has_key(varname):
-			# FIXME
-				truekeys=[]
-				for cond in self.conditionals[varname].keys():
-					if self.raw.has_key(cond):
-						truekeys.append(cond)
-					if len(truekeys) > 1:
-						raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (myvar, repr(truekeys)) 
-					elif len(truekeys) == 1:
-						print 'DEBUG: condition TRUE: var %s condition %s' % ( myvar, truekeys[0] )
-						newstack=stack[:]
-						newstack.append(varname)
-						ex += self.expandString(self.conditionals[varname][truekeys[0]],varname,newstack)
+				expandme = self.get_condition_for(varname)
+				if expandme == None:
+					raise KeyError
+				newstack=stack[:]
+				newstack.append(varname)
+				ex += self.expandString(expandme,varname,newstack)
 			else:
 				if not self.lax:
 					raise KeyError, "Cannot find variable '"+varname+"'"
@@ -288,7 +270,12 @@ class collection:
 		return self.raw.has_key(key)
 
 	def keys(self):
-		return self.raw.keys()
+		mylist=self.raw.keys()
+		for x in self.conditionals:
+			mycond = self.get_condition_for(x)
+			if x != None:
+				mylist.append(x)
+		return mylist
 
 	def missing(self,keylist):
 		""" return list of any keys that are not defined. good for validating that we have a bunch of required things defined."""
@@ -308,7 +295,6 @@ class collection:
 					pos += 1
 			else:
 				print key, self[key]
-		print
 
 	def skipblock(self,openfile=None):
 		while 1:
@@ -402,16 +388,14 @@ class collection:
 			elif mysection[0] == "collect":
 				if len(mysection)>3:
 					if mysection[2] == "when":
-						print "DEBUG: found COLLECT/WHEN %s" % repr(mysection)
 						self.collectorcond[mysection[1]]=mysection[3]
-						self.collector.append(mysection[1])
+						#self.collector.append(mysection[1])
 					else:
 						raise FlexDataError,"Ow, [collect] clause seems invalid"
 				elif len(mysection)==2:
 					self.collector.append(mysection[1])
 				else:
 					raise FlexDataError,"Ow, [collect] expects 1 or 3 arguments."
-				print "DEBUG: collector:",self.collector
 			else:
 				raise FlexDataError,"Invalid annotation: %s in %s" % (mysection[0], curline[:-1])
 		elif mysplit[0][-1] == ":":
@@ -427,7 +411,6 @@ class collection:
 				raise FlexDataError,"Error - \""+mykey+"\" already defined."
 			myvalue = " ".join(mysplit[1:])
 			if self.conditional:
-				print "DEBUG: doing CONDITIONAL for",mykey,"CONDITIONAL:", myvalue
 				if not self.conditionals.has_key(mykey):
 					self.conditionals[mykey]={}
 				if self.conditionals[mykey].has_key(self.conditional):
@@ -465,23 +448,19 @@ class collection:
 		self.lax = False
 		while len(self.collector) != 0 and contfails < len(self.collector):
 			myitem = self.collector[0]
-			print "DEBUG: doing COLLECTION ON %s" % myitem
 			if self.collectorcond.has_key(myitem):
-				print "DEBUG: collector cond for %s" % myitem
 				cond = self.collectorcond[myitem]
 				if not self.raw.has_key(cond):
-					print "DEBUG: collector cond fail for %s" % myitem
 					contfails += 1
-					self.collector = self.collector[1:] + self.collector[0]
+					self.collector = self.collector[1:] + [self.collector[0]]
 					continue
 				else:
 					try:
 						myexpand = self.expandString(string=myitem)
 					except KeyError:
 						contfails +=1
-						self.collector = self.collector[1:] + self.collector[0]
+						self.collector = self.collector[1:] + [self.collector[0]]
 						continue
-					print "DEBUG: collector cond success for %s" % myitem
 					self.collect(myexpand)
 					self.collector=self.collector[1:]
 					contfails = 0
@@ -491,7 +470,7 @@ class collection:
 				except KeyError:
 					contfails += 1
 					# move failed item to back of list
-					self.collector = self.collector[1:] + self.collector[0]
+					self.collector = self.collector[1:] + [self.collector[0]]
 				else:
 					# read in data:
 					self.collect(myexpand)

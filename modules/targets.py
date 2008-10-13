@@ -9,19 +9,63 @@ bin={
 	"chroot": "/usr/bin/chroot",
 	"bash": "/bin/bash",
 	"mount": "/bin/mount",
-	"kill",:"/bin/kill"
+	"kill":"/bin/kill",
+	"install":"/usr/bin/install"
 }
 
 class target:
 
+	def runScript(self,key,chroot=None):
+		if not self.settings.has_key(key):
+			raise MetroError, "exec: key \""+key+"\" not found."
+		if type(self.settings[key]) != types.ListType:
+			raise MetroError, "exec: key \""+key+"\" is not a multi-line element."
+
+		os.environ["PATH"] = self.env["PATH"]
+
+		if chroot:
+			chrootfile = "/tmp/"+key+".metro"
+			outfile = chroot+chrootfile
+		else:
+			outfile = self.settings["path/tmp"]+"/pid/"+repr(os.getpid())
+
+		outdir = os.path.dirname(outfile)
+
+		if not os.path.exists(outdir):
+			os.makedirs(outdir)
+		outfd = open(outfile,"w")
+		
+		for x in self.settings[key]:
+			outfd.write(x+"\n")
+
+		outfd.close()
+		# make executable:
+		os.chmod(outfile, 0755)
+
+		cmds = []
+		if chroot:
+			if self.settings["subarch/arch"] == "x86" and os.uname()[4] == "x86_64":
+				cmds = [bin["linux32"],bin["chroot"]]
+			else:
+				cmds = [bin["chroot"]]
+			cmds.append(chrootfile)
+		else:
+			cmds.append(outfile)
+
+		retval = spawn(cmds, env=self.env )
+
+		if retval != 0:
+			raise MetroError, "Command failure: "+" ".join(cmds)
+
+
 	def targetExists(self,key):
 		if "replace" in self.settings["metro/options"].split():
 			if os.path.exists(settings[key]):
-				print "Removing existing file %s..." % settings[key]
+				print "Removing existing file %s..." % self.settings[key]
 				self.cmd( bin["rm"] + " -f " + self.settings[key])
 			return False
 		elif os.path.exists(self.settings[key]):
-			print "File %s already exists - skipping..." % settings[key]
+			print "File %s already exists - skipping..." % self.settings[key]
 			return True
 		else:
 			return False
@@ -41,12 +85,14 @@ class target:
 		self.env = {}
 		self.env["PATH"] = "/bin:/sbin:/usr/bin:/usr/sbin"
 
-	def cleanWorkPath(self,recreate=False):
-		if os.path.exists(self.settings["path/work"]):
-			print "Cleaning up "+self.settings["path/work"]+"..."
-		self.cmd(bin["rm"]+" -rf "+self.settings["path/work"])
+	def cleanPath(self,path=None,recreate=False):
+		if path == None:
+			path = self.settings["path/work"]
+		if os.path.exists(path):
+			print "Cleaning up %s..." % path
+		self.cmd(bin["rm"]+" -rf "+path)
 		if recreate:
-			self.cmd(bin["install"]+" -d "+self.settings["path/work"])
+			self.cmd(bin["install"]+" -d "+path)
 
 	def cmd(self,mycmd,myexc="",badval=None):
 		print "Executing \""+mycmd+"\"..."
@@ -79,44 +125,13 @@ class chroot(target):
 			if mylink[0:len(cdir)] == cdir:
 				#we got something in our chroot
 				print "Killing process "+pid+" ("+mylink+")"
-				self.cmd(bin["kill"+" -9 "+pid)
+				self.cmd(bin["kill"]+" -9 "+pid)
 
-	def exec_in_chroot(self,key,chrootdir=None):
-
+	def runScriptInChroot(self,key,chrootdir=None):
 		if chrootdir == None:
-			chrootdir = self.settings["path/work"]
-
-		print "Running "+repr(key)+" in "+chrootdir+"..."
-
-		if not self.settings.has_key(key):
-			raise MetroError, "exec_in_chroot: key \""+key+"\" not found."
-	
-		if type(self.settings[key]) != types.ListType:
-			raise MetroError, "exec_in_chroot: key \""+key+"\" is not a multi-line element."
-
-		outfile = chrootdir+"/tmp/"+key+".sh"
-		outdir = os.path.dirname(outfile)
-
-		if not os.path.exists(outdir):
-			os.makedirs(outdir)
-		outfd = open(outfile,"w")
-		
-		for x in self.settings[key]:
-			outfd.write(x+"\n")
-
-		outfd.close()
-
-		if self.settings["subarch/arch"] == "x86" and os.uname()[4] == "x86_64":
-			cmds = [bin["linux32"],bin["chroot"],chrootdir,bin["bash"]]
+			return self.runScript(key,chrootdir=self.settings["path/work"])
 		else:
-			cmds = [bin["chroot"],chrootdir,bin["bash"]]
-
-		cmds.append("/tmp/"+key+".sh")
-
-		retval = spawn(cmds, env=self.env )
-
-		if retval != 0:
-			raise MetroError, "Command failure: "+" ".join(cmds)
+			return self.runScript(key,chrootdir)
 
 	def __init__(self,settings):
 		target.__init__(self,settings)
@@ -222,15 +237,17 @@ class snapshot(target):
 		target.__init__(self,settings)
 	
 	def run(self):
-		if self.targetExists("path/mirror/snapshot")
+		if self.targetExists("path/mirror/snapshot"):
 			return
 
-		self.cleanWorkPath(recreate=True)
+		self.cleanPath(recreate=True)
 
-		# TODO - add check to ensure that run/rysnc or run/git has been defined, here or in constructor
-		self.exec("snapshot/run/"+self.settings["snapshot/type"])
-		#raise MetroError, "snapshot/type of \""+self.settings["snapshot/type"]+"\" not recognized."
-		# workdir cleanup is handled by catalyst calling our cleanup() method
+		runkey="target/run/"+self.settings["target/type"]
+
+		if not self.settings.has_key(runkey):
+			raise MetroError, "Required steps in %s not found." % runkey
+
+		self.runScript(runkey)
 
 class stage(chroot):
 
@@ -253,7 +270,7 @@ class stage(chroot):
 			return
 
 		# look for required files
-		for loc in [ "storedir/srcstage", "storedir/snapshot" ]:
+		for loc in [ "path/mirror/srcstage", "path/mirror/snapshot" ]:
 			if not os.path.exists(self.settings[loc]):
 				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
 
@@ -265,15 +282,15 @@ class stage(chroot):
 		self.cleanWorkPath(recreate=True)
 		try:
 			self.mount_safety_check()
-			self.exec("unpack")
-			self.exec("unpack/post")
+			self.runScript("unpack")
+			self.runScript("unpack/post")
 			self.unpack_snapshot()
 
 			self.bind()
 
-			self.exec_in_chroot("chroot/prerun")
-			self.exec_in_chroot("chroot/run")
-			self.exec_in_chroot("chroot/postrun")
+			self.runScriptInChroot("chroot/prerun")
+			self.runScriptInChroot("chroot/run")
+			self.runScriptInChroot("chroot/postrun")
 			
 			self.unbind()
 			
@@ -284,9 +301,9 @@ class stage(chroot):
 			# now let the spec-defined clean script do all the heavy lifting...
 
 			if self.settings["target"] == "stage1":
-				self.exec_in_chroot("chroot/clean",self.settings["chrootdir"]+self.settings["ROOT"])
+				self.execInChroot("chroot/clean",self.settings["chrootdir"]+self.settings["ROOT"])
 			else:
-				self.exec_in_chroot("chroot/clean")
+				self.execInChroot("chroot/clean")
 			
 		except:
 		
