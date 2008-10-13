@@ -44,7 +44,7 @@ print
 ]
 
 run: [
->> chroot/setup
+>> files/setup
 
 cat > /tmp/build.py << EOF
 >> target/pythonjunk
