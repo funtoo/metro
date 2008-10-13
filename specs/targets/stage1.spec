@@ -1,11 +1,15 @@
-metro/class: stage
-ROOT: /tmp/stage1root
-source: stage3
-target: stage1 
-source/lastdate: << $[controldir]/lastdate
-source/subarch: << $[controldir]/subarch
+[collect $[path/metro]/specs/arch/$[target/subarch].spec]
+[collect $[path/metro]/etc/files.conf]
 
-chroot/pythonjunk: [
+[section target]
+
+class: stage
+
+[section portage]
+
+ROOT: /tmp/stage1root
+
+pythonjunk: [
 #!/usr/bin/python
 
 import os,portage
@@ -39,11 +43,11 @@ for b in buildpkgs: print b,
 print
 ]
 
-chroot/run: [
+run: [
 >> chroot/setup
 
 cat > /tmp/build.py << EOF
->> chroot/pythonjunk
+>> target/pythonjunk
 EOF
 
 export buildpkgs="$(python /tmp/build.py)"
@@ -61,8 +65,8 @@ else
 	echo "WE ARE BUILDING: ${buildpkgs}"
 fi
 
-export ROOT="$[ROOT]"
-install -d $[ROOT]
+export ROOT="$[portage/ROOT]"
+install -d ${ROOT}
 #emerge baselayout || exit 1
 # removing emerge/options for now because some source stages don't support --jobs yet
 emerge --noreplace --oneshot ${buildpkgs} || exit 1

@@ -1,19 +1,22 @@
-metro/class: stage
+[collect $[path/metro]/specs/arch/$[target/subarch].spec]
+[collect $[path/metro]/etc/files.conf]
+
+[section target]
+
+class: stage
+
+[section portage]
+
 ROOT: /
-source: stage1
-source/lastdate: $[version]
-source/subarch: $[subarch]
-target: stage2 
 
 chroot/run: [
-	>> chroot/setup
-
+	>> files/setup
 	export AUTOCLEAN="yes"
 	export CONFIG_PROTECT="-*"
 	export FEATURES="-collision-protect"
 
-	cat > /tmp/bootstrap.py << EOF
->> chroot/bootstrap.py
+	cat > /tmp/bootstrap.py << "EOF"
+>> target/bootstrap.py
 EOF
 	python /tmp/bootstrap.py --check || exit 1
 
@@ -28,7 +31,7 @@ EOF
 	gcc-config $(gcc-config --get-current-profile)
 ]
 
-chroot/bootstrap.py: [
+bootstrap.py: [
 #!/usr/bin/python
 import portage,sys
 pkgdict={}

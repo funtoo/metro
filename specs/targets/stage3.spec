@@ -1,10 +1,14 @@
+[collect $[path/metro]/specs/arch/$[target/subarch].spec]
+[collect $[path/metro]/etc/files.conf]
+
 [section target]
 
 class: stage
 
-run: 	>> files/setup
+run: 	[
+	>> files/setup
 	USE="build" emerge --oneshot --nodeps portage || exit 1
-	export USE="$[portage/USE] $[subarch/HOSTUSE] bindist"
+	export USE="$[portage/USE] bindist"
 	emerge $[emerge/options] -e system || exit 1
 	if [ "$[emerge/packages]" != "" ]
 	then
