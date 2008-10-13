@@ -5,8 +5,10 @@
 
 class: stage
 
+[section steps]
+
 run: 	[
-	>> files/setup
+	>> steps/setup
 	USE="build" emerge --oneshot --nodeps portage || exit 1
 	export USE="$[portage/USE] bindist"
 	emerge $[emerge/options] -e system || exit 1

@@ -1,8 +1,9 @@
-#what what I want
 [section target]
 
 class: snapshot
 #require: snapshot/type snapshot snapshot/path target/version target path/mirror/snapshot
+
+[section steps]
 
 run/rsync: [
 	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ $[portage/path]/ $[path/work]/portage/ || exit 1

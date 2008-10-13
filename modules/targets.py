@@ -242,7 +242,7 @@ class snapshot(target):
 
 		self.cleanPath(recreate=True)
 
-		runkey="target/run/"+self.settings["target/type"]
+		runkey="steps/run/"+self.settings["target/type"]
 
 		if not self.settings.has_key(runkey):
 			raise MetroError, "Required steps in %s not found." % runkey
@@ -279,18 +279,18 @@ class stage(chroot):
 		self.mount_safety_check()
 
 		# BEFORE WE START - CLEAN UP ANY MESSES
-		self.cleanWorkPath(recreate=True)
+		self.cleanPath(recreate=True)
 		try:
 			self.mount_safety_check()
-			self.runScript("unpack")
-			self.runScript("unpack/post")
-			self.unpack_snapshot()
+			self.runScript("steps/unpack")
+			if self.settings.has_key("steps/unpack/post"):
+				self.runScript("steps/unpack/post")
 
 			self.bind()
 
-			self.runScriptInChroot("chroot/prerun")
-			self.runScriptInChroot("chroot/run")
-			self.runScriptInChroot("chroot/postrun")
+			self.runScriptInChroot("steps/prerun")
+			self.runScriptInChroot("steps/run")
+			self.runScriptInChroot("steps/postrun")
 			
 			self.unbind()
 			
@@ -299,11 +299,8 @@ class stage(chroot):
 			self.chroot_cleanup()
 
 			# now let the spec-defined clean script do all the heavy lifting...
-
-			if self.settings["target"] == "stage1":
-				self.execInChroot("chroot/clean",self.settings["chrootdir"]+self.settings["ROOT"])
-			else:
-				self.execInChroot("chroot/clean")
+			# NEED A VARIABLE FOR THE "REAL" CHROOT:	
+			self.runScriptInChroot("steps/clean")
 			
 		except:
 		

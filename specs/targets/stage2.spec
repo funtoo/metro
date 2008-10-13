@@ -9,14 +9,16 @@ class: stage
 
 ROOT: /
 
-chroot/run: [
-	>> files/setup
+[section steps]
+
+steps/run: [
+	>> steps/setup
 	export AUTOCLEAN="yes"
 	export CONFIG_PROTECT="-*"
 	export FEATURES="-collision-protect"
 
 	cat > /tmp/bootstrap.py << "EOF"
->> target/bootstrap.py
+>> files/bootstrap.py
 EOF
 	python /tmp/bootstrap.py --check || exit 1
 
@@ -30,6 +32,8 @@ EOF
 
 	gcc-config $(gcc-config --get-current-profile)
 ]
+
+[section files]
 
 bootstrap.py: [
 #!/usr/bin/python

@@ -43,8 +43,10 @@ for b in buildpkgs: print b,
 print
 ]
 
+[section steps]
+
 run: [
->> files/setup
+>> steps/setup
 
 cat > /tmp/build.py << EOF
 >> target/pythonjunk

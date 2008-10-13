@@ -100,7 +100,13 @@ class collection:
 				truekeys.append(cond)
 			if len(truekeys) > 1:
 				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (varname, repr(truekeys)) 
-		return self.conditionals[varname][truekeys[0]]
+		if len(truekeys) == 1:
+			return self.conditionals[varname][truekeys[0]]
+		elif len(truekeys) == 0:
+			return None
+		else:
+			#shouldn't get here
+			raise FlexDataError
 			
 
 	def expand(self,myvar):
@@ -132,7 +138,10 @@ class collection:
 			else:
 				string = self.get_condition_for(myvar)
 				if string == None:
-					raise KeyError
+					if self.lax:
+						string = self.laxstring % ( myvar, "" )
+					else:
+						raise KeyError
 			
 		if type(string) != types.StringType:
 			if len(stack) >=1:
@@ -273,7 +282,8 @@ class collection:
 		mylist=self.raw.keys()
 		for x in self.conditionals:
 			mycond = self.get_condition_for(x)
-			if x != None:
+			if mycond != None:
+				print "DEBUG: got condition for",mycond
 				mylist.append(x)
 		return mylist
 
