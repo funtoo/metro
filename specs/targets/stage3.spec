@@ -8,7 +8,7 @@ class: stage
 
 [section steps]
 
-run: [
+chroot/run: [
 #!/bin/bash
 >> steps/setup
 USE="build" emerge --oneshot --nodeps portage || exit 1
