@@ -12,12 +12,12 @@ ROOT: /
 
 [section steps]
 
-steps/run: [
+chroot/run: [
 #!/bin/bash
 >> steps/setup
 export AUTOCLEAN="yes"
 export CONFIG_PROTECT="-*"
-export FEATURES="-collision-protect"
+export FEATURES="$FEATURES -collision-protect"
 
 cat > /tmp/bootstrap.py << "EOF"
 >> files/bootstrap.py
