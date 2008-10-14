@@ -10,6 +10,8 @@ class: stage
 
 ROOT: /tmp/stage1root
 
+[section files]
+
 pythonjunk: [
 #!/usr/bin/python
 
@@ -46,11 +48,12 @@ print
 
 [section steps]
 
-run: [
+chroot/run: [
+#!/bin/bash
 >> steps/setup
 
-cat > /tmp/build.py << EOF
->> target/pythonjunk
+cat > /tmp/build.py << "EOF"
+>> files/pythonjunk
 EOF
 
 export buildpkgs="$(python /tmp/build.py)"
@@ -70,6 +73,7 @@ fi
 
 export ROOT="$[portage/ROOT]"
 install -d ${ROOT}
+# let's see if we can get away without merging baselayout first:
 #emerge baselayout || exit 1
 # removing emerge/options for now because some source stages don't support --jobs yet
 emerge --noreplace --oneshot ${buildpkgs} || exit 1

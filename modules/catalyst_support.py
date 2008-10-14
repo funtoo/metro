@@ -328,7 +328,6 @@ def msg(mymsg,verblevel=1):
 def ismount(path):
 	"enhanced to handle bind mounts"
 	if os.path.ismount(path):
-		print "ismount reports that",path,"is still mounted..."
 		return 1
 	a=os.popen("mount")
 	mylines=a.readlines()
@@ -336,7 +335,6 @@ def ismount(path):
 	for line in mylines:
 		mysplit=line.split()
 		if os.path.normpath(path) == os.path.normpath(mysplit[2]):
-			print "popen shows",path,"still mounted. Line: ",line
 			return 1
 	return 0
 

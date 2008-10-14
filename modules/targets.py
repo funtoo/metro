@@ -17,9 +17,13 @@ class target:
 
 	def runScript(self,key,chroot=None):
 		if not self.settings.has_key(key):
-			raise MetroError, "exec: key \""+key+"\" not found."
+			raise MetroError, "runScript: key \""+key+"\" not found."
 		if type(self.settings[key]) != types.ListType:
-			raise MetroError, "exec: key \""+key+"\" is not a multi-line element."
+			raise MetroError, "runScript: key \""+key+"\" is not a multi-line element."
+
+		print
+		print "runScript: running %s..." % key
+		print
 
 		os.environ["PATH"] = self.env["PATH"]
 
@@ -48,6 +52,7 @@ class target:
 				cmds = [bin["linux32"],bin["chroot"]]
 			else:
 				cmds = [bin["chroot"]]
+			cmds.append(chroot)
 			cmds.append(chrootfile)
 		else:
 			cmds.append(outfile)
@@ -55,7 +60,7 @@ class target:
 		retval = spawn(cmds, env=self.env )
 
 		if retval != 0:
-			raise MetroError, "Command failure: "+" ".join(cmds)
+			raise MetroError, "Command failure (key %s, return value %s) : %s" % ( key, repr(retval), " ".join(cmds))
 
 
 	def targetExists(self,key):
@@ -127,11 +132,11 @@ class chroot(target):
 				print "Killing process "+pid+" ("+mylink+")"
 				self.cmd(bin["kill"]+" -9 "+pid)
 
-	def runScriptInChroot(self,key,chrootdir=None):
-		if chrootdir == None:
-			return self.runScript(key,chrootdir=self.settings["path/work"])
+	def runScriptInChroot(self,key,chroot=None):
+		if chroot == None:
+			return self.runScript(key,chroot=self.settings["path/work"])
 		else:
-			return self.runScript(key,chrootdir)
+			return self.runScript(key,chroot=chroot)
 
 	def __init__(self,settings):
 		target.__init__(self,settings)
@@ -222,13 +227,10 @@ class chroot(target):
 			if ismount(mypath+x):
 				#something is still mounted
 				try:
-					print x+" is still mounted; performing auto-bind-umount...",
 					# try to umount stuff ourselves
 					self.unbind()
 					if ismount(mypath+x):
 						raise MetroError, "Auto-unbind failed for "+x
-					else:
-						print "Auto-unbind successful..."
 				except MetroError:
 					raise MetroError, "Unable to auto-unbind "+x
 
@@ -288,39 +290,19 @@ class stage(chroot):
 
 			self.bind()
 
-			self.runScriptInChroot("steps/chroot/prerun")
+			if self.settings.has_key("steps/chroot/prerun"):
+				self.runScriptInChroot("steps/chroot/prerun")
 			self.runScriptInChroot("steps/chroot/run")
 			self.runScriptInChroot("steps/chroot/postrun")
 			
 			self.unbind()
 			
-			# remove our tweaks...
-
-			self.chroot_cleanup()
-
-			# now let the spec-defined clean script do all the heavy lifting...
-			# NEED A VARIABLE FOR THE "REAL" CHROOT:	
 			self.runScriptInChroot("steps/chroot/clean")
-			
 		except:
-		
 			self.kill_chroot_pids()
 			self.mount_safety_check()
 			raise
 
-		# Now, grab the fruits of our labor.
-		self.capture()
-	
-	def capture(self):
-		"""capture target in a tarball"""
-		# target should not exist - we removed it earlier if it did
-		grabpath=os.path.normpath(self.settings["path/work"]+self.settings["ROOT"])
-		
-		# Ensure target stage directory exists (might be several subdirectories that need to be created)
-		if not os.path.exists(os.path.dirname(self.settings["path/mirror/deststage"])):
-			os.makedirs(os.path.dirname(self.settings["path/mirror/deststage"]))
-
-		print "Creating stage tarball..."
-		self.cmd("tar cjpf "+self.settings["path/mirror//deststage"]+" -C "+grabpath+" .","Couldn't create stage tarball",badval=2)
+		self.runScript("steps/capture")
 
 #vim: ts=4 sw=4 sta et sts=4 ai
