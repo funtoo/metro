@@ -142,7 +142,6 @@ if __name__ == "__main__":
 		settings.collect("/etc/metro/metro.conf")
 	else:
 		print "Warning: /etc/metro/metro.conf not found."
-	
 	# the new version of metro/catalyst does not have any configuration file
 	# parse command-line supplied configuration files and spec files in the order they were specified
 
@@ -156,13 +155,12 @@ if __name__ == "__main__":
 			settings[args[apos][:-1]] = args[apos+1]
 			apos += 2
 		else:
-			settings.collect(args[apos])
+			print "Adding %s to collection list..." % args[apos]
+			settings.collector.append(args[apos])
 			apos += 1
 	
 	settings.runCollector()
 	
-	if debug:
-		settings.debugdump()
 	if valueme:
 		print settings[valueme]
 		sys.exit(0)
@@ -195,8 +193,12 @@ if __name__ == "__main__":
 		# We're all done.
 
 		print __app__+": complete."
+		if debug:	
+			settings.debugdump()
 	except MetroError:
-		print "ERROR - exiting."
+		raise
+	except flexdata.FlexDataError:
+		raise
 	except KeyboardInterrupt:
 		print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
 		print

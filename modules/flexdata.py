@@ -398,6 +398,9 @@ class collection:
 				if len(mysection)>3:
 					if mysection[2] == "when":
 						self.collectorcond[mysection[1]]=mysection[3]
+						# even with a conditional, we still put the thing on the main collector list:
+						self.collector.append(mysection[1])
+						print 'DEBUG: COLLECTORCOND',self.collectorcond
 						#self.collector.append(mysection[1])
 					else:
 						raise FlexDataError,"Ow, [collect] clause seems invalid"
@@ -480,16 +483,17 @@ class collection:
 					contfails += 1
 					# move failed item to back of list
 					self.collector = self.collector[1:] + [self.collector[0]]
-				else:
-					# read in data:
-					self.collect(myexpand)
-					# we already parsed it, so remove filename from list:
-					self.collector = self.collector[1:]
-					# reset continuous fail counter, we are making progress:
-					contfails = 0
+					continue
+				# read in data:
+				self.collect(myexpand)
+				# we already parsed it, so remove filename from list:
+				self.collector = self.collector[1:]
+				# reset continuous fail counter, we are making progress:
+				contfails = 0
 		self.lax=oldlax
-		if len(self.collector) != 0:
-			raise FlexDataError, "Unable to collect all files - uncollected are: "+repr(self.collector)
+		# leftovers are ones that had false conditions, so we don't want to raise an exception:
+		#if len(self.collector) != 0:
+		#	raise FlexDataError, "Unable to collect all files - uncollected are: "+repr(self.collector)
 
 if __name__ == "__main__":
 	coll = collection(debug=False)
