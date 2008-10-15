@@ -48,7 +48,7 @@ class target:
 
 		cmds = []
 		if chroot:
-			if self.settings["subarch/arch"] == "x86" and os.uname()[4] == "x86_64":
+			if self.settings["target/arch"] == "x86" and os.uname()[4] == "x86_64":
 				cmds = [bin["linux32"],bin["chroot"]]
 			else:
 				cmds = [bin["chroot"]]

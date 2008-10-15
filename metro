@@ -155,7 +155,6 @@ if __name__ == "__main__":
 			settings[args[apos][:-1]] = args[apos+1]
 			apos += 2
 		else:
-			print "Adding %s to collection list..." % args[apos]
 			settings.collector.append(args[apos])
 			apos += 1
 	
