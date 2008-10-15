@@ -71,7 +71,7 @@ class collection:
 		self.suf = "]"
 		self.immutable=False
 		# lax means: if a key isn't found, pretend it exists but return the empty string.
-		self.lax=True
+		self.lax=False
 		self.laxstring="[BLANK var=%s %s]"
 		self.blanks={}
 		# self.collected holds the names of files we've collected (parsed)

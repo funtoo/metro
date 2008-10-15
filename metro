@@ -35,7 +35,7 @@ def usage():
 def version():
 	print " "+__app__,"-",__version__
 	print
-	print " Copyright 2008 Funtoo Technologies, LLC; Portions copyright 2003-2007 Gentoo Foundation"
+	print " Copyright 2008-2009 Funtoo Technologies, LLC; Portions copyright 2003-2007 Gentoo Foundation"
 	print " Maintainer:",__maintainer__
 	print
 	print " Web: http://www.funtoo.org"
@@ -137,8 +137,6 @@ if __name__ == "__main__":
 	import targets
 
 	settings=flexdata.collection()
-	settings["metro_version"]=__version__
-	settings["sharedir"]=sharedir
 
 	if os.path.exists("/etc/metro/metro.conf"):
 		settings.collect("/etc/metro/metro.conf")
@@ -148,9 +146,21 @@ if __name__ == "__main__":
 	# the new version of metro/catalyst does not have any configuration file
 	# parse command-line supplied configuration files and spec files in the order they were specified
 
-	for arg in args:
-		settings.collect(arg)
+	apos = 0
+
+	while apos < len(args):
+		if args[apos][-1] == ":":
+		# args such as: target/version: 2008.10.12 - parse both of these args
+			if apos+1 >= len(args):
+				raise MetroError, "Missing value argument for %s" % args[apos]
+			settings[args[apos][:-1]] = args[apos+1]
+			apos += 2
+		else:
+			settings.collect(args[apos])
+			apos += 1
+	
 	settings.runCollector()
+	
 	if debug:
 		settings.debugdump()
 	if valueme:

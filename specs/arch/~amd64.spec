@@ -1,4 +1,4 @@
-[collect $[path/metro]/specs/ports/portage.spec]
+[collect $[path/metro]/specs/ports/funtoo.spec]
 
 [section target]
 
