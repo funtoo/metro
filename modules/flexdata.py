@@ -400,7 +400,6 @@ class collection:
 						self.collectorcond[mysection[1]]=mysection[3]
 						# even with a conditional, we still put the thing on the main collector list:
 						self.collector.append(mysection[1])
-						print 'DEBUG: COLLECTORCOND',self.collectorcond
 						#self.collector.append(mysection[1])
 					else:
 						raise FlexDataError,"Ow, [collect] clause seems invalid"
