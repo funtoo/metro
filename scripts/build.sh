@@ -55,9 +55,9 @@ do_everything() {
 	echo "Starting..."
 	if [ "$UNSTABLE" = "yes" ]
 	then
-		metro -d /usr/lib/metro/etc/USER-snapshot-funtoo.conf target/version: $CURDATE || die "snapshot fail"
+		metro /usr/lib/metro/etc/USER-snapshot-funtoo.conf target/version: $CURDATE || die "snapshot fail"
 	else
-		metro -d /usr/lib/metro/etc/USER-snapshot.conf target/version: $CURDATE || die "snapshot fail"
+		metro /usr/lib/metro/etc/USER-snapshot.conf target/version: $CURDATE || die "snapshot fail"
 	fi
 	metro /usr/lib/metro/etc/USER-stage1.conf target/version: $CURDATE target/subarch: $SUBARCH || die "stage1 fail"
 	metro /usr/lib/metro/etc/USER-stage2.conf target/version: $CURDATE target/subarch: $SUBARCH || die "stage2 fail"

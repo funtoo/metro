@@ -75,6 +75,5 @@ export ROOT="$[portage/ROOT]"
 install -d ${ROOT}
 # let's see if we can get away without merging baselayout first:
 #emerge baselayout || exit 1
-# removing emerge/options for now because some source stages don't support --jobs yet
-emerge --noreplace --oneshot ${buildpkgs} || exit 1
+emerge $[emerge/options] --noreplace --oneshot ${buildpkgs} || exit 1
 ]
