@@ -96,7 +96,7 @@ class collection:
 			return None
 		truekeys=[]
 		for cond in self.conditionals[varname].keys():
-			if self.raw.has_key(cond):
+			if self.conditionTrue(cond):
 				truekeys.append(cond)
 			if len(truekeys) > 1:
 				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (varname, repr(truekeys)) 
@@ -141,7 +141,7 @@ class collection:
 					if self.lax:
 						string = self.laxstring % ( myvar, "" )
 					else:
-						raise KeyError
+						raise KeyError, "Variable "+repr(myvar)+" not found."
 			
 		if type(string) != types.StringType:
 			if len(stack) >=1:
@@ -392,12 +392,13 @@ class collection:
 			elif mysection[0] == "when":
 				# conditional block
 				self.conditional=" ".join(mysection[1:])
+				print "DEBUG: set self.conditional to",self.conditional
 				if self.conditional == "*":
 					self.conditional = None
 			elif mysection[0] == "collect":
 				if len(mysection)>3:
 					if mysection[2] == "when":
-						self.collectorcond[mysection[1]]=mysection[3]
+						self.collectorcond[mysection[1]]=" ".join(mysection[3:])
 						# even with a conditional, we still put the thing on the main collector list:
 						self.collector.append(mysection[1])
 						#self.collector.append(mysection[1])
@@ -406,7 +407,7 @@ class collection:
 				elif len(mysection)==2:
 					self.collector.append(mysection[1])
 				else:
-					raise FlexDataError,"Ow, [collect] expects 1 or 3 arguments."
+					raise FlexDataError,"Ow, [collect] expects 1 or 4+ arguments."
 			else:
 				raise FlexDataError,"Invalid annotation: %s in %s" % (mysection[0], curline[:-1])
 		elif mysplit[0][-1] == ":":
@@ -419,7 +420,7 @@ class collection:
 				mykey = self.section+"/"+mykey
 				self.sectionfor[mykey]=self.section
 			if not dups and self.raw.has_key(mykey):
-				raise FlexDataError,"Error - \""+mykey+"\" already defined."
+				raise FlexDataError,"Error - \""+mykey+"\" already defined. Value: %s. New line: %s." % ( repr(self.raw[mykey]), curline[:-1] )
 			myvalue = " ".join(mysplit[1:])
 			if self.conditional:
 				if not self.conditionals.has_key(mykey):
@@ -446,6 +447,32 @@ class collection:
 		# add to our list of parsed files
 		self.collected.append(os.path.normpath(filename))
 
+	def conditionTrue(self,cond):
+		print "DEBUG: evaluating condition"
+		cond=cond.split()
+		print "DEBUG: cond.split =",cond
+		if len(cond) == 1:
+			if self.raw.has_key(cond[0]):
+				return True
+			else:
+				return False
+		elif len(cond) in [0,2]:
+			raise FlexDataError, "Condition "+repr(cond)+" is invalid"
+		elif len(cond) == 3:
+			if cond[1] != "is":
+				raise FlexDataError, "Expecting \"is\" in condition "+repr(cond)
+			if not self.raw.has_key(cond[0]):
+				# maybe it's not defined
+				return False
+			elif self[cond[0]]==cond[2]:
+				# maybe it's defined and equal
+				return True
+			else:
+				return False
+		else:
+			raise FlexDataError, "Invalid condition"
+
+
 	def runCollector(self):
 		# BUG? we may need to have an expandString option that will disable the ability to go to the evaluated dict,
 		# because as we parse new files, we have new data and some "lax" evals may evaluate correctly now.
@@ -458,10 +485,12 @@ class collection:
 		oldlax = self.lax
 		self.lax = False
 		while len(self.collector) != 0 and contfails < len(self.collector):
+			# grab the first item from our collector list
 			myitem = self.collector[0]
 			if self.collectorcond.has_key(myitem):
 				cond = self.collectorcond[myitem]
-				if not self.raw.has_key(cond):
+				# is the condition true?: 
+				if not self.conditionTrue(cond):
 					contfails += 1
 					self.collector = self.collector[1:] + [self.collector[0]]
 					continue
