@@ -234,6 +234,45 @@ class chroot(target):
 				except MetroError:
 					raise MetroError, "Unable to auto-unbind "+x
 
+	def run(self):
+		if self.targetExists("path/mirror/dest"):
+			return
+
+		# look for required files
+		for loc in [ "path/mirror/src" ]
+			if not os.path.exists(self.settings[loc]):
+				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
+
+		# BEFORE WE CLEAN UP - MAKE SURE WE ARE UNMOUNTED
+		self.kill_chroot_pids()
+		self.mount_safety_check()
+
+		# BEFORE WE START - CLEAN UP ANY MESSES
+		self.cleanPath(recreate=True)
+		try:
+			self.mount_safety_check()
+			self.runScript("steps/unpack")
+			if self.settings.has_key("steps/unpack/post"):
+				self.runScript("steps/unpack/post")
+
+			self.bind()
+
+			if self.settings.has_key("steps/chroot/prerun"):
+				self.runScriptInChroot("steps/chroot/prerun")
+			self.runScriptInChroot("steps/chroot/run")
+			self.runScriptInChroot("steps/chroot/postrun")
+			
+			self.unbind()
+			
+			self.runScriptInChroot("steps/chroot/clean")
+		except:
+			self.kill_chroot_pids()
+			self.mount_safety_check()
+			raise
+
+		self.runScript("steps/capture")
+
+
 class snapshot(target):
 	def __init__(self,settings):
 		target.__init__(self,settings)
