@@ -307,11 +307,11 @@ class stage(chroot):
 			self.mountmap["/dev"] = "/dev"
 			self.mountmap["/dev/pts"] = "/dev/pts"
 	def run(self):
-		if self.targetExists("path/mirror/deststage"):
+		if self.targetExists("path/mirror/target"):
 			return
 
 		# look for required files
-		for loc in [ "path/mirror/srcstage", "path/mirror/snapshot" ]:
+		for loc in [ "path/mirror/source", "path/mirror/snapshot" ]:
 			if not os.path.exists(self.settings[loc]):
 				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
 
