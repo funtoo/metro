@@ -16,10 +16,17 @@ fi
 OUTDIR=`metro -k path/mirror`
 if [ ! -d $OUTDIR ]
 then
-	die "Mirror directory $OUTDIR (from 'metro -k path/mirro') does not exist."
+	die "Mirror directory $OUTDIR (from 'metro -k path/mirror') does not exist."
 fi
 
 SUBARCH=$1
+
+CONTROL=`metro -k path/mirror/control target/subarch: $SUBARCH`
+if [ ! -d $CONTROL ]
+then
+	die "Control directory $CONTROL (from 'metro -k path/mirror/control target/subarch: $SUBARCH') does not exist."
+fi
+
 if [ "$#" = "2" ]
 then
 	CURDATE=$2
@@ -63,8 +70,8 @@ do_everything() {
 	metro /usr/lib/metro/etc/USER-stage2.conf target/version: $CURDATE target/subarch: $SUBARCH || die "stage2 fail"
 	metro /usr/lib/metro/etc/USER-stage3.conf target/version: $CURDATE target/subarch: $SUBARCH || die "stage3 fail"
 	# update what we will build against next time:
-	echo $CURDATE > /home/mirror/linux/$SUBARCH/.control/lastdate
-	echo $SUBARCH > /home/mirror/linux/$SUBARCH/.control/subarch
+	echo $CURDATE > $CONTROL/lastdate
+	echo $SUBARCH > $CONTROL/subarch
 }
 
 do_everything
