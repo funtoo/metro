@@ -1,10 +1,10 @@
-metro/class: chroot 
-source: stage3
-target: openvz
-author: Daniel Robbins <drobbins@funtoo.org>
-template/name: gentoo-openvz-$[subarch]-$[version]
-template/file: $[template/name].tar.gz
-storedir/template: $[storedir]/openvz/$[subarch]/$[template/file]
+[collect $[path/metro]/specs/arch/$[target/subarch].spec]
+
+[section target]
+
+class: chroot
+
+[section steps]
 
 chroot/test: [
 	# root password blank
@@ -43,14 +43,14 @@ chroot/run: [
 	# OpenRC
 	rc-update del consolefont boot
 	cp /etc/rc.conf /etc/rc.conf.orig || exit 1
-	cat /etc/rc.conf.orig | sed -e "/^#rc_devices/c\\" -e 'rc_devices="static"' > /etc/rc.conf || exit
+	cat /etc/rc.conf.orig | sed -e "/^#rc_devices/c\\" -e 'rc_devices="static"' > /etc/rc.conf || exit 1
 	
 	# timezone
 	rm /etc/localtime
 	ln -s /usr/share/zoneinfo/UTC /etc/localtime
 
-	#hostname - change periods from templatename into dashes
-	myhost=`echo $[template/name] | tr . -`
+	#hostname - change periods from target/name into dashes
+	myhost=`echo $[target/name] | tr . -`
 	cat > /etc/conf.d/hostname << EOF
 # /etc/conf.d/hostname
 
@@ -59,21 +59,24 @@ hostname=${myhost}
 EOF
 
 	#motd
-	cat > /etc/motd << EOF
+	cat > /etc/motd << "EOF"
 >> chroot/files/motd
 EOF
 	fi
 ]
 
-chroot/files/motd: [
+[section files]
 
- >>> OpenVZ Template:               $[template/name]
- >>> Version:                       $[version] 
- >>> Created by:                    $[author] 
- 
+motd: [
+
+ >>> OpenVZ Template:               $[target/name]
+ >>> Version:                       $[target/version] 
+ >>> Created by:                    $[openvz/author] 
+ >>> CFLAGS:                        $[portage/CFLAGS]
+
  >>> Send suggestions, improvements, bug reports relating to... 
  
- >>> This OpenVZ template:          $[author]
+ >>> This OpenVZ template:          $[openvz/author]
  >>> Gentoo Linux (general):        Gentoo Linux (http://www.gentoo.org)
  >>> OpenVZ (general):              OpenVZ (http://www.openvz.org)
 

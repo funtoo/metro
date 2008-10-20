@@ -392,11 +392,16 @@ class collection:
 			elif mysection[0] == "when":
 				# conditional block
 				self.conditional=" ".join(mysection[1:])
-				print "DEBUG: set self.conditional to",self.conditional
 				if self.conditional == "*":
 					self.conditional = None
 			elif mysection[0] == "collect":
-				if len(mysection)>3:
+				if self.conditional:
+					# This part of the code handles a [collect] annotation that appears inside a [when] block - we use the [when] condition in this case
+					if len(mysection)>=3:
+						raise FlexDataError, "Conditional collect annotations not allowed inside \"when\" annotations: %s" % repr(mysection)
+					self.collectorcond[mysection[1]]=self.conditional
+					self.collector.append(mysection[1])
+				elif len(mysection)>3:
 					if mysection[2] == "when":
 						self.collectorcond[mysection[1]]=" ".join(mysection[3:])
 						# even with a conditional, we still put the thing on the main collector list:
@@ -448,9 +453,7 @@ class collection:
 		self.collected.append(os.path.normpath(filename))
 
 	def conditionTrue(self,cond):
-		print "DEBUG: evaluating condition"
 		cond=cond.split()
-		print "DEBUG: cond.split =",cond
 		if len(cond) == 1:
 			if self.raw.has_key(cond[0]):
 				return True
