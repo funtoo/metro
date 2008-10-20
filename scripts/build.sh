@@ -21,7 +21,7 @@ fi
 
 SUBARCH=$1
 
-CONTROL=`metro -k path/mirror/control target/subarch: $SUBARCH`
+CONTROL=`metro -k path/mirror/control target: stage3 target/subarch: $SUBARCH`
 if [ ! -d $CONTROL ]
 then
 	die "Control directory $CONTROL (from 'metro -k path/mirror/control target/subarch: $SUBARCH') does not exist."
