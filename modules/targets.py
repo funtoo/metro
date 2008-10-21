@@ -148,7 +148,7 @@ class chroot(target):
 		
 		# CCACHE SUPPORT FOR CHROOTS
 
-		if self.settings.has_key("metro/options") and "ccache" in self.settings["metro/options"].split():
+		if self.settings.has_key("metro/options/chroot") and "ccache" in self.settings["metro/options/chroot"].split():
 			if os.environ.has_key("CCACHE_DIR"):
 				ccdir=os.environ["CCACHE_DIR"]
 			else:
@@ -235,11 +235,11 @@ class chroot(target):
 					raise MetroError, "Unable to auto-unbind "+x
 
 	def run(self):
-		if self.targetExists("path/mirror/dest"):
+		if self.targetExists("path/mirror/target"):
 			return
 
 		# look for required files
-		for loc in [ "path/mirror/src" ]:
+		for loc in [ "path/mirror/source" ]:
 			if not os.path.exists(self.settings[loc]):
 				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
 
@@ -252,19 +252,13 @@ class chroot(target):
 		try:
 			self.mount_safety_check()
 			self.runScript("steps/unpack")
-			if self.settings.has_key("steps/unpack/post"):
-				self.runScript("steps/unpack/post")
 
 			self.bind()
 
-			if self.settings.has_key("steps/chroot/prerun"):
-				self.runScriptInChroot("steps/chroot/prerun")
 			self.runScriptInChroot("steps/chroot/run")
-			self.runScriptInChroot("steps/chroot/postrun")
 			
 			self.unbind()
 			
-			self.runScriptInChroot("steps/chroot/clean")
 		except:
 			self.kill_chroot_pids()
 			self.mount_safety_check()

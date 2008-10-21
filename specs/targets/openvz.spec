@@ -6,20 +6,31 @@ class: chroot
 
 [section steps]
 
-chroot/test: [
-	# root password blank
-	[ "`cat /etc/shadow | grep ^root | cut -b1-7`" != 'root:!:' ] && exit 1
-	# tty must exist
-	[ ! -e /dev/tty ] && exit 1
-	# OpenRC static device setting check
-	[ -e /etc/rc.conf ] && [ `cat /etc/rc.conf | [ `grep '$rc_devices="static"'` = 'rc_devices="static"' ] || exit 1
+unpack: [
+#!/bin/bash
+[ ! -d $[path/chroot] ] && install -d $[path/chroot] 
+[ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777 || exit 2
+echo "Extracting source stage $[path/mirror/source]..."
+tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
 ]
 
-chroot/clean: [
-	rm -f /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf 
+capture: [
+#!/bin/bash
+outdir=`dirname $[path/mirror/target]`
+if [ ! -d $outdir ]
+then
+	install -d $outdir || exit 1
+fi
+tar czpf $[path/mirror/target] -C $[path/chroot] .
+if [ $? -ge 2 ]
+then
+	rm -f $[path/mirror/target]
+	exit 1
+fi
 ]
 
 chroot/run: [
+#!/bin/bash
 	# mounts
 	rm -f /etc/mtab
 	ln -s /proc/mounts /etc/mtab || exit 1
@@ -60,9 +71,20 @@ EOF
 
 	#motd
 	cat > /etc/motd << "EOF"
->> chroot/files/motd
+>> files/motd
 EOF
 	fi
+	
+	rm -f /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf 
+
+	# TESTS
+
+	# root password blank
+	[ "`cat /etc/shadow | grep ^root | cut -b1-7`" != 'root:!:' ] && exit 1
+	# tty must exist
+	[ ! -e /dev/tty ] && exit 1
+	# OpenRC static device setting check
+	[ -e /etc/rc.conf ] && [ `cat /etc/rc.conf | [ `grep '$rc_devices="static"'` = 'rc_devices="static"' ] || exit 1
 ]
 
 [section files]
