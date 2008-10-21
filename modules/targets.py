@@ -64,8 +64,8 @@ class target:
 
 
 	def targetExists(self,key):
-		if "replace" in self.settings["metro/options"].split():
-			if os.path.exists(settings[key]):
+		if self.settings.has_key("metro/options") and "replace" in self.settings["metro/options"].split():
+			if os.path.exists(self.settings[key]):
 				print "Removing existing file %s..." % self.settings[key]
 				self.cmd( bin["rm"] + " -f " + self.settings[key])
 			return False

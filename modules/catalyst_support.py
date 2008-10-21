@@ -6,6 +6,17 @@ selinux_capable = False
 #fakeroot_capable = False
 BASH_BINARY             = "/bin/bash"
 
+class MetroError(Exception):
+	def __init__(self, message):
+		if message:
+			(type,value)=sys.exc_info()[:2]
+			if value!=None:
+				print 
+				print traceback.print_exc(file=sys.stdout)
+			print
+			print "!!! metro: "+message
+			print
+	
 try:
         import resource
         max_fd_limit=resource.getrlimit(RLIMIT_NOFILE)
@@ -17,11 +28,6 @@ except:
 
 # pids this process knows of.
 spawned_pids = []
-
-try:
-        import urllib
-except SystemExit, e:
-        raise
 
 def cleanup(pids,block_exceptions=True):
         """function to go through and reap the list of pids passed to it"""
@@ -50,22 +56,7 @@ def cleanup(pids,block_exceptions=True):
                 except IndexError:      pass
 
 verbosity=1
-
-class MetroError(Exception):
-	def __init__(self, message):
-		if message:
-			(type,value)=sys.exc_info()[:2]
-			if value!=None:
-				print 
-				print traceback.print_exc(file=sys.stdout)
-			print
-			print "!!! metro: "+message
-			print
-			
-def die(msg=None):
-	warn(msg)
-	sys.exit(1)
-
+		
 def warn(msg):
 	print "!!! metro: "+msg
 

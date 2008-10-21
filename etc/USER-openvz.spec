@@ -3,11 +3,6 @@
 : openvz
 name: gentoo-openvz-$[target/subarch]-$[target/version]
 
-[section path/mirror]
-
-dest: $[]/openvz/$[target/name].tar.gz
-src: $[path/mirror/srcstage]
-
 [section source]
 
 : stage3

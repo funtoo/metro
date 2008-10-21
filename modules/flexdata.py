@@ -189,7 +189,7 @@ class collection:
 			elif self.conditionals.has_key(varname):
 				expandme = self.get_condition_for(varname)
 				if expandme == None:
-					raise KeyError
+					raise KeyError, "Variable %s not found" % varname
 				newstack=stack[:]
 				newstack.append(varname)
 				ex += self.expandString(expandme,varname,newstack)

@@ -1,6 +1,12 @@
 #!/usr/bin/python -OO
 
-import os,sys,string,getopt
+import os,sys,string,getopt,types
+# we need this hard-coded path because we need a module here before we can parse our config file
+sharedir="/usr/lib/metro"
+sys.path.append(sharedir+"/modules")
+import flexdata
+import targets
+from catalyst_support import *
 
 __app__=os.path.basename(sys.argv[0])
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
@@ -12,8 +18,6 @@ __license__=""" Distributed under the terms of the GNU General Public License ve
 __status__="Development"
 __version__="iteration 1 version 0.5 (1.0.5)"
 
-# we need to define this here because we need to add a module to our path so we can load the config file in /etc
-sharedir="/usr/lib/metro"
 
 def usage():
 	version()
@@ -58,7 +62,8 @@ def find_target(settings):
 		raise MetroError, "Metro class "+settings["target/class"]+" does not appear to be a class."
 	return targets.__dict__[settings["target/class"]](settings)
 
-if __name__ == "__main__":
+	
+def main():
 	if os.getuid() != 0:
 		print __app__ + ": This script requires root privileges to operate."
 		sys.exit(2)
@@ -130,19 +135,13 @@ if __name__ == "__main__":
 		else:
 			evalme=optdict["--eval"]
 
-	# import configuration file and import our main module using those settings
-	sys.path.append(sharedir+"/modules")
-	from catalyst_support import *
-	import flexdata
-	import targets
-
 	settings=flexdata.collection()
 
 	if os.path.exists("/etc/metro/metro.conf"):
 		settings.collect("/etc/metro/metro.conf")
 	else:
 		print "Warning: /etc/metro/metro.conf not found."
-	# the new version of metro/catalyst does not have any configuration file
+	
 	# parse command-line supplied configuration files and spec files in the order they were specified
 
 	apos = 0
@@ -169,38 +168,41 @@ if __name__ == "__main__":
 	if not settings.has_key("target"):
 		raise MetroError("Please specify a target.")
 	
-	try:
-		target = find_target(settings)
+	target = find_target(settings)
 
-		# "target" is now a new object, constructor has run. We have validated that we have all required values.
+	# "target" is now a new object, constructor has run. We have validated that we have all required values.
+	
+	# However - we could still have some bad data -
+	# since settings should now be all defined, now we can go through all the settings now and make sure we don't have any bad
+	# references in our spec data, like foo: $[bar] and not having bar defined. If we find problems, checkconfig() will alert
+	# the user and abort:
+
+	#target.checkconfig(strict)
+	
+	# OK, we have all required values - our config is good - now we can run the target
+	print __app__+": running target \""+settings["target"]+"\"."
+	target.run()
+
+	# Now that the target has run, we want to clean up our temporary work space. cleanup() does this.
+	# TODO: ADD SOMETHING HERE TO CLEAN UP ALL PATHS WE'VE USED...
+	#target.cleanPath()
+
+	# We're all done.
+
+	print __app__+": complete."
+	if debug:	
+		settings.debugdump()
 		
-		# However - we could still have some bad data -
-		# since settings should now be all defined, now we can go through all the settings now and make sure we don't have any bad
-		# references in our spec data, like foo: $[bar] and not having bar defined. If we find problems, checkconfig() will alert
-		# the user and abort:
-
-		#target.checkconfig(strict)
-		
-		# OK, we have all required values - our config is good - now we can run the target
-		print __app__+": running target \""+settings["target"]+"\"."
-		target.run()
-
-		# Now that the target has run, we want to clean up our temporary work space. cleanup() does this.
-		# TODO: ADD SOMETHING HERE TO CLEAN UP ALL PATHS WE'VE USED...
-		#target.cleanPath()
-
-		# We're all done.
-
-		print __app__+": complete."
-		if debug:	
-			settings.debugdump()
-	except MetroError:
-		raise
-	except flexdata.FlexDataError:
-		raise
-	except KeyboardInterrupt:
-		print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
-		print
-		print __app__,"aborting..."
-		raise
-		sys.exit(2)
+try:		
+	main()
+except MetroError:
+	sys.exit(1)
+	print "FOO"
+except flexdata.FlexDataError:
+	sys.exit(1)
+except KeyboardInterrupt:
+	print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
+	print
+	print __app__,"aborting..."
+	raise
+	sys.exit(2)

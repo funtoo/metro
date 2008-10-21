@@ -4,6 +4,10 @@
 
 class: chroot
 
+[section path]
+
+chroot: $[path/work]
+
 [section steps]
 
 unpack: [
@@ -16,6 +20,7 @@ tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
 
 capture: [
 #!/bin/bash
+rm -rf /tmp/steps || exit 1
 outdir=`dirname $[path/mirror/target]`
 if [ ! -d $outdir ]
 then
@@ -37,32 +42,31 @@ chroot/run: [
 	echo "proc /proc proc defaults 0 0" > /etc/fstab
 
 	# turn off gettys
-	mv /etc/inittab /etc/inittab.orig || exit 1
-	cat /etc/inittab.orig | sed -e '/getty/s/^/#/' > /etc/inittab || exit 1
-	rm -f /etc/inittab.orig || exit 1
+	mv /etc/inittab /etc/inittab.orig || exit 2
+	cat /etc/inittab.orig | sed -e '/getty/s/^/#/' > /etc/inittab || exit 3
+	rm -f /etc/inittab.orig || exit 4
 
 	# reset root password
-	cat /etc/shadow | sed -e 's/^root:[^:]*:/root:!:/' > /etc/shadow.new || exit 1
-	cat /etc/shadow.new > /etc/shadow || exit 1
-	rm /etc/shadow.new || exit 1
+	cat /etc/shadow | sed -e 's/^root:[^:]*:/root:!:/' > /etc/shadow.new || exit 5
+	cat /etc/shadow.new > /etc/shadow || exit 6
+	rm /etc/shadow.new || exit 7
 
 	# device nodes
-	mknod /lib/udev/devices/ttyp0 c 3 0 || exit 1
-	mknod /lib/udev/devices/ptyp0 c 2 0 || exit 1
-	mynod /lib/udev/devices/ptmx c 5 2 || exit 1
+	mknod /lib/udev/devices/ttyp0 c 3 0 || exit 8
+	mknod /lib/udev/devices/ptyp0 c 2 0 || exit 9
+	mknod /lib/udev/devices/ptmx c 5 2 || exit 10
 	
 	# OpenRC
-	rc-update del consolefont boot
-	cp /etc/rc.conf /etc/rc.conf.orig || exit 1
-	cat /etc/rc.conf.orig | sed -e "/^#rc_devices/c\\" -e 'rc_devices="static"' > /etc/rc.conf || exit 1
+	cp /etc/rc.conf /etc/rc.conf.orig || exit 11
+	cat /etc/rc.conf.orig | sed -e "/^#rc_devices/c\\" -e 'rc_devices="static"' > /etc/rc.conf || exit 12
 	
 	# timezone
 	rm /etc/localtime
-	ln -s /usr/share/zoneinfo/UTC /etc/localtime
+	ln -s /usr/share/zoneinfo/UTC /etc/localtime || exit 13
 
 	#hostname - change periods from target/name into dashes
 	myhost=`echo $[target/name] | tr . -`
-	cat > /etc/conf.d/hostname << EOF
+	cat > /etc/conf.d/hostname << EOF || exit 14
 # /etc/conf.d/hostname
 
 # Set to the hostname of this machine
@@ -73,18 +77,21 @@ EOF
 	cat > /etc/motd << "EOF"
 >> files/motd
 EOF
-	fi
-	
-	rm -f /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf 
+	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf 
 
 	# TESTS
 
 	# root password blank
-	[ "`cat /etc/shadow | grep ^root | cut -b1-7`" != 'root:!:' ] && exit 1
+	[ "`cat /etc/shadow | grep ^root | cut -b1-7`" != 'root:!:' ] && exit 15
 	# tty must exist
-	[ ! -e /dev/tty ] && exit 1
-	# OpenRC static device setting check
-	[ -e /etc/rc.conf ] && [ `cat /etc/rc.conf | [ `grep '$rc_devices="static"'` = 'rc_devices="static"' ] || exit 1
+	[ ! -e /dev/tty ] && exit 16
+
+	myvar=`cat $TMPDIR/etc/shadow | grep ^root | cut -b1-7`
+	if [ "$myvar" != 'root:!:' ]
+	then
+		exit 17
+	fi
+
 ]
 
 [section files]
