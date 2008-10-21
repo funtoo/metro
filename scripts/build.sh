@@ -72,6 +72,10 @@ do_everything() {
 	# update what we will build against next time:
 	echo $CURDATE > $CONTROL/lastdate
 	echo $SUBARCH > $CONTROL/subarch
+	if [ "$UNSTABLE" = "yes" ]
+	then
+		metro /usr/lib/metro/etc/USER-openvz.conf target/version: $CURDATE target/subarch: $SUBARCH || die "openvz template fail"
+	fi
 }
 
 do_everything
