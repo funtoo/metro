@@ -50,10 +50,10 @@ print
 
 chroot/run: [
 #!/bin/bash
->> steps/setup
+$[[steps/setup]]
 
 cat > /tmp/build.py << "EOF"
->> files/pythonjunk
+$[[files/pythonjunk]]
 EOF
 
 export buildpkgs="$(python /tmp/build.py)"

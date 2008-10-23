@@ -160,7 +160,11 @@ def main():
 	settings.runCollector()
 	
 	if valueme:
-		print settings[valueme]
+		if type(settings[valueme]) == types.ListType:
+			for line in settings[valueme]:
+				print line
+		else:
+			print settings[valueme]
 		sys.exit(0)
 	elif evalme:
 		print settings.expandString(string=evalme)

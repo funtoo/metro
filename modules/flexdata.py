@@ -148,10 +148,11 @@ class collection:
 				raise FlexDataError("expandString received non-string when expanding "+repr(myvar)+" ( stack = "+repr(stack)+")")
 			else:
 				raise FlexDataError("expandString received non-string: %s" % repr(string) )
-
+		
 		mysplit = string.strip().split(" ")
+
 		if len(mysplit) == 2 and mysplit[0] == "<<":
-			fromfile = True
+		 	fromfile = True
 			string = " ".join(mysplit[1:])
 		else:
 			fromfile = False
@@ -207,7 +208,7 @@ class collection:
 		try:
 			myfile=open(ex,"r")
 		except:
-			raise FlexDataError,"Cannot open file "+ex+" specified in variable \""+varname+"\""
+			raise FlexDataError,"Cannot open file "+ex+" specified in variable \""+string+"\""
 		outstring=""
 		for line in myfile.readlines():
 			outstring=outstring+line[:-1]+" "
@@ -236,13 +237,15 @@ class collection:
 
 		pos=0
 		while pos<len(multi):
-			mysplit = multi[pos].strip().split(" ")
-			if len(mysplit) == 2 and mysplit[0] == ">>":
-				if mysplit[1] in stack:
-					raise FlexDataError,"Circular reference of '"+mysplit[1]+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
+			mystrip = multi[pos].strip()
+			mysplit = mystrip.split(" ")
+			if len(mysplit) > 0 and len(mysplit) < 3 and mystrip[0:3] == "$[[" and mystrip[-2:] == "]]":
+				myref=mystrip[3:-2]
+				if myref in stack:
+					raise FlexDataError,"Circular reference of '"+myref+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
 				newstack = stack[:]
-				newstack.append(mysplit[1])
-				newlines += self.expandMulti(self.expandString(string=mysplit[1]),newstack)
+				newstack.append(myref)
+				newlines += self.expandMulti(self.expandString(string=myref),newstack)
 			elif len(mysplit) >=1 and mysplit[0] == "<?python":
 				sys.stdout = StringIO.StringIO()
 				mycode=""

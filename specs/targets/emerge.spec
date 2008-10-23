@@ -5,8 +5,8 @@ ROOT: /
 rootdir: $[workdir]
 
 chroot/run: [
-	>> chroot/setup
-	export USE="$[USE] bindist"
-	emerge dhcpcd dev-util/git || exit 1
+$[[chroot/setup]]
+export USE="$[USE] bindist"
+emerge dhcpcd dev-util/git || exit 1
 ]
 

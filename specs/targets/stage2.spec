@@ -14,13 +14,13 @@ ROOT: /
 
 chroot/run: [
 #!/bin/bash
->> steps/setup
+$[[steps/setup]]
 export AUTOCLEAN="yes"
 export CONFIG_PROTECT="-*"
 export FEATURES="$FEATURES -collision-protect"
 
 cat > /tmp/bootstrap.py << "EOF"
->> files/bootstrap.py
+$[[files/bootstrap.py]]
 EOF
 python /tmp/bootstrap.py --check || exit 1
 

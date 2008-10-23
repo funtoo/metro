@@ -75,7 +75,7 @@ EOF
 
 	#motd
 	cat > /etc/motd << "EOF"
->> files/motd
+$[[files/motd]]
 EOF
 	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf 
 
