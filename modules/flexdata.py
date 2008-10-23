@@ -165,6 +165,13 @@ class collection:
 				ex += unex
 				unex = ""
 				continue
+			if unex[varpos:varpos+len(self.pre)+1] == "$[[":
+				# extra [, so it's a multi-line element .... which we just pass to the output unexpanded since it might be comented out...
+				# (we don't want to throw an excption if someone put a # in front of it.
+				ex += unex[0:varpos+len(self.pre)+1]
+				unex = unex[varpos+len(self.pre)+1:]
+				continue
+			# OK, this looks like a regular single-line element
 			ex += unex[0:varpos]
 			unex = unex[varpos+len(self.pre):] # remove "$["
 			endvarpos = unex.find(self.suf)
