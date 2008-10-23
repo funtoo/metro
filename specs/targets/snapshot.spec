@@ -6,6 +6,7 @@ class: snapshot
 [section steps]
 
 run/rsync: [
+#!/bin/bash
 	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ $[target/path]/ $[path/work]/portage/ || exit 1
 	tar -cjf $[path/mirror/snapshot] -C $[path/work]/portage
 	if [ $? -ne 0 ]
