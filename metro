@@ -199,9 +199,9 @@ def main():
 		
 try:		
 	main()
-except MetroError:
+except (MetroError,KeyError),arg:
+	print "metro:",arg
 	sys.exit(1)
-	print "FOO"
 except flexdata.FlexDataError:
 	sys.exit(1)
 except KeyboardInterrupt:
