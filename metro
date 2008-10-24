@@ -199,8 +199,11 @@ def main():
 		
 try:		
 	main()
-except (MetroError,KeyError),arg:
-	print "metro:",arg
+except MetroError,arg:
+	print __app__+":",arg
+	sys.exit(1)
+except KeyError,arg:
+	print __app__+":",arg
 	sys.exit(1)
 except flexdata.FlexDataError:
 	sys.exit(1)

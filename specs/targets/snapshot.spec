@@ -18,20 +18,43 @@ run/rsync: [
 
 run/git: [
 #!/bin/bash
-	cd $[path/work] || exit 1
-	git clone $[target/path] portage || exit 1
-	cd portage || exit 1
-	if [ "`git branch | grep ^* | cut -f2 -d" "`" != "$[target/branch]" ]
-	then
-		echo "Local branch does not exist yet, Metro will create it..."
-		git checkout --track -b $[target/branch] origin/$[target/branch] || exit 1
-	fi
-	git archive --prefix=portage/ HEAD | bzip2 > $[path/mirror/snapshot]
-	if [ $? -ne 0 ]
-	then
-		rm -f $[path/mirror/snapshot]
-		exit 1
-	fi
+
+die() {
+	rm -f $[path/mirror/snapshot]
+	echo "$*"
+	exit 1
+}
+
+# On keyboard interrupt, clean up our partially-completed file...
+trap "die Removing incomplete $[path/mirror/snapshot]..." INT
+
+! [ -d "$[path/git]" ] && install -d "$[path/git]"
+
+if ! [ -e "$[path/git]/$[git/name]" ]
+then
+	# create repo if it doesn't exist
+	git clone $[git/remote] $[path/git]/$[git/name] || die "Couldn't clone git repo"
+fi
+cd $[path/git]/$[git/name] || die "Couldn't change directories to git repo"
+branch=`git rev-parse --symbolic --branches | grep "^$[git/branch]"`
+if [ "$branch" != "$[git/branch]" ]
+then
+	# create local branch since it doesn't exist yet
+	git checkout -b --track $[git/branch] origin/$[git/branch] || die "Couldn't create local git branch"
+else
+	# otherwise, make sure the branch is active (so we can pull if necessary)
+	git checkout $[git/branch] || die "Couldn't checkout local git branch"
+fi
+options="$[git/options]"
+if [ "${options/pull/}" != "${options}" ]
+then
+	echo "Performing git pull..."
+	# if we have the "pull" option in git/options, then make sure we're up-to-date
+	git pull > /dev/null || die "Couldn't perform git pull"
+fi
+echo "Creating $[path/mirror/snapshot]..."
+( git archive --prefix=portage/ $[git/branch] || die "Couldn't create git archive" ) | ( bzip2 > $[path/mirror/snapshot] || die "Git bzip2 failure" )
+echo "Snapshot $[path/mirror/snapshot] created."
 ]
 
 [section portage]

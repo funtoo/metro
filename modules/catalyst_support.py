@@ -9,13 +9,12 @@ BASH_BINARY             = "/bin/bash"
 class MetroError(Exception):
 	def __init__(self, message):
 		if message:
-			(type,value)=sys.exc_info()[:2]
-			if value!=None:
-				print 
-				print traceback.print_exc(file=sys.stdout)
-			print
-			print "!!! metro: "+message
-			print
+			self.message = message
+	def __str__(self):
+		if self.message:
+			return self.message
+		else:
+			return "(no message)"
 	
 try:
         import resource
@@ -285,7 +284,12 @@ def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,retur
         # loop through pids (typically one, unless logging), either waiting on their death, or waxing them
         # if the main pid (mycommand) returned badly.
         while len(mypid):
-                retval=os.waitpid(mypid[-1],0)[1]
+		try:
+                	retval=os.waitpid(mypid[-1],0)[1]
+		except KeyboardInterrupt:
+			print "Keyboard interrupt detected, aborting script..."
+			os.kill(mypid[-1],signal.SIGINT)
+			continue
                 if retval != 0:
                         cleanup(mypid[0:-1],block_exceptions=False)
                         # at this point we've killed all other kid pids generated via this call.
