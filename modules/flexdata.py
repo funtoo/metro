@@ -110,6 +110,11 @@ class collection:
 			
 
 	def expand(self,myvar):
+		if myvar[-1] == "?":
+			boolean = True
+			myvar = myvar[:-1]
+		else:
+			boolean = False
 		if self.raw.has_key(myvar):
 			typetest = self.raw[myvar]
 		elif self.conditionals.has_key(myvar):
@@ -118,11 +123,18 @@ class collection:
 		elif self.lax:
 			# record that we looked up an undefined element
 			self.blanks[myvar]=True
-			return self.laxstring % ( myvar, "foo" )
+			if boolean:
+				return "no"
+			else:
+				return self.laxstring % ( myvar, "foo" )
 		else:
-			raise FlexDataError,"Variable \""+myvar+"\" not found"
-
-		if type(typetest) == types.ListType:
+			if boolean:
+				return "no"
+			else:
+				raise FlexDataError,"Variable \""+myvar+"\" not found foo"
+		if boolean:
+			return "yes"
+		elif type(typetest) == types.ListType:
 			return self.expandMulti(myvar)
 		else:
 			return self.expandString(myvar=myvar)
@@ -133,15 +145,27 @@ class collection:
 		# Expand all variables in a basic value, ie. a string 
 
 		if string == None:
+			if myvar[-1] == "?":
+				boolean = True
+				myvar = myvar[:-1]
+			else:
+				boolean = False
 			if self.raw.has_key(myvar):
-				string = self.raw[myvar]
+				if boolean:
+					string = "yes"
+				else:
+					string = self.raw[myvar]
 			else:
 				string = self.get_condition_for(myvar)
 				if string == None:
-					if self.lax:
+					if boolean:
+						string = "no"
+					elif self.lax:
 						string = self.laxstring % ( myvar, "" )
 					else:
 						raise KeyError, "Variable "+repr(myvar)+" not found."
+				elif boolean:
+					string = "yes"
 			
 		if type(string) != types.StringType:
 			if len(stack) >=1:
@@ -178,7 +202,12 @@ class collection:
 			if endvarpos == -1:
 				raise FlexDataError,"Error expanding variable for '"+string+"'"
 			varname = unex[0:endvarpos]
-			# $[] expansion
+			if varname[-1] == "?":
+				boolean = True
+				varname = varname[:-1]
+			else:
+				boolean = False
+			# $[] and $[:] expansion
 			if varname == "" or varname == ":":
 				if self.sectionfor.has_key(myvar):
 					varname = self.sectionfor[myvar]
@@ -193,21 +222,33 @@ class collection:
 					raise FlexDataError,"Trying to expand multi-line value "+repr(varname)+" in single-line value "+repr(myvar)
 				newstack = stack[:]
 				newstack.append(varname)
-				ex += self.expandString(self.raw[varname],varname,newstack)
+				if not boolean:
+					ex += self.expandString(self.raw[varname],varname,newstack)
+				else: 
+					ex += "yes"
 			elif self.conditionals.has_key(varname):
 				expandme = self.get_condition_for(varname)
 				if expandme == None:
 					raise KeyError, "Variable %s not found" % varname
 				newstack=stack[:]
 				newstack.append(varname)
-				ex += self.expandString(expandme,varname,newstack)
+				if not boolean:
+					ex += self.expandString(expandme,varname,newstack)
+				else:
+					ex += "yes"
 			else:
 				if not self.lax:
-					raise KeyError, "Cannot find variable '"+varname+"'"
+					if not boolean:
+						raise KeyError, "Cannot find variable '"+varname+"'"
+					else:
+						ex += "no"
 				else:
 					# record variables that we attempted to expand but were blank, so we can inform the user of possible bugs
-					self.blanks[varname] = True
-					ex += self.laxstring % ( varname, "bar" )
+					if boolean: 
+						ex += "no"
+					else:
+						self.blanks[varname] = True
+						ex += self.laxstring % ( varname, "bar" )
 		if fromfile == False:
 			return ex
 
@@ -399,6 +440,13 @@ class collection:
 				self.section = mysection[1]
 				# clear conditional:
 				self.conditional = None
+			elif mysection[0] == "option":
+				if mysection[1] == "parse/lax":
+					self.lax = True
+				elif mysection[1] == "parse/strict":
+					self.lax = False
+				else:
+					raise FlexDataError,"Unexpected option in [option ] section: %s" % mysection[1]
 			elif mysection[0] == "when":
 				# conditional block
 				self.conditional=" ".join(mysection[1:])
