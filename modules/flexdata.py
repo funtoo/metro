@@ -2,48 +2,6 @@
 
 import sys,os,types,StringIO,string
 
-"""
-BUG: EMBEDDED PYTHON MAY EXPAND VARIABLES THAT ARE NOT DEFINED YET
-
-This module contains Metro's parsing code. It supports the following syntax:
-
-foo: bar
-
-... defines key "foo" to have value "bar". Multiple whitespace-separated values can be specified after
-"bar" if desired.
-
-foo: << bar
-
-... defines key "foo" to have the value of the contents of the file "bar" (all newlines removed)
-
-bar: [
-#!/bin/bash
-ls -l /
-mv $[foo] $[bar]
->> oni
-<?python
-print "Hello from python!"
-if settings["foo"] != "bar":
-	print settings["foo"]
-?>
-]
-
-... defines key "bar" to have the multi-line value of a small shell script. The ">> onit" line inserts
-the multi-line contents of the variable "oni". On the "mv $[foo] $[bar]" line, the variables $[foo]
-and $[bar] will be expanded to the values of foo and bar, respectively.
-
-The parser is designed to eliminate side-effects. keys can be defined only once. The order of definition
-is not important, so the following snippet of code works fine:
-
-foo: $[bar]
-bar: hi there! 
-
-The <?python and ?> tags, appearing by themselves on a line, indicate an embedded python section of the
-multi-line block. Python code in this block will be executed and stdout will be appended to the result
-string.
-
-"""
-
 class FlexDataError(Exception):
 	def __init__(self, message):
 		if message:
@@ -72,6 +30,7 @@ class collection:
 		self.immutable=False
 		# lax means: if a key isn't found, pretend it exists but return the empty string.
 		self.lax=False
+		self.laxvars={}
 		self.laxstring="[BLANK var=%s %s]"
 		self.blanks={}
 		# self.collected holds the names of files we've collected (parsed)
@@ -120,7 +79,8 @@ class collection:
 		elif self.conditionals.has_key(myvar):
 			# test the type of the first conditional - in the future, we should ensure all conditional values are of the same type
 			typetest = self.conditionals[myvar][self.conditionals[myvar].keys()[0]]
-		elif self.lax:
+		# FIXME: COME BACK HERE AND FIX THIS
+		elif self.laxvars.has_key(myvar) and self.laxvars[myvar]:
 			# record that we looked up an undefined element
 			self.blanks[myvar]=True
 			if boolean:
@@ -160,7 +120,7 @@ class collection:
 				if string == None:
 					if boolean:
 						string = "no"
-					elif self.lax:
+					elif len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
 						string = self.laxstring % ( myvar, "" )
 					else:
 						raise KeyError, "Variable "+repr(myvar)+" not found."
@@ -215,13 +175,13 @@ class collection:
 					raise FlexDataError, "no section name for "+myvar+" in "+string
 			unex = unex[endvarpos+len(self.suf):]
 			if varname in stack:
-				raise KeyError, "Circular reference of '"+varname+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
+				raise KeyError, "Circular reference of '"+varname+"' by "+repr(myvar)+" ( Call stack: "+repr(stack)+' )'
 			if self.raw.has_key(varname):
 				# if myvar == None, we are being called from self.expand_all() and we don't care where we are being expanded from
 				if myvar != None and type(self.raw[varname]) == types.ListType:
 					raise FlexDataError,"Trying to expand multi-line value "+repr(varname)+" in single-line value "+repr(myvar)
 				newstack = stack[:]
-				newstack.append(varname)
+				newstack.append(myvar)
 				if not boolean:
 					ex += self.expandString(self.raw[varname],varname,newstack)
 				else: 
@@ -231,24 +191,24 @@ class collection:
 				if expandme == None:
 					raise KeyError, "Variable %s not found" % varname
 				newstack=stack[:]
-				newstack.append(varname)
+				newstack.append(myvar)
 				if not boolean:
 					ex += self.expandString(expandme,varname,newstack)
 				else:
 					ex += "yes"
 			else:
-				if not self.lax:
-					if not boolean:
-						raise KeyError, "Cannot find variable '"+varname+"'"
-					else:
-						ex += "no"
-				else:
+				if len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
 					# record variables that we attempted to expand but were blank, so we can inform the user of possible bugs
 					if boolean: 
 						ex += "no"
 					else:
 						self.blanks[varname] = True
 						ex += self.laxstring % ( varname, "bar" )
+				else:
+					if not boolean:
+						raise KeyError, "Cannot find variable '"+varname+"'"
+					else:
+						ex += "no"
 		if fromfile == False:
 			return ex
 
@@ -265,7 +225,7 @@ class collection:
 
 
 	def expandMulti(self,myvar,stack=[]):
-
+		print "DEBUG: expandmulti",myvar,stack
 		mylocals = {}
 		# Expand all variables in a multi-line value. stack is used internally to detect circular references.
 		if self.debug:
@@ -275,10 +235,12 @@ class collection:
 			if type(multi) != types.ListType:
 				raise FlexDataError("expandMulti received non-multi")
 		else:
-			if self.lax:
+			print "DEBUG: laxvars",self.laxvars
+			if len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
 				self.blanks[myvar] = True
 				return [self.laxstring % ( myvar, "oni" ) ]
 			else:
+				print 'DEBUG: stack',stack
 				raise FlexDataError("referenced variable \""+myvar+"\" not found")
 
 		newlines=[]
@@ -292,7 +254,8 @@ class collection:
 				if myref in stack:
 					raise FlexDataError,"Circular reference of '"+myref+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
 				newstack = stack[:]
-				newstack.append(myref)
+				newstack.append(myvar)
+				print 'DEBUG: newstack',newstack
 				newlines += self.expandMulti(self.expandString(string=myref),newstack)
 			elif len(mysplit) >=1 and mysplit[0] == "<?python":
 				sys.stdout = StringIO.StringIO()
@@ -373,7 +336,10 @@ class collection:
 		# return a list of string elements if there is data on the line, split along whitespace: [ "foo:", "bar", "oni" ]
 		# parseline() will also remove "# comments" from a line as appropriate
 		# parseline() will update self.raw with new data as it finds it.
-		curline = openfile.readline()
+		if type(openfile) == types.StringType:
+			curline = openfile + '\n'
+		else:
+			curline = openfile.readline()
 		if curline == "": #EOF
 			return None
 		# get list of words separated by whitespace
@@ -410,6 +376,7 @@ class collection:
 			if self.section:
 				myvar = self.section+"/"+myvar
 				self.sectionfor[myvar] = self.section
+			self.laxvars[myvar] = self.lax
 			mylines = []
 			while 1:
 				curline = openfile.readline()
@@ -482,6 +449,7 @@ class collection:
 			elif self.section:
 				mykey = self.section+"/"+mykey
 				self.sectionfor[mykey]=self.section
+			self.laxvars[mykey]=self.lax
 			if not dups and self.raw.has_key(mykey):
 				raise FlexDataError,"Error - \""+mykey+"\" already defined. Value: %s. New line: %s." % ( repr(self.raw[mykey]), curline[:-1] )
 			myvalue = " ".join(mysplit[1:])

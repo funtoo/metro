@@ -167,7 +167,7 @@ def main():
 			print settings[valueme]
 		sys.exit(0)
 	elif evalme:
-		print settings.expandString(string=evalme)
+		print settings.parseline(evalme)
 		sys.exit(0)
 	if not settings.has_key("target"):
 		raise MetroError("Please specify a target.")
@@ -201,11 +201,15 @@ try:
 	main()
 except MetroError,arg:
 	print __app__+":",arg
+	raise
 	sys.exit(1)
 except KeyError,arg:
 	print __app__+":",arg
+	raise
 	sys.exit(1)
-except flexdata.FlexDataError:
+except flexdata.FlexDataError,arg:
+	print __app__+":",arg
+	raise
 	sys.exit(1)
 except KeyboardInterrupt:
 	print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
