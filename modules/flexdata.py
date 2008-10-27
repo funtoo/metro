@@ -202,7 +202,7 @@ class collection:
 			if endvarpos == -1:
 				raise FlexDataError,"Error expanding variable for '"+string+"'"
 			varname = unex[0:endvarpos]
-			if varname[-1] == "?":
+			if len(varname)>0 and varname[-1] == "?":
 				boolean = True
 				varname = varname[:-1]
 			else:
