@@ -75,7 +75,7 @@ def main():
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "ldhvxVk:e:", ["lax","debug","help", "verbose", "version","key=","eval="])
+		opts,args = getopt.getopt(sys.argv[1:], "ldhvxVk:", ["lax","debug","help", "verbose", "version","key="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -89,7 +89,6 @@ def main():
 	# check preconditions
 
 	valueme=None
-	evalme=None
 	optdict={}
 	for opt,optarg in opts:
 		optdict[opt]=optarg
@@ -115,11 +114,11 @@ def main():
 	# Step 3: check for duplicate main options, which is an error
 
 	mainargs=0
-	for x in [ "-k", "--key", "-e", "--eval" ]:
+	for x in [ "-k", "--key" ]:
 		if optdict.has_key(x):
 			mainargs += 1
 	if mainargs > 1:
-		print "Please specify only one -k, --key, -e or --eval option at a time."
+		print "Please specify only one -k or --key option at a time."
 		sys.exit(1)
 
 	# Step 4: parse main options
@@ -129,11 +128,6 @@ def main():
 			valueme=optdict["-k"]
 		else:
 			valueme=optdict["--key"]
-	if optdict.has_key("-e") or optdict.has_key("--eval"):
-		if optdict.has_key("-e"):
-			evalme=optdict["-e"]
-		else:
-			evalme=optdict["--eval"]
 
 	settings=flexdata.collection()
 
@@ -165,9 +159,6 @@ def main():
 				print line
 		else:
 			print settings[valueme]
-		sys.exit(0)
-	elif evalme:
-		print settings.parseline(evalme)
 		sys.exit(0)
 	if not settings.has_key("target"):
 		raise MetroError("Please specify a target.")
