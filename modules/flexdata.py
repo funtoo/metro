@@ -100,8 +100,6 @@ class collection:
 			return self.expandString(myvar=myvar)
 
 	def expandString(self,string=None,myvar=None,stack=[]):
-		if self.debug:
-			print "DEBUG: in expandString"
 		# Expand all variables in a basic value, ie. a string 
 
 		if string == None:
@@ -225,22 +223,17 @@ class collection:
 
 
 	def expandMulti(self,myvar,stack=[]):
-		print "DEBUG: expandmulti",myvar,stack
 		mylocals = {}
 		# Expand all variables in a multi-line value. stack is used internally to detect circular references.
-		if self.debug:
-			print "DEBUG: in expandMulti"
 		if self.raw.has_key(myvar):
 			multi = self.raw[myvar]
 			if type(multi) != types.ListType:
 				raise FlexDataError("expandMulti received non-multi")
 		else:
-			print "DEBUG: laxvars",self.laxvars
 			if len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
 				self.blanks[myvar] = True
 				return [self.laxstring % ( myvar, "oni" ) ]
 			else:
-				print 'DEBUG: stack',stack
 				raise FlexDataError("referenced variable \""+myvar+"\" not found")
 
 		newlines=[]
@@ -255,7 +248,6 @@ class collection:
 					raise FlexDataError,"Circular reference of '"+myref+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
 				newstack = stack[:]
 				newstack.append(myvar)
-				print 'DEBUG: newstack',newstack
 				newlines += self.expandMulti(self.expandString(string=myref),newstack)
 			elif len(mysplit) >=1 and mysplit[0] == "<?python":
 				sys.stdout = StringIO.StringIO()
@@ -369,8 +361,6 @@ class collection:
 			return []
 
 		if len(mysplit) == 2 and mysplit[0][-1] == ":" and mysplit[1] == "[":
-			if self.debug:
-				print "DEBUG: MULTI-LINE BLOCK"
 			# for myvar, remove trailing colon:
 			myvar = mysplit[0][:-1]
 			if self.section:
@@ -384,8 +374,6 @@ class collection:
 					raise KeyError,"Error - incomplete [[ multi-line block,"
 				mysplit = curline[:-1].strip().split(" ")
 				if len(mysplit) == 1 and mysplit[0] == "]":
-					if self.debug:
-						print "DEBUG: end multi-line block"
 					# record value and quit
 					if not dups and self.raw.has_key(myvar):
 						raise FlexDataError,"Error - \""+myvar+"\" already defined."
