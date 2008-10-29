@@ -172,19 +172,19 @@ def main():
 				print line
 		else:
 			print settings[valueme]
-	if not settings.has_key("target"):
+	elif not settings.has_key("target"):
 		raise MetroError("Please specify a target.")
 	else:
 		print __app__+": running target \""+settings["target"]+"\"."
 		target.run()
 
-	# Now that the target has run, we want to clean up our temporary work space. cleanup() does this.
-	# TODO: ADD SOMETHING HERE TO CLEAN UP ALL PATHS WE'VE USED...
-	#target.cleanPath()
+		# Now that the target has run, we want to clean up our temporary work space. cleanup() does this.
+		# TODO: ADD SOMETHING HERE TO CLEAN UP ALL PATHS WE'VE USED...
+		#target.cleanPath()
 
-	# We're all done.
+		# We're all done.
 
-	print __app__+": complete."
+		print __app__+": complete."
 	
 try:		
 	main()
@@ -196,6 +196,9 @@ except KeyError,arg:
 	sys.exit(1)
 except flexdata.FlexDataError,arg:
 	print __app__+":",arg
+	sys.exit(1)
+except IOError:
+	raise
 	sys.exit(1)
 except KeyboardInterrupt:
 	print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"

@@ -55,7 +55,11 @@ class collection:
 			return None
 		truekeys=[]
 		for cond in self.conditionals[varname].keys():
+			print "DEBUG: testing cond",cond
+			if self.conditionOnConditional(cond):
+				raise FlexDataError, "Not Allowed: conditional variable %s depends on condition %s which is itself a conditional variable." % ( varname, cond )
 			if self.conditionTrue(cond):
+				print "DEBUG: %s is TRUE" % cond
 				truekeys.append(cond)
 			if len(truekeys) > 1:
 				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (varname, repr(truekeys)) 
@@ -460,6 +464,31 @@ class collection:
 		openfile.close()
 		# add to our list of parsed files
 		self.collected.append(os.path.normpath(filename))
+
+	def conditionOnConditional(self,cond):
+		"""defining a conditial var based on another conditional var is illegal. This function will tell us if we are in this mess."""
+		cond=cond.split()
+		if len(cond) == 1:
+			if self.raw.has_key(cond[0]):
+				return False
+			elif self.conditionals.has_key(cond[0]):
+				return True
+			else:
+				# undefined
+				return False
+		elif len(cond) in [0,2]:
+			raise FlexDataError, "Condition %s is invalid" % cond
+		elif len(cond) == 3:
+			if cond[1] != "is":
+				raise FlexDataError, "Expecting IS in %s" % cond
+			if self.raw.has_key(cond[0]):
+				return False
+			elif self.conditionals.has_key(cond[0]):
+				return True
+			else:
+				# undefined
+				return False
+
 
 	def conditionTrue(self,cond):
 		cond=cond.split()

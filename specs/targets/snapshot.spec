@@ -1,5 +1,6 @@
 [section target]
 
+name: $[portage/name]
 class: snapshot
 #require: snapshot/type snapshot snapshot/path target/version target path/mirror/snapshot
 
