@@ -13,15 +13,9 @@ then
 	die "Metro is required for build.sh to run"
 fi
 
-OUTDIR=`metro -k path/mirror`
-if [ ! -d $OUTDIR ]
-then
-	die "Mirror directory $OUTDIR (from 'metro -k path/mirror') does not exist."
-fi
-
-SUBARCH=$1
-
-CONTROL=`metro -k path/mirror/control target: stage3 target/subarch: $SUBARCH`
+BUILD=$1
+SUBARCH=$2
+CONTROL=`metro -k path/mirror/control build/type: $BUILD build/subarch: $SUBARCH`
 if [ ! -d $CONTROL ]
 then
 	die "Control directory $CONTROL (from 'metro -k path/mirror/control target/subarch: $SUBARCH') does not exist."
@@ -58,23 +52,18 @@ then
 fi
 
 do_everything() {
-	#metro -k /usr/lib/metro/etc/USER-snapshot-funtoo.spec target/version: $CURDATE
 	echo "Starting..."
-	if [ "$UNSTABLE" = "yes" ]
-	then
-		metro /usr/lib/metro/etc/USER-snapshot-funtoo.conf target/version: $CURDATE || die "snapshot fail"
-	else
-		metro /usr/lib/metro/etc/USER-snapshot.conf target/version: $CURDATE || die "snapshot fail"
-	fi
-	metro /usr/lib/metro/etc/USER-stage1.conf target/version: $CURDATE target/subarch: $SUBARCH || die "stage1 fail"
-	metro /usr/lib/metro/etc/USER-stage2.conf target/version: $CURDATE target/subarch: $SUBARCH || die "stage2 fail"
-	metro /usr/lib/metro/etc/USER-stage3.conf target/version: $CURDATE target/subarch: $SUBARCH || die "stage3 fail"
+	metro build/type: $BUILD target/version: $CURDATE target: $x || die "$x fail"
+	for x in stage1 stage2 stage3
+	do
+		metro build/type: $BUILD target/version: $CURDATE target: $x build/subarch: $SUBARCH || die "$x fail"
+	done
 	# update what we will build against next time:
 	echo $CURDATE > $CONTROL/lastdate
 	echo $SUBARCH > $CONTROL/subarch
 	if [ "$UNSTABLE" = "yes" ]
 	then
-		metro /usr/lib/metro/etc/USER-openvz.conf target/version: $CURDATE target/subarch: $SUBARCH || die "openvz template fail"
+		metro build/type: $BUILD target/version $CURDATE target: openvz build/subarch: $SUBARCH || die "openvz fail"
 	fi
 }
 

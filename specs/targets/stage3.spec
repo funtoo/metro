@@ -1,6 +1,5 @@
-[collect $[path/metro]/specs/arch/$[target/subarch].spec]
-[collect $[path/metro]/etc/stage/files.conf]
-[collect $[path/metro]/etc/stage/steps.conf]
+[collect $[path/metro]/specs/targets/stage/files.conf]
+[collect $[path/metro]/specs/targets/stage/steps.conf]
 
 [section target]
 

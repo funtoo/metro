@@ -153,16 +153,7 @@ def main():
 	
 	settings.runCollector()
 	
-	if valueme:
-		if type(settings[valueme]) == types.ListType:
-			for line in settings[valueme]:
-				print line
-		else:
-			print settings[valueme]
-		sys.exit(0)
-	if not settings.has_key("target"):
-		raise MetroError("Please specify a target.")
-	
+
 	target = find_target(settings)
 
 	# "target" is now a new object, constructor has run. We have validated that we have all required values.
@@ -175,8 +166,17 @@ def main():
 	#target.checkconfig(strict)
 	
 	# OK, we have all required values - our config is good - now we can run the target
-	print __app__+": running target \""+settings["target"]+"\"."
-	target.run()
+	if valueme:
+		if type(settings[valueme]) == types.ListType:
+			for line in settings[valueme]:
+				print line
+		else:
+			print settings[valueme]
+	if not settings.has_key("target"):
+		raise MetroError("Please specify a target.")
+	else:
+		print __app__+": running target \""+settings["target"]+"\"."
+		target.run()
 
 	# Now that the target has run, we want to clean up our temporary work space. cleanup() does this.
 	# TODO: ADD SOMETHING HERE TO CLEAN UP ALL PATHS WE'VE USED...
@@ -185,22 +185,17 @@ def main():
 	# We're all done.
 
 	print __app__+": complete."
-	if debug:	
-		settings.debugdump()
-		
+	
 try:		
 	main()
 except MetroError,arg:
 	print __app__+":",arg
-	raise
 	sys.exit(1)
 except KeyError,arg:
 	print __app__+":",arg
-	raise
 	sys.exit(1)
 except flexdata.FlexDataError,arg:
 	print __app__+":",arg
-	raise
 	sys.exit(1)
 except KeyboardInterrupt:
 	print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"

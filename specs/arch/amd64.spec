@@ -1,5 +1,3 @@
-[collect $[path/metro]/specs/ports/gentoo.spec]
-
 [section target]
 
 arch: amd64

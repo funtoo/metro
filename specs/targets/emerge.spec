@@ -1,6 +1,6 @@
 [collect $[path/metro]/specs/arch/$[target/subarch].spec]
-[collect $[path/metro]/etc/stage/files.conf]
-[collect $[path/metro]/etc/stage/steps.conf]
+[collect $[path/metro]/specs/targets/stage/files.conf]
+[collect $[path/metro]/specs/targets/stage/steps.conf]
 
 [section target]
 
@@ -10,7 +10,7 @@ class: stage
 
 chroot/run: [
 #!/bin/bash
-$[[chroot/setup]]
+$[[steps/setup]]
 export USE="$[portage/USE] bindist"
 emerge $[emerge/packages] || exit 1
 ]

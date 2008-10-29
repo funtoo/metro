@@ -5,6 +5,8 @@ class: snapshot
 
 [section steps]
 
+[when target/type is rsync]
+
 run/rsync: [
 #!/bin/bash
 	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ $[rsync/path]/ $[path/work]/portage/ || exit 1
@@ -16,11 +18,13 @@ run/rsync: [
 	fi
 ]
 
+[when target/type is git]
+
 run/git: [
 #!/bin/bash
 
 die() {
-	rm -f $[path/mirror/snapshot]
+	rm -f $[path/mirror/snapshot] $tarout
 	echo "$*"
 	exit 1
 }
@@ -53,10 +57,16 @@ then
 	git pull > /dev/null || die "Couldn't perform git pull"
 fi
 echo "Creating $[path/mirror/snapshot]..."
-( git archive --prefix=portage/ $[git/branch] || die "Couldn't create git archive" ) | ( bzip2 > $[path/mirror/snapshot] || die "Git bzip2 failure" )
+tarout="$[path/mirror/snapshot]"
+tarout=${tarout%.*}
+git archive --prefix=portage/ $[git/branch] > $tarout || die "Couldn't create git archive"
+if [ -e /usr/bin/pbzip2 ]
+then
+	echo "Compressing $tarout using pbzip2..."
+	pbzip2 -p4 $tarout || die "Git pbzip2 failure" 
+else
+	echo "Compressing $tarout using bzip2..."
+	bzip2 $tarout || die "Git bzip2 failure"
+fi
 echo "Snapshot $[path/mirror/snapshot] created."
 ]
-
-[section portage]
-
-name: $[target/name]

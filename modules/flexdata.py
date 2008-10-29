@@ -186,10 +186,10 @@ class collection:
 					ex += "yes"
 			elif self.conditionals.has_key(varname):
 				expandme = self.get_condition_for(varname)
-				if expandme == None:
-					raise KeyError, "Variable %s not found" % varname
 				newstack=stack[:]
 				newstack.append(myvar)
+				if expandme == None:
+					raise KeyError, "Variable %s not found (stack: %s )" % (varname, repr(newstack))
 				if not boolean:
 					ex += self.expandString(expandme,varname,newstack)
 				else:
@@ -204,7 +204,7 @@ class collection:
 						ex += self.laxstring % ( varname, "bar" )
 				else:
 					if not boolean:
-						raise KeyError, "Cannot find variable '"+varname+"'"
+						raise KeyError, "Cannot find variable %s (in %s)" % (varname,myvar)
 					else:
 						ex += "no"
 		if fromfile == False:
@@ -300,17 +300,6 @@ class collection:
 				missing.append(key)
 		return missing
 
-	def debugdump(self,desc=""):
-		for key in self.keys():
-			if type(self[key]) == types.ListType:
-				pos = 0
-				for line in self[key]:
-					print key+".%04d" % pos,
-					print line
-					pos += 1
-			else:
-				print key, self[key]
-
 	def skipblock(self,openfile=None):
 		while 1:
 			curline=openfile.readline()
@@ -388,13 +377,18 @@ class collection:
 			mysplit[-1]= mysplit[-1][:-1]
 			mysection=string.join(mysplit).split()
 			if mysection[0] == "section":
-				if len(mysection) != 2:
-					raise FlexDataError,"Invalid section specifier: "+curline[:-1]
-				if mysection[0] != "section":
-					raise FlexDataError,"Expected \"section\" in: "+curline[:-1]
 				self.section = mysection[1]
-				# clear conditional:
-				self.conditional = None
+				if len(mysection) > 2:
+					if mysection[2] != "when":
+						raise FlexDataError,"Expecting \"when\": "+curline[:-1]
+					self.conditional=" ".join(mysection[3:])
+					if self.conditional == "*":
+						self.conditional = None
+				elif len(mysection) == 2:
+					# clear conditional:
+					self.conditional = None
+				else:
+					raise FlexDataError,"Invalid section specifier: "+curline[:-1]
 			elif mysection[0] == "option":
 				if mysection[1] == "parse/lax":
 					self.lax = True
@@ -456,6 +450,7 @@ class collection:
 			raise IOError, "File '"+filename+"' does not exist."
 		if not os.path.isfile(filename):
 			raise IOError, "File to be parsed '"+filename+"' is not a regular file."
+		self.conditional = None
 		openfile = open(filename,"r")
 		self.section=""
 		while 1:
@@ -545,6 +540,5 @@ if __name__ == "__main__":
 	for arg in sys.argv[1:]:
 		coll.collect(arg)
 	coll.runCollector()	
-	coll.debugdump()	
 	sys.exit(0)
 
