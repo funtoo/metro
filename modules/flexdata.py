@@ -432,8 +432,6 @@ class collection:
 				mykey = self.section+"/"+mykey
 				self.sectionfor[mykey]=self.section
 			self.laxvars[mykey]=self.lax
-			if not dups and self.raw.has_key(mykey):
-				raise FlexDataError,"Error - \""+mykey+"\" already defined. Value: %s. New line: %s." % ( repr(self.raw[mykey]), curline[:-1] )
 			myvalue = " ".join(mysplit[1:])
 			if self.conditional:
 				if not self.conditionals.has_key(mykey):
@@ -442,6 +440,8 @@ class collection:
 					raise FlexDataError,"Conditional element %s already defined for condition %s", (mykey, self.conditional)
 				self.conditionals[mykey][self.conditional] = myvalue
 			else:
+				if not dups and self.raw.has_key(mykey):
+					raise FlexDataError,"Error - \""+mykey+"\" already defined. Value: %s. New line: %s." % ( repr(self.raw[mykey]), curline[:-1] )
 				self.raw[mykey] = myvalue
 		return mysplit	
 	
