@@ -154,7 +154,6 @@ def main():
 	settings.runCollector()
 	
 
-	target = find_target(settings)
 
 	# "target" is now a new object, constructor has run. We have validated that we have all required values.
 	
@@ -175,6 +174,7 @@ def main():
 	elif not settings.has_key("target"):
 		raise MetroError("Please specify a target.")
 	else:
+		target = find_target(settings)
 		print __app__+": running target \""+settings["target"]+"\"."
 		target.run()
 

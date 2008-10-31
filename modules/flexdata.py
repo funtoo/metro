@@ -55,11 +55,9 @@ class collection:
 			return None
 		truekeys=[]
 		for cond in self.conditionals[varname].keys():
-			print "DEBUG: testing cond",cond
 			if self.conditionOnConditional(cond):
 				raise FlexDataError, "Not Allowed: conditional variable %s depends on condition %s which is itself a conditional variable." % ( varname, cond )
 			if self.conditionTrue(cond):
-				print "DEBUG: %s is TRUE" % cond
 				truekeys.append(cond)
 			if len(truekeys) > 1:
 				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (varname, repr(truekeys)) 

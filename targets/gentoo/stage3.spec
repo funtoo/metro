@@ -1,9 +1,15 @@
-[collect $[path/metro]/specs/targets/stage/files.conf]
-[collect $[path/metro]/specs/targets/stage/steps.conf]
+[collect $[path/metro]/targets/gentoo/stage/main.spec]
 
 [section target]
 
-class: stage
+shortname: stage3
+
+[section source]
+
+: gentoo/stage2
+name: stage2-$[source/subarch]-$[source/version]
+version: $[target/version]
+subarch: $[target/subarch]
 
 [section steps]
 

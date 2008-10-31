@@ -264,7 +264,7 @@ def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,retur
                         raise
                 except Exception, e:
                         if not func_call:
-                                raise str(e)+":\n   "+myc+" "+string.join(myargs)
+                                raise MetroError, str(e)+":\n   "+myc+" "+string.join(myargs)
                         print "func call failed"
 
                 # If the execve fails, we need to report it, and exit

@@ -1,8 +1,3 @@
-[section path]
-
-chroot: $[path/work]
-chroot/stage: $[path/work]$[portage/ROOT]
-
 [section steps]
 
 chroot/prerun: [
@@ -18,6 +13,7 @@ setup: [
 /usr/sbin/env-update
 gcc-config 1
 source /etc/profile
+export MAKEOPTS="$[portage/MAKEOPTS]"
 export EMERGE_WARNING_DELAY=0
 export CLEAN_DELAY=0
 export EBEEP_IGNORE=0
@@ -191,9 +187,9 @@ then
 	# multi-core friendly pbzip2 option...
 	echo "Creating $[path/mirror/target] using pbzip2..."
 	tarout="$[path/mirror/target]"
-	tarout=$[tarout%.*]
+	tarout="${tarout%.*}"
 	tar cpf $tarout -C $[path/chroot/stage] . 
-	if [$? -ge 2 ]
+	if [ $? -ge 2 ]
 	then
 		rm -f "$tarout" "$[path/mirror/target]"
 		exit 1

@@ -1,8 +1,17 @@
-[collect $[path/metro]/specs/arch/$[target/subarch].spec]
+[collect $[path/metro]/subarch/$[build/subarch].spec]
 
 [section target]
 
 class: chroot
+subarch: $[portage/stable]$[build/subarch]
+name: gentoo-openvz-$[target/subarch]-$[target/version]
+
+[section source]
+
+: gentoo/stage3
+name: stage3-$[source/subarch]-$[source/version]
+version: $[target/version]
+subarch: $[target/subarch]
 
 [section path]
 
@@ -14,28 +23,51 @@ unpack: [
 #!/bin/bash
 [ ! -d $[path/chroot] ] && install -d $[path/chroot] 
 [ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777 || exit 2
-echo "Extracting source stage $[path/mirror/source]..."
-tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
+if [ -e /usr/bin/pbzip2 ]
+then
+	echo "Extracting source stage $[path/mirror/source] using pbzip2..."
+	pbzip2 -dc $[path/mirror/source] | tar xpf - -C $[path/chroot] || exit 3
+else
+	echo "Extracting source stage $[path/mirror/source]..."
+	tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
+fi
 ]
 
 capture: [
 #!/bin/bash
-rm -rf /tmp/steps || exit 1
+
+die() {
+	echo $*
+	rm -f $[path/mirror/target]
+	exit 1
+}
+
+trap "die user interrupt - Removing incomplete template..." INT
+
+rm -rf /tmp/steps || die "Steps cleanup fail"
 outdir=`dirname $[path/mirror/target]`
 if [ ! -d $outdir ]
 then
-	install -d $outdir || exit 1
+	install -d $outdir || "Output path $outdir does not exist"
 fi
-tar czpf $[path/mirror/target] -C $[path/chroot] .
+echo "Creating $[path/mirror/target]..."
+tar czpf $[path/mirror/target] -C $[path/chroot] . 
 if [ $? -ge 2 ]
 then
-	rm -f $[path/mirror/target]
-	exit 1
+	die "Error creating tarball"
 fi
 ]
 
 chroot/run: [
 #!/bin/bash
+
+	if [ -e $TMPDIR/etc/conf.d/rc ]
+	then
+		echo "You appear to be using a Gentoo (non-OpenRC) stage. This target only supports"
+		echo "OpenRC-based stages, such as the Funtoo stages. Aborting."
+		exit 1
+	fi
+
 	# mounts
 	rm -f /etc/mtab
 	ln -s /proc/mounts /etc/mtab || exit 1
@@ -63,6 +95,9 @@ chroot/run: [
 	# timezone
 	rm /etc/localtime
 	ln -s /usr/share/zoneinfo/UTC /etc/localtime || exit 13
+
+	# sshd
+	rc-update add sshd default
 
 	#hostname - change periods from target/name into dashes
 	myhost=`echo $[target/name] | tr . -`
@@ -100,12 +135,11 @@ motd: [
 
  >>> OpenVZ Template:               $[target/name]
  >>> Version:                       $[target/version] 
- >>> Created by:                    $[openvz/author] 
- >>> CFLAGS:                        $[portage/CFLAGS]
+ >>> Created by:                    $[local/author] 
 
  >>> Send suggestions, improvements, bug reports relating to... 
  
- >>> This OpenVZ template:          $[openvz/author]
+ >>> This OpenVZ template:          $[local/author]
  >>> Gentoo Linux (general):        Gentoo Linux (http://www.gentoo.org)
  >>> OpenVZ (general):              OpenVZ (http://www.openvz.org)
 

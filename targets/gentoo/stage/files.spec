@@ -1,13 +1,3 @@
-[section portage]
-
-ACCEPT_KEYWORDS: $[portage/stable]$[target/arch]
-
-[section target]
-
-[collect $[path/metro]/specs/arch/$[build/subarch].spec]
-subarch: $[portage/stable]$[build/subarch]
-name: $[target]-$[target/subarch]-$[target/version]
-
 [section files]
 
 make.conf: [

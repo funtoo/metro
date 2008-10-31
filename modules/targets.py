@@ -148,7 +148,11 @@ class chroot(target):
 		
 		# CCACHE SUPPORT FOR CHROOTS
 
-		if self.settings.has_key("metro/options/chroot") and "ccache" in self.settings["metro/options/chroot"].split():
+		if not self.settings.has_key("target/class"):
+			return
+	
+		settingkey="metro/options/"+self.settings["target/class"]
+		if self.settings.has_key(settingkey) and "ccache" in self.settings[settingkey].split():
 			if os.environ.has_key("CCACHE_DIR"):
 				ccdir=os.environ["CCACHE_DIR"]
 			else:
