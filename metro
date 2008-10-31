@@ -50,17 +50,17 @@ def version():
 def find_target(settings):
 	""" 
 	
-	Use the "target/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
+	Use the "metro/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
 	
 	The targets.__dict__ dictionary contains all the objects in the targets module. We look inside it to see if the class
-	defined in "target/class" exists in there and is a class. If not, we raise an exception.
+	defined in "metro/class" exists in there and is a class. If not, we raise an exception.
 	
 	"""
-	if not targets.__dict__.has_key(settings["target/class"]):
-		raise MetroError, "Metro class "+settings["target/class"]+" not defined in modules/targets.py."
-	if type(targets.__dict__[settings["target/class"]]) != types.ClassType:
-		raise MetroError, "Metro class "+settings["target/class"]+" does not appear to be a class."
-	return targets.__dict__[settings["target/class"]](settings)
+	if not targets.__dict__.has_key(settings["metro/class"]):
+		raise MetroError, "Metro class "+settings["metro/class"]+" not defined in modules/targets.py."
+	if type(targets.__dict__[settings["metro/class"]]) != types.ClassType:
+		raise MetroError, "Metro class "+settings["metro/class"]+" does not appear to be a class."
+	return targets.__dict__[settings["metro/class"]](settings)
 
 	
 def main():

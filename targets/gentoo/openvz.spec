@@ -1,8 +1,12 @@
 [collect $[path/metro]/subarch/$[build/subarch].spec]
 
+[section metro]
+
+class: stage
+
 [section target]
 
-class: chroot
+type: stage
 subarch: $[portage/stable]$[build/subarch]
 name: gentoo-openvz-$[target/subarch]-$[target/version]
 

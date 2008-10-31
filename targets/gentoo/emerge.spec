@@ -1,9 +1,5 @@
 [collect $[path/metro]/targets/gentoo/stage/main.spec]
 
-[section target]
-
-class: stage
-
 [section steps]
 
 chroot/run: [

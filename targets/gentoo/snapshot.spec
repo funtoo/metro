@@ -1,8 +1,11 @@
+[section metro]
+
+# This defines what internal Metro class is used to build this target
+class: snapshot
+
 [section target]
 
-name: $[portage/name]
-class: snapshot
-#require: snapshot/type snapshot snapshot/path target/version target path/mirror/snapshot
+type: snapshot
 
 [section steps]
 
