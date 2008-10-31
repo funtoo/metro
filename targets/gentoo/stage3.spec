@@ -1,16 +1,5 @@
 [collect $[path/metro]/targets/gentoo/stage/main.spec]
 
-[section target]
-
-shortname: stage3
-
-[section source]
-
-: gentoo/stage2
-name: stage2-$[source/subarch]-$[source/version]
-version: $[target/version]
-subarch: $[target/subarch]
-
 [section steps]
 
 chroot/run: [

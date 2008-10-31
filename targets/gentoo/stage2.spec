@@ -1,16 +1,5 @@
 [collect $[path/metro]/targets/gentoo/stage/main.spec]
 
-[section target]
-
-shortname: stage2
-
-[section source]
-
-: gentoo/stage1
-name: stage1-$[source/subarch]-$[source/version]
-version: $[target/version]
-subarch: $[target/subarch]
-
 [section portage]
 
 ROOT: /
