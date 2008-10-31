@@ -1,5 +1,6 @@
 create a "collapsible" variable reference so that if it is not defined,
 a null string is used and an exception is not thrown. Handy way to deal
-with some issues.
+with some issues and avoid the need for [option parser/lax]. Simply do
+something like: $[~foo]
 
 do lastdate with snapshots to avoid creating identical snapshot files
