@@ -7,11 +7,9 @@ class: snapshot
 
 type: snapshot
 
-[section steps]
+[section steps when snapshot/type is rsync]
 
-[when target/type is rsync]
-
-run/rsync: [
+run: [
 #!/bin/bash
 	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ $[rsync/path]/ $[path/work]/portage/ || exit 1
 	tar -cjf $[path/mirror/snapshot] -C $[path/work]/portage
@@ -22,9 +20,9 @@ run/rsync: [
 	fi
 ]
 
-[when target/type is git]
+[section steps when snapshot/type is git]
 
-run/git: [
+run: [
 #!/bin/bash
 
 die() {

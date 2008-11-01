@@ -281,7 +281,7 @@ class snapshot(target):
 
 		self.cleanPath(recreate=True)
 
-		runkey="steps/run/"+self.settings["target/type"]
+		runkey="steps/run"
 
 		if not self.settings.has_key(runkey):
 			raise MetroError, "Required steps in %s not found." % runkey
