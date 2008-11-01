@@ -225,6 +225,8 @@ class collection:
 
 
 	def expandMulti(self,myvar,stack=[]):
+		# TODO: ADD BOOLEAN SUPPORT HERE - NOT DONE YET
+		print "DEBUG: in ExpandMulti for",myvar
 		mylocals = {}
 		# Expand all variables in a multi-line value. stack is used internally to detect circular references.
 		if self.raw.has_key(myvar):
@@ -232,11 +234,13 @@ class collection:
 			if type(multi) != types.ListType:
 				raise FlexDataError("expandMulti received non-multi")
 		else:
-			if len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
-				self.blanks[myvar] = True
-				return [self.laxstring % ( myvar, "oni" ) ]
-			else:
-				raise FlexDataError("referenced variable \""+myvar+"\" not found")
+			multi = self.get_condition_for(myvar)
+			if multi == None:
+				if len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
+					self.blanks[myvar] = True
+					return [self.laxstring % ( myvar, "oni" ) ]
+				else:
+					raise FlexDataError("referenced variable \""+myvar+"\" not found")
 
 		newlines=[]
 
@@ -366,9 +370,18 @@ class collection:
 				mysplit = curline[:-1].strip().split(" ")
 				if len(mysplit) == 1 and mysplit[0] == "]":
 					# record value and quit
-					if not dups and self.raw.has_key(myvar):
+					# FIXME - MISSING COND HERE!?!?!?
+					if self.conditional:
+						print "DEBUG: doing cond for %s - cond %s" % (myvar, self.conditional)
+						if not self.conditionals.has_key(myvar):
+							self.conditionals[myvar]={}
+						if self.conditionals[myvar].has_key(self.conditional):
+							raise FlexDataError,"Conditional element %s already defined for condition %s" % (myvar, self.conditional)
+						self.conditionals[myvar][self.conditional] = mylines
+					elif not dups and self.raw.has_key(myvar):
 						raise FlexDataError,"Error - \""+myvar+"\" already defined."
-					self.raw[myvar] = mylines
+					else:
+						self.raw[myvar] = mylines
 					break
 				else:
 					# append new line
@@ -439,7 +452,7 @@ class collection:
 				if not self.conditionals.has_key(mykey):
 					self.conditionals[mykey]={}
 				if self.conditionals[mykey].has_key(self.conditional):
-					raise FlexDataError,"Conditional element %s already defined for condition %s", (mykey, self.conditional)
+					raise FlexDataError,"Conditional element %s already defined for condition %s" % (mykey, self.conditional)
 				self.conditionals[mykey][self.conditional] = myvalue
 			else:
 				if not dups and self.raw.has_key(mykey):
