@@ -226,7 +226,6 @@ class collection:
 
 	def expandMulti(self,myvar,stack=[]):
 		# TODO: ADD BOOLEAN SUPPORT HERE - NOT DONE YET
-		print "DEBUG: in ExpandMulti for",myvar
 		mylocals = {}
 		# Expand all variables in a multi-line value. stack is used internally to detect circular references.
 		if self.raw.has_key(myvar):
@@ -288,7 +287,14 @@ class collection:
 		return self.expand(element)
 
 	def has_key(self,key):
-		return self.raw.has_key(key)
+		if self.raw.has_key(key):
+			return True
+		else:
+			ret = self.get_condition_for(key)
+		if ret != None:
+			return True
+		else:
+			return False
 
 	def keys(self):
 		mylist=self.raw.keys()
@@ -372,7 +378,6 @@ class collection:
 					# record value and quit
 					# FIXME - MISSING COND HERE!?!?!?
 					if self.conditional:
-						print "DEBUG: doing cond for %s - cond %s" % (myvar, self.conditional)
 						if not self.conditionals.has_key(myvar):
 							self.conditionals[myvar]={}
 						if self.conditionals[myvar].has_key(self.conditional):
