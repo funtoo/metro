@@ -513,19 +513,17 @@ class collection:
 				return True
 			else:
 				return False
-		elif len(cond) in [0,2]:
+		elif len(cond) == 0:
 			raise FlexDataError, "Condition "+repr(cond)+" is invalid"
-		elif len(cond) == 3:
-			if cond[1] != "is":
-				raise FlexDataError, "Expecting \"is\" in condition "+repr(cond)
+		elif len(cond) >= 3 and cond[1] == "is":
 			if not self.raw.has_key(cond[0]):
 				# maybe it's not defined
 				return False
-			elif self[cond[0]]==cond[2]:
-				# maybe it's defined and equal
-				return True
-			else:
-				return False
+			# loop over multiple values, such as "target is ~x86 x86 amd64", if one is equal, then it's true
+			for curcond in cond[2:]:
+				if self[cond[0]] == curcond:
+					return True
+			return False
 		else:
 			raise FlexDataError, "Invalid condition"
 
