@@ -103,7 +103,6 @@ class collection:
 
 	def expandString(self,string=None,myvar=None,stack=[]):
 		# Expand all variables in a basic value, ie. a string 
-
 		if string == None:
 			if myvar[-1] == "?":
 				boolean = True
@@ -240,7 +239,6 @@ class collection:
 					return [self.laxstring % ( myvar, "oni" ) ]
 				else:
 					raise FlexDataError("referenced variable \""+myvar+"\" not found")
-
 		newlines=[]
 
 		pos=0
@@ -254,20 +252,6 @@ class collection:
 				newstack = stack[:]
 				newstack.append(myvar)
 				newlines += self.expandMulti(self.expandString(string=myref),newstack)
-			elif len(mysplit) >=1 and mysplit[0] == "<?python":
-				sys.stdout = StringIO.StringIO()
-				mycode=""
-				pos += 1
-				while (pos < len(multi)):
-					newsplit = multi[pos].split()
-					if len(newsplit) >= 1 and newsplit[0] == "?>":
-						break
-					else:
-						mycode += multi[pos] + "\n"
-						pos += 1
-				exec mycode in { "settings" : self, "os": os }, mylocals
-				newlines.append(sys.stdout.getvalue())
-				sys.stdout = sys.__stdout__
 			else:	
 				newlines.append(self.expandString(string=multi[pos]))
 			pos += 1

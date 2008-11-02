@@ -61,6 +61,8 @@ def find_target(settings):
 	if type(targets.__dict__[settings["metro/class"]]) != types.ClassType:
 		raise MetroError, "Metro class "+settings["metro/class"]+" does not appear to be a class."
 	return targets.__dict__[settings["metro/class"]](settings)
+	
+debug=False
 
 	
 def main():
@@ -81,7 +83,6 @@ def main():
 		sys.exit(2)
 	
 	# defaults for commandline opts
-	debug=False
 	verbose=False
 	myopts=[]
 	strict=True
@@ -166,11 +167,7 @@ def main():
 	
 	# OK, we have all required values - our config is good - now we can run the target
 	if valueme:
-		if type(settings[valueme]) == types.ListType:
-			for line in settings[valueme]:
-				print line
-		else:
-			print settings[valueme]
+		print settings[valueme]
 	elif not settings.has_key("target"):
 		raise MetroError("Please specify a target.")
 	else:
