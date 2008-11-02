@@ -2,7 +2,7 @@
 
 [section metro]
 
-class: stage
+class: chroot
 
 [section target]
 
