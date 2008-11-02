@@ -252,6 +252,20 @@ class collection:
 				newstack = stack[:]
 				newstack.append(myvar)
 				newlines += self.expandMulti(self.expandString(string=myref),newstack)
+			elif len(mysplit) >=1 and mysplit[0] == "<?python":
+				sys.stdout = StringIO.StringIO()
+				mycode=""
+				pos += 1
+				while (pos < len(multi)):
+				    	newsplit = multi[pos].split()
+				     	if len(newsplit) >= 1 and newsplit[0] == "?>":
+				      		break
+				       	else:
+						mycode += multi[pos] + "\n"
+					 	pos += 1
+				exec mycode in { "os": os }, mylocals
+				newlines.append(sys.stdout.getvalue())
+				sys.stdout = sys.__stdout__
 			else:	
 				newlines.append(self.expandString(string=multi[pos]))
 			pos += 1
