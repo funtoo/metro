@@ -52,7 +52,7 @@ do_everything() {
 	[ "${SUBARCH:0:1}" = "~" ] && builds="$builds openvz"
 	for x in $builds 
 	do
-		metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH || die "$x fail"
+		metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH || die "$x fail: metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH"
 		if [ "$x" = "stage3" ]
 		then
 			#record successful build for next time

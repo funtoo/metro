@@ -483,6 +483,8 @@ class collection:
 
 	def conditionOnConditional(self,cond):
 		"""defining a conditial var based on another conditional var is illegal. This function will tell us if we are in this mess."""
+		if cond == None:
+			return False
 		cond=cond.split()
 		if len(cond) == 1:
 			if self.raw.has_key(cond[0]):
@@ -492,9 +494,9 @@ class collection:
 			else:
 				# undefined
 				return False
-		elif len(cond) in [0,2]:
+		elif len(cond) == 0:
 			raise FlexDataError, "Condition %s is invalid" % cond
-		elif len(cond) == 3:
+		elif len(cond) >= 3:
 			if cond[1] != "is":
 				raise FlexDataError, "Expecting IS in %s" % cond
 			if self.raw.has_key(cond[0]):
@@ -544,6 +546,8 @@ class collection:
 			myitem = self.collector[0]
 			if self.collectorcond.has_key(myitem):
 				cond = self.collectorcond[myitem]
+				if self.conditionOnConditional(cond):
+					raise FlexDataError,"Collect annotation %s has conditional %s that references a conditional variable, which is not allowed." % (myitem, cond)
 				# is the condition true?: 
 				if not self.conditionTrue(cond):
 					contfails += 1
