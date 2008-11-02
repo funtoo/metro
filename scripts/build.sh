@@ -8,33 +8,6 @@ die() {
 	exit 1
 }
 
-if [ ! -e /usr/bin/metro ]
-then
-	die "Metro is required for build.sh to run"
-fi
-
-if [ "${1:0:1}" = "~" ]
-then
-	BUILD=funtoo
-	SUBARCH=${1:1}
-else
-	BUILD=gentoo
-	SUBARCH=$1
-fi
-
-CONTROL=`metro -k path/mirror/control build/type: $BUILD target: gentoo/stage3 build/subarch: $SUBARCH`
-if [ ! -d "$CONTROL" ]
-then
-	die "Control directory $CONTROL (from 'metro -k path/mirror/control target/subarch: $SUBARCH') does not exist."
-fi
-
-if [ "$#" = "2" ]
-then
-	CURDATE=$2
-else
-	CURDATE=`date +%Y.%m.%d`
-fi
-
 do_help() {
 	cat << EOF
 
@@ -53,20 +26,39 @@ then
 	die "This script requires one or two arguments"
 fi
 
+if [ ! -e /usr/bin/metro ]
+then
+	die "Metro is required for build.sh to run"
+fi
+
+CONTROL=`metro -k path/mirror/control target/subarch: $SUBARCH`
+if [ ! -d "$CONTROL" ]
+then
+	die "Control directory $CONTROL (from 'metro -k path/mirror/control target/subarch: $SUBARCH') does not exist."
+fi
+
+SUBARCH=$1
+if [ "$#" = "2" ]
+then
+	CURDATE=$2
+else
+	CURDATE=`date +%Y.%m.%d`
+fi
+
 do_everything() {
 	echo "Starting..."
-	metro build/type: $BUILD target/version: $CURDATE target: gentoo/snapshot || die "snapshot fail"
-	for x in stage1 stage2 stage3
+	local builds="snapshot stage1 stage2 stage3"
+	[ "${SUBARCH:0:1}" = "~" ] && builds="$builds openvz"
+	for x in $builds 
 	do
-		metro build/type: $BUILD target/version: $CURDATE target: gentoo/$x build/subarch: $SUBARCH || die "$x fail"
+		metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH || die "$x fail"
+		if [ "$x" = "stage3" ]
+		then
+			#record successful build for next time
+			echo $CURDATE > $CONTROL/lastdate
+			echo $SUBARCH > $CONTROL/subarch
+		fi
 	done
-	# update what we will build against next time:
-	echo $CURDATE > $CONTROL/lastdate
-	echo $SUBARCH > $CONTROL/subarch
-	if [ "$BUILD" = "funtoo" ]
-	then
-		metro build/type: $BUILD target/version: $CURDATE target: gentoo/openvz build/subarch: $SUBARCH || die "openvz fail"
-	fi
 }
 
 do_everything

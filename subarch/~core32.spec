@@ -1,0 +1,1 @@
+core32.spec

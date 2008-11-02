@@ -7,7 +7,6 @@ class: chroot
 [section target]
 
 type: openvz
-subarch: $[portage/stable]$[build/subarch]
 name: gentoo-openvz-$[target/subarch]-$[target/version]
 
 [section source]
