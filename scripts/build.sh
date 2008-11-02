@@ -20,21 +20,15 @@ do_help() {
 EOF
 }
 
-if [ $# -lt 1 ] || [ $# -gt 2 ]
-then
-	do_help
-	die "This script requires one or two arguments"
-fi
-
 if [ ! -e /usr/bin/metro ]
 then
 	die "Metro is required for build.sh to run"
 fi
 
-CONTROL=`metro -k path/mirror/control target/subarch: $SUBARCH`
-if [ ! -d "$CONTROL" ]
+if [ $# -lt 1 ] || [ $# -gt 2 ]
 then
-	die "Control directory $CONTROL (from 'metro -k path/mirror/control target/subarch: $SUBARCH') does not exist."
+	do_help
+	die "This script requires one or two arguments"
 fi
 
 SUBARCH=$1
@@ -43,6 +37,13 @@ then
 	CURDATE=$2
 else
 	CURDATE=`date +%Y.%m.%d`
+fi
+
+CONTROL=`metro -k path/mirror/control target/subarch: $SUBARCH`
+
+if [ ! -d "$CONTROL" ]
+then
+	die "Control directory $CONTROL (from 'metro -k path/mirror/control target/subarch: $SUBARCH') does not exist."
 fi
 
 do_everything() {
