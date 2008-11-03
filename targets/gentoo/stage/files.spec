@@ -3,12 +3,13 @@
 make.conf: [
 # These settings were set by the metro build script that automatically built this stage.
 # Please consult /etc/make.conf.example for a more detailed example.
-#<?python
-#for opt in ["USE","CFLAGS","CXXFLAGS","LDFLAGS","CHOST","ACCEPT_KEYWORDS"]:
-#	mykey = "portage/%s" % opt
-#	if settings.has_key(mykey) and settings[mykey]!="":
-#		print opt+'="'+settings[mykey]+'"'
-#?>
+
+ACCEPT_KEYWORDS="$[portage/ACCEPT_KEYWORDS:zap]"
+CHOST="$[portage/CHOST:zap]"
+CFLAGS="$[portage/CFLAGS:zap]"
+CXXFLAGS="$[portage/CXXFLAGS:zap]"
+LDFLAGS="$[portage/LDFLAGS:zap]"
+USE="$[portage/USE:zap]"
 ]
 
 locale.gen: [

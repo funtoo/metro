@@ -1,4 +1,4 @@
-[collect $[path/metro]/subarch/$[build/subarch].spec]
+[collect $[path/metro]/subarch/$[target/subarch].spec]
 
 [section metro]
 

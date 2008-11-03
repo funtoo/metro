@@ -172,6 +172,18 @@ class collection:
 					varname = self.sectionfor[myvar]
 				else:
 					raise FlexDataError, "no section name for "+myvar+" in "+string
+			varsplit=varname.split(":")
+			zapmode=False
+			if len(varsplit) == 1:
+				pass
+			elif len(varsplit) == 2:
+				if varsplit[1] == "zap":
+					zapmode=True
+					varname=varsplit[0]
+				else:
+					raise FlexDataError, "expanding variable %s - mode %s does not exist" % (varname, varsplit[1])
+			else:
+				raise FlexDataError, 'expanding variable %s - invalid variable' % varname
 			unex = unex[endvarpos+len(self.suf):]
 			if varname in stack:
 				raise KeyError, "Circular reference of '"+varname+"' by "+repr(myvar)+" ( Call stack: "+repr(stack)+' )'
@@ -182,7 +194,12 @@ class collection:
 				newstack = stack[:]
 				newstack.append(myvar)
 				if not boolean:
-					ex += self.expandString(self.raw[varname],varname,newstack)
+					newex = self.expandString(self.raw[varname],varname,newstack)
+					if newex == "" and zapmode==True:
+						# when expandMulti gets None, it won't add this line so we won't get a blank line even
+						return None 
+					else:
+						ex += newex
 				else: 
 					ex += "yes"
 			elif self.conditionals.has_key(varname):
@@ -196,6 +213,10 @@ class collection:
 				else:
 					ex += "yes"
 			else:
+				if zapmode:
+					# a ":zap" will cause the line to be deleted if there is no variable defined or the var evals to an empty string
+					# when expandMulti gets None, it won't add this line so we won't get a blank line even
+					return None
 				if len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
 					# record variables that we attempted to expand but were blank, so we can inform the user of possible bugs
 					if boolean: 
@@ -267,7 +288,9 @@ class collection:
 				newlines.append(sys.stdout.getvalue())
 				sys.stdout = sys.__stdout__
 			else:	
-				newlines.append(self.expandString(string=multi[pos]))
+				newline = self.expandString(string=multi[pos])
+				if newline != None:
+					newlines.append(newline)
 			pos += 1
 		return newlines
 
