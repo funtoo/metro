@@ -16,14 +16,10 @@ bin={
 class target:
 
 	def runScript(self,key,chroot=None):
-		print "DEBUG: in RUNSCRIPT"
 		if not self.settings.has_key(key):
-			print "DEBUG: KEY NOT FOUND"
 			#raise MetroError, "runScript: key \""+key+"\" not found."
 		if type(self.settings[key]) != types.ListType:
-			print "DEBUG: NOT LIST"
 			#raise MetroError, "runScript: key \""+key+"\" is not a multi-line element."
-		print "GOT HERE"
 		print
 		print "runScript: running %s..." % key
 		print
@@ -321,17 +317,12 @@ class stage(chroot):
 		self.mount_safety_check()
 
 		# BEFORE WE START - CLEAN UP ANY MESSES
-		print "DEBUG: cleanpath"
 		self.cleanPath(recreate=True)
 		try:
-			print "DEBUG: mount_safety"
 			self.mount_safety_check()
-			print "DEBUG: unpack"
 			self.runScript("steps/unpack")
-			print "DEBUG: unpack/post"
 			if self.settings.has_key("steps/unpack/post"):
 				self.runScript("steps/unpack/post")
-			print "DEBUG: bind"
 			self.bind()
 
 			if self.settings.has_key("steps/chroot/prerun"):
