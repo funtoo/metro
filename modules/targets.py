@@ -17,9 +17,9 @@ class target:
 
 	def runScript(self,key,chroot=None):
 		if not self.settings.has_key(key):
-			#raise MetroError, "runScript: key \""+key+"\" not found."
+			raise MetroError, "runScript: key \""+key+"\" not found."
 		if type(self.settings[key]) != types.ListType:
-			#raise MetroError, "runScript: key \""+key+"\" is not a multi-line element."
+			raise MetroError, "runScript: key \""+key+"\" is not a multi-line element."
 		print
 		print "runScript: running %s..." % key
 		print
