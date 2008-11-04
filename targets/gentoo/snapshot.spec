@@ -59,6 +59,7 @@ then
 	git pull > /dev/null || die "Couldn't perform git pull"
 fi
 echo "Creating $[path/mirror/snapshot]..."
+install -d `dirname $[path/mirror/snapshot]` || die "Couldn't create output directory"
 tarout="$[path/mirror/snapshot]"
 tarout=${tarout%.*}
 git archive --prefix=portage/ $[git/branch] > $tarout || die "Couldn't create git archive"
