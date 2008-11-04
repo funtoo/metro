@@ -16,7 +16,7 @@ __license__=""" Distributed under the terms of the GNU General Public License ve
  redistribute it under certain conditions. See /usr/lib/metro/LICENSE for details.
 """
 __status__="Development"
-__version__="iteration 1 version 0.5 (1.0.5)"
+__version__="1.1"
 
 
 def usage():
@@ -35,7 +35,7 @@ def usage():
 """
 
 def version():
-	print " "+__app__,"-",__version__
+	print " "+__app__,"version",__version__
 	print
 	print " Copyright 2008-2009 Funtoo Technologies, LLC; Portions copyright 2003-2007 Gentoo Foundation"
 	print " Maintainer:",__maintainer__

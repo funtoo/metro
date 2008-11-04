@@ -1,0 +1,69 @@
+# ChangeLog for metro 
+# Copyright 2008-2009 Funtoo Technologies, LLC; Distributed under the GPL v2
+# Portions Copyright 1999-2007 Gentoo Foundation;
+
+*metro-1.1 (04 Nov 2008)
+
+  04 Nov 2008; Daniel Robbins <drobbins@funtoo.org>: New release:
+  * Reorganized /etc/metro directory
+  * NEW: "Builds" defined in /etc/metro/builds/ - all key build information
+    now in a single file for convenience.
+  * NEW: "FSLayouts" defined in /etc/metro/fslayouts/ - all mirror-related
+    file names and path structures now in a single file.
+  * NEW: OpenVZ template support for Funtoo stages, enabled in 
+    scripts/build.sh
+  * NEW: Reorganized file paths inside /usr/lib/metro.
+  * NEW: Working gentoo/emerge target, when you just want to take a stage3
+    and create something new by emerging stuff in it.
+  * NEW: Targets now have an OS prefix. What was target: snapshot is now
+    target: gentoo/snapshot, etc. The path structure in /usr/lib/metro has
+    also been improved so that people can easily create a
+    /usr/lib/metro/targets/myos/ directory and start hacking.
+  * NEW: Several parser bug fixes
+  * FIX: Improvements to metro have allowed scripts/build.sh to be simplified.
+  * NEW: Improved error and exception handling
+  * NEW: Enhanced Portage git snapshot support - Metro will now keep a
+    local cache of a git repository so it doesn't need to re-clone it
+    every time, saving bandwidth. This cache location is defined in the
+    path/cache/git variable in /etc/metro/metro.conf.
+  * Embedded Python interpreter can no longer reference Metro metadata
+    directly. This prevents weird side-effects from occurring.
+  * NEW: Conditional expansion - a variable such as $[foo?] will get
+    expanded to "yes" if defined and "no" if not defined, providing
+    easy integration with scripts so you don't throw a parser exception
+    by referencing an undefined variable.
+  * NEW: "zap" expansion - in a multi-line element, a variable such 
+    as $[foo:zap] will get expanded to the name of the variable if it is
+    defined. If it is not defined, however, then the entire line will
+    be deleted from the output. This allows very compact conditional
+    lines in templates like this:
+    CFLAGS=$[portage/CFLAGS:zap]
+  * FIX: MAKEOPTS now properly applied to Gentoo builds, speeding up
+    builds on multi-core systems significantly.
+  * NEW: [options parse/lax] and [options parse/strict] to disable and
+    enable strict parsing, respectively. When lax parsing is enabled,
+    any referenced undefined variables in multi-line elements will get
+    dummy values, but an exception will not be thrown.
+  * NEW: conditonal sections - it's now possible to write:
+    [section foo when bar]
+    This is equivalent to the old:
+    [section foo]
+    [when bar]
+  * NEW: conditional equality - it's now possible for all conditionals
+    to test for equality, such as:
+    [section foo when bar is oni]
+    or
+    [when bar is oni]
+  * NEW: conditional list-match - it's now possible to see if an element
+    matches a list of values, such as:
+    [section foo when target/subarch is x86 amd64 pentium4]
+    This section will be active if target/subarch has a value that matches
+    one of the specified values.
+  * CHANGE: multi-line elements that are referenced inside other multi-line
+    elements, using the syntax $[[foo]], will only get expanded if they
+    appear at the beginning of the line. This allows them to easily be
+    commented out by prefixing them by a "#" or any other character. In this
+    case, the $[[foo]] will not be expanded and will be passed to the output
+    as-is.
+  * CHANGE: path/mirror/srcstage and path/mirror/deststage have been
+    renamed to /path/mirror/source and path/mirror/target respectively.
