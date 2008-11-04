@@ -28,10 +28,8 @@ def usage():
  
  -d, --debug			Enable debug mode
  -v, --verbose			Verbose mode
- -l, --lax			Lax variable expansion
  
  -k [key], --key [key]		Print value of [key], ie. "distfiles"
- -e [string], --eval [string]	Evaluate string, ie. '$[distfiles]' (remember to use single-quotes)
 
  [FILE]				File(s) to parse and evaluate
 """
@@ -77,7 +75,7 @@ def main():
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "ldhvxVk:", ["lax","debug","help", "verbose", "version","key="])
+		opts,args = getopt.getopt(sys.argv[1:], "dhvxVk:", ["debug","help", "verbose", "version","key="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -105,8 +103,6 @@ def main():
 
 	# Step 2: parse optional arguments that affect behavior of the program
 
-	if optdict.has_key("-l") or optdict.has_key("--lax"):
-		strict=False
 	if optdict.has_key("-d") or optdict.has_key("--debug"):
 		debug=True
 	if optdict.has_key("-v") or optdict.has_key("--verbose"):
