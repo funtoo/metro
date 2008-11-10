@@ -175,67 +175,46 @@ class chroot(target):
 				self.unbind()
 				raise MetroError,"Couldn't bind mount "+src
 			    
-	
 	def unbind(self):
-		""" Attempt to unmount bind mounts"""
-		ouch=0
-		mypath=self.settings["path/work"]
-		myrevmounts=self.mounts[:]
-		myrevmounts.reverse()
-		# unmount in reverse order for nested bind-mounts
-		for x in myrevmounts:
-			if not os.path.exists(mypath+x):
-				continue
-			
-			if not ismount(mypath+x):
-				# it's not mounted, continue
-				continue
-			
-			retval=os.system("umount "+os.path.join(mypath,x.lstrip(os.path.sep)))
-			
-			if retval!=0:
-				warn("First attempt to unmount: "+mypath+x+" failed.")
-				warn("Killing any pids still running in the chroot")
-				
-				self.kill_chroot_pids()
-				
-				retval2=os.system("umount "+mypath+x)
-				if retval2!=0:
-				    ouch=1
-				    warn("Couldn't umount bind mount: "+mypath+x)
-				    # keep trying to umount the others, to minimize damage if developer makes a mistake
-		if ouch:
-			"""
-			if any bind mounts really failed, then we need to raise
-			this to potentially prevent an upcoming bash stage cleanup script
-			from wiping our bind mounts.
-			"""
-			raise MetroError,"Couldn't umount one or more bind-mounts; aborting for safety."
+		myprefix = self.settings["path/work"]
+		mounts = self.getActiveMounts()
+		while len(mounts) != 0:
+			# now, go through our dictionary and try to unmound
+			progress = 0
+			mpos = 0
+			while mpos < len(mounts):
+				self.cmd("umount "+mounts[mpos],badval=10)
+				if not ismount(mounts[mpos]):
+					del mounts[mpos]	
+					progress += 1
+				else:
+					mpos += 1
+			if progress == 0:
+				break
+		if len(mounts):
+			mstring=""
+			for x in mounts():
+				mstring += x+"\n"
+			raise MetroError,"The following bind mounts could not be unmounted: \n"+mstring
 
-	def mount_safety_check(self):
-		mypath=self.settings["path/work"]
-		
-		"""
-		check and verify that none of our paths in mypath are mounted. We don't want to clean
-		up with things still mounted, and this allows us to check. 
-		returns 1 on ok, 0 on "something is still mounted" case.
-		"""
-		if not os.path.exists(mypath):
+	def getActiveMounts(self):
+		prefix=self.settings["path/work"]	
+		myf=os.popen("mount")
+		mylines=myf.readlines()
+		myf.close()
+		outlist=[]
+		for line in mylines:
+			mypath = line.split()[2]
+			if mypath[0:len(prefix)] == prefix:
+				outlist.append(mypath)
+		return outlist
+
+	def checkMounts(self):
+		mymounts = self.getActiveMounts()
+		if len(mymounts) == 0:
 			return
-		
-		for x in self.mounts:
-			if not os.path.exists(mypath+x):
-				continue
-			
-			if ismount(mypath+x):
-				#something is still mounted
-				try:
-					# try to umount stuff ourselves
-					self.unbind()
-					if ismount(mypath+x):
-						raise MetroError, "Auto-unbind failed for "+x
-				except MetroError:
-					raise MetroError, "Unable to auto-unbind "+x
+		else:
+			self.unbind()
 
 	def run(self):
 		if self.targetExists("path/mirror/target"):
@@ -248,12 +227,12 @@ class chroot(target):
 
 		# BEFORE WE CLEAN UP - MAKE SURE WE ARE UNMOUNTED
 		self.kill_chroot_pids()
-		self.mount_safety_check()
+		self.checkMounts()
 
 		# BEFORE WE START - CLEAN UP ANY MESSES
 		self.cleanPath(recreate=True)
 		try:
-			self.mount_safety_check()
+			self.checkMounts()
 			self.runScript("steps/unpack")
 
 			self.bind()
@@ -314,12 +293,12 @@ class stage(chroot):
 
 		# BEFORE WE CLEAN UP - MAKE SURE WE ARE UNMOUNTED
 		self.kill_chroot_pids()
-		self.mount_safety_check()
+		self.checkMounts()
 
 		# BEFORE WE START - CLEAN UP ANY MESSES
 		self.cleanPath(recreate=True)
 		try:
-			self.mount_safety_check()
+			self.checkMounts()
 			self.runScript("steps/unpack")
 			if self.settings.has_key("steps/unpack/post"):
 				self.runScript("steps/unpack/post")
@@ -335,7 +314,7 @@ class stage(chroot):
 			self.runScriptInChroot("steps/chroot/clean")
 		except:
 			self.kill_chroot_pids()
-			self.mount_safety_check()
+			self.checkMounts()
 			raise
 
 		self.runScript("steps/capture")
