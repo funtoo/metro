@@ -71,6 +71,7 @@ from portage.process import find_binary, spawn
 from portage.output import bold, create_color_func, darkgreen, \
 	green, nocolor, red, turquoise, yellow
 from portage.output import ConsoleStyleFile, StyleWriter
+from portage.util import writemsg_level
 
 util.initialize_logger()
 
@@ -247,7 +248,7 @@ def ParseArgs(args, qahelp):
 	return (opts, args)
 
 qahelp={
-	"vcs/IO_error":"Attempting to commit, and an IO error was encountered",
+	"vcs.IO_error":"Attempting to commit, and an IO error was encountered",
 	"desktop.invalid":"desktop-file-validate reports errors in a *.desktop file",
 	"ebuild.invalidname":"Ebuild files with a non-parseable or syntactically incorrect name (or using 2.1 versioning extensions)",
 	"ebuild.namenomatch":"Ebuild files that do not have the same name as their parent directory",
@@ -349,8 +350,6 @@ qawarnings = set((
 "file.size",
 "inherit.autotools",
 "java.eclassesnotused",
-"metadata.missing",
-"metadata.bad",
 "virtual.versioned",
 "virtual.exists",
 "virtual.unavailable",
@@ -482,9 +481,8 @@ if options.mode in ('last', 'lfull'):
 # commit (like if Manifest generation fails).
 can_force = True
 
-try:
-	portdir, portdir_overlay, mydir = utilities.FindPortdir(repoman_settings)
-except ValueError:
+portdir, portdir_overlay, mydir = utilities.FindPortdir(repoman_settings)
+if portdir is None:
 	sys.exit(1)
 
 vcs = None
@@ -492,7 +490,7 @@ if os.path.isdir("CVS"):
 	vcs = "cvs"
 elif os.path.isdir(".svn"):
 	vcs = "svn"
-elif os.path.isdir(portdir+"/.git"):
+elif os.path.isdir(os.path.join(portdir_overlay, ".git")):
 	vcs = "git"
 
 if vcs == "cvs" and \
@@ -752,6 +750,7 @@ modified_changelogs = set()
 mychanged = []
 mynew = []
 myremoved = []
+path_lstrip_re = re.compile(r'.*/')
 
 if vcs == "cvs":
 	mycvstree = cvstree.getentries("./", recursive=1)
@@ -761,12 +760,14 @@ elif vcs == "svn":
 	svnstatus = os.popen("svn status").readlines()
 	mychanged = [ "./" + elem.split()[-1:][0] for elem in svnstatus if elem and elem[:1] in "MR" ]
 	mynew     = [ "./" + elem.split()[-1:][0] for elem in svnstatus if elem.startswith("A") ]
-elif vcs=="git":
-	gitchanged = os.popen("git ls-files -m").readlines()
-	gitnew = os.popen("git diff --cached --name-only --diff-filter=A .").readlines()
-	mychanged = [ "./" +  elem[:-1] for elem in gitchanged ]
-	relpath = os.getcwd()[len(portdir)+1:]
-	mynew = [ "./" + elem[len(relpath)+1:-1] for elem in gitnew ]
+elif vcs == "git":
+	mychanged = os.popen("git ls-files -m").readlines()
+	mychanged = [ "./" +  elem[:-1] for elem in mychanged ]
+	mynew = os.popen("git diff --cached --name-only --diff-filter=A").readlines()
+	strip_levels = repolevel - 1
+	if strip_levels:
+		mynew = [path_lstrip_re.sub("", elem, strip_levels) for elem in mynew]
+	mynew = ["./" + elem[:-1] for elem in mynew]
 if vcs:
 	new_ebuilds.update(x for x in mynew if x.endswith(".ebuild"))
 	modified_changelogs.update(x for x in chain(mychanged, mynew) \
@@ -793,6 +794,12 @@ for x in scanlist:
 	eadded=[]
 	catdir,pkgdir=x.split("/")
 	checkdir=repodir+"/"+x
+	checkdir_relative = ""
+	if repolevel < 3:
+		checkdir_relative = os.path.join(pkgdir, checkdir_relative)
+	if repolevel < 2:
+		checkdir_relative = os.path.join(catdir, checkdir_relative)
+	checkdir_relative = os.path.join(".", checkdir_relative)
 
 	if options.mode == "manifest" or \
 	  options.mode in ('commit', 'fix') and not options.pretend:
@@ -878,7 +885,17 @@ for x in scanlist:
 				s = s[s.rfind("\n") + 1:]
 			fails["file.UTF8"].append("%s/%s: line %i, just after: '%s'" % (checkdir, y, line, s))
 
-	if vcs and check_ebuild_notadded:
+	if vcs == "git" and check_ebuild_notadded:
+		myf = os.popen("git ls-files --others %s" % \
+			(portage._shell_quote(checkdir_relative),))
+		for l in myf:
+			if l[:-1][-7:] == ".ebuild":
+				stats["ebuild.notadded"] += 1
+				fails["ebuild.notadded"].append(
+					os.path.join(x, os.path.basename(l[:-1])))
+		myf.close()
+
+	if vcs in ("cvs", "svn") and check_ebuild_notadded:
 		try:
 			if vcs == "cvs":
 				myf=open(checkdir+"/CVS/Entries","r")
@@ -917,12 +934,11 @@ for x in scanlist:
 						if l[-7:] == ".ebuild":
 							eadded.append(os.path.basename(l[:-7]))
 		except IOError:
-			if options.mode == 'commit':
-				stats["vcs/IO_error"] += 1
-				if vcs == "cvs":
-					fails["vcs.IO_error"].append(checkdir+"/CVS/Entries")
-				elif vcs in [ "svn", "git"]:
-					fails["vcs.IO_error"].append(checkdir)
+			stats["vcs.IO_error"] += 1
+			if options.mode == 'commit' and vcs == "cvs":
+				fails["vcs.IO_error"].append(checkdir+"/CVS/Entries")
+			if options.mode == 'commit' and vcs == "svn":
+				fails["vcs.IO_error"].append(checkdir+"svn info")
 			continue
 
 	mf = Manifest(checkdir, repoman_settings["DISTDIR"])
@@ -1055,12 +1071,7 @@ for x in scanlist:
 
 		del metadata_bad
 
-	changelog_path = "ChangeLog"
-	if repolevel < 3:
-		changelog_path = os.path.join(pkgdir, changelog_path)
-	if repolevel < 2:
-		changelog_path = os.path.join(catdir, changelog_path)
-	changelog_path = os.path.join(".", changelog_path)
+	changelog_path = os.path.join(checkdir_relative, "ChangeLog")
 	changelog_modified = changelog_path in modified_changelogs
 
 	allmasked = True
@@ -1081,14 +1092,10 @@ for x in scanlist:
 		if stat.S_IMODE(os.stat(full_path).st_mode) & 0111:
 			stats["file.executable"] += 1
 			fails["file.executable"].append(x+"/"+y+".ebuild")
-		if vcs and check_ebuild_notadded:
-			if vcs != "git" and y not in eadded:
-				#ebuild not added to vcs
-				stats["ebuild.notadded"]=stats["ebuild.notadded"]+1
-				fails["ebuild.notadded"].append(x+"/"+y+".ebuild")
-			elif vcs == "git":
-				stats["ebuild.notadded"]=len(enotadded)
-				fails["ebuild.notadded"]=enotadded
+		if vcs in ("cvs", "svn") and check_ebuild_notadded and y not in eadded:
+			#ebuild not added to vcs
+			stats["ebuild.notadded"]=stats["ebuild.notadded"]+1
+			fails["ebuild.notadded"].append(x+"/"+y+".ebuild")
 		myesplit=portage.pkgsplit(y)
 		if myesplit is None or myesplit[0] != x.split("/")[-1]:
 			stats["ebuild.invalidname"]=stats["ebuild.invalidname"]+1
@@ -1250,7 +1257,8 @@ for x in scanlist:
 			"java-pkg-opt-2" in inherited
 		operator_tokens = set(["||", "(", ")"])
 		type_list, badsyntax = [], []
-		for mytype in ("DEPEND", "RDEPEND", "PDEPEND", "LICENSE", "PROVIDE"):
+		for mytype in ("DEPEND", "RDEPEND", "PDEPEND",
+			"LICENSE", "PROPERTIES", "PROVIDE"):
 			mydepstr = myaux[mytype]
 			
 			if mydepstr.find(" ?") != -1:
@@ -1671,15 +1679,11 @@ else:
 			raise  # TODO propogate this
 		except:
 			err("Error retrieving SVN info; exiting.")
-	elif vcs == "git":
-			# get list of files not under version control or missing
-		try:
-			gitdiff=os.popen("git ls-files --others").readlines()
-			myunadded = [ "./"+elem[:-1] for elem in gitdiff ]
-		except SystemExit, e:
-			raise # TODO propogate this
-		except:
-			err("Error retrieving GIT info; exiting.")
+	if vcs == "git":
+		# get list of files not under version control or missing
+		myf = os.popen("git ls-files --others")
+		myunadded = [ "./" + elem[:-1] for elem in myf ]
+		myf.close()
 
 	myautoadd=[]
 	if myunadded:
@@ -1703,7 +1707,8 @@ else:
 			if vcs:
 				retval=os.system("%s add "+" ".join(myautoadd) % vcs)
 		if retval:
-			print "!!! Exiting on vcs (shell) error code:",retval
+			writemsg_level("!!! Exiting on %s (shell) error code: %s\n" % \
+				(vcs, retval), level=logging.ERROR, noiselevel=-1)
 			sys.exit(retval)
 
 	if myunadded:
@@ -1741,7 +1746,20 @@ else:
 		# only a contain props for a file listed on a previous line.
 		expansion = set("./" + prop.split(" - ")[0] \
 			for prop in props if " - " in prop)
-	# FIXME: ADD GIT
+
+	elif vcs == "git":
+		mychanged = os.popen("git ls-files -m").readlines()
+		mychanged = [ "./" +  elem[:-1] for elem in mychanged ]
+		mynew = os.popen("git diff --cached --name-only --diff-filter=A").readlines()
+		strip_levels = repolevel - 1
+		if strip_levels:
+			mynew = [path_lstrip_re.sub("", elem, strip_levels) for elem in mynew]
+		mynew = ["./" + elem[:-1] for elem in mynew]
+		myremoved = os.popen("git diff --cached --name-only --diff-filter=D").readlines()
+		if strip_levels:
+			myremoved = [path_lstrip_re.sub("", elem, strip_levels) for elem in myremoved]
+		myremoved = ["./" + elem[:-1] for elem in myremoved]
+
 	if vcs:
 		if not (mychanged or mynew or myremoved):
 			print green("RepoMan sez:"), "\"Doing nothing is not always good for QA.\""
@@ -1785,7 +1803,7 @@ else:
 		elif vcs == "svn":
 			if myfile not in expansion:
 				continue
-		#FIXME: add git
+
 		myout = commands.getstatusoutput("egrep -q "+headerstring+" "+myfile)
 		if myout[0] == 0:
 			myheaders.append(myfile)
@@ -1876,7 +1894,7 @@ else:
 					"-F", commitmessagefile] + myfiles,
 					env=os.environ)
 			elif vcs == "git":
-				retval = spawn(["git", "commit", "-q", "-F", 
+				retval = spawn(["git", "commit", "-q",
 					commitmessagefile] + myfiles, 
 					env=os.environ)
 		try:
@@ -1884,7 +1902,8 @@ else:
 		except OSError:
 			pass
 		if retval:
-			print "!!! Exiting on cvs (shell) error code:",retval
+			writemsg_level("!!! Exiting on %s (shell) error code: %s\n" % \
+				(vcs, retval), level=logging.ERROR, noiselevel=-1)
 			sys.exit(retval)
 
 	# Setup the GPG commands
@@ -2007,7 +2026,8 @@ else:
 				except OSError:
 					pass
 				if retval:
-					print "!!! Exiting on cvs (shell) error code:",retval
+					writemsg_level("!!! Exiting on %s (shell) error code: %s\n" % \
+						(vcs, retval), level=logging.ERROR, noiselevel=-1)
 					sys.exit(retval)
 			manifest_commit_required = False
 
@@ -2083,7 +2103,8 @@ else:
 			except OSError:
 				pass
 			if retval:
-				print "!!! Exiting on cvs (shell) error code:",retval
+				writemsg_level("!!! Exiting on %s (shell) error code: %s\n" % \
+					(vcs, retval), level=logging.ERROR, noiselevel=-1)
 				sys.exit(retval)
 
 	print
