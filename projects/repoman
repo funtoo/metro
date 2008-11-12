@@ -1723,9 +1723,7 @@ else:
 		bin_blob_pattern = re.compile("^-kb$")
 		no_expansion = set(portage.cvstree.findoption(mycvstree, bin_blob_pattern,
 			recursive=1, basedir="./"))
-
-
-	if vcs == "svn":
+	elif vcs == "svn":
 		svnstatus = os.popen("svn status").readlines()
 		mychanged = [ "./" + elem.split()[-1:][0] for elem in svnstatus if elem and elem[:1] in "MR" ]
 		mynew     = [ "./" + elem.split()[-1:][0] for elem in svnstatus if elem.startswith("A") ]
@@ -1878,7 +1876,7 @@ else:
 					"-F", commitmessagefile] + myfiles,
 					env=os.environ)
 			elif vcs == "git":
-				retval = spawn(["git", "commit", "-F", 
+				retval = spawn(["git", "commit", "-q", "-F", 
 					commitmessagefile] + myfiles, 
 					env=os.environ)
 		try:
@@ -1991,7 +1989,7 @@ else:
 				elif vcs == "svn":
 					print "(svn -q commit -F commitmessagefile)"
 				elif vcs == "git":
-					print "(svn -q commit -F commitmessagefile)"
+					print "(git commit -q -F commitmessagefile)"
 			else:
 				fd, commitmessagefile = tempfile.mkstemp(".repoman.msg")
 				mymsg = os.fdopen(fd, "w")
@@ -2003,7 +2001,7 @@ else:
 				elif vcs == "svn":
 					retval=os.system("svn -q commit -F "+commitmessagefile)
 				elif vcs == "git":
-					retval=os.system("git -q commit -F "+commitmessagefile)
+					retval=os.system("git commit -q -F "+commitmessagefile)
 				try:
 					os.unlink(commitmessagefile)
 				except OSError:
@@ -2064,7 +2062,7 @@ else:
 			elif vcs == "svn":
 				print "(svn -q commit -F commitmessagefile)"
 			elif vcs == "git":
-				print "(git -q commit -F commitmessagefile)"
+				print "(git commit -q -F commitmessagefile)"
 		else:
 			fd, commitmessagefile = tempfile.mkstemp(".repoman.msg")
 			mymsg = os.fdopen(fd, "w")
@@ -2079,7 +2077,7 @@ else:
 			elif vcs == "svn":
 				retval=os.system("svn -q commit -F "+commitmessagefile)
 			elif vcs == "git":
-				retval=os.system("git -q commit -F "+commitmessagefile)
+				retval=os.system("git commit -q -F "+commitmessagefile+" Manifest")
 			try:
 				os.unlink(commitmessagefile)
 			except OSError:
