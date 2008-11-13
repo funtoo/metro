@@ -7,7 +7,7 @@ ln -sf ../usr/portage/profiles/$[portage/profile] /etc/make.profile || exit 1
 echo "Set Portage profile to $[portage/profile]."
 ]
 
-[option parse/lax]
+#[option parse/lax]
 
 setup: [
 /usr/sbin/env-update
@@ -56,22 +56,22 @@ EOF
 if [ "$[portage/files/package.use?]" = "yes" ]
 then
 cat > /etc/portage/package.use << "EOF"
-$[[portage/files/package.use]]
+$[[portage/files/package.use:lax]]
 EOF
 fi
 if [ "$[portage/files/package.keywords?]" = "yes" ]
 then
 cat > /etc/portage/package.keywords << "EOF"
-$[[portage/files/package.keywords]]
+$[[portage/files/package.keywords:lax]]
 EOF
 fi
 if [ "$[probe/setup?]" = "yes" ]
 then
-$[[probe/setup]]
+$[[probe/setup:lax]]
 fi
 ]
 
-[option parse/strict]
+#[option parse/strict]
 
 chroot/clean: [
 #!/bin/bash

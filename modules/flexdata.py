@@ -70,7 +70,7 @@ class collection:
 			raise FlexDataError
 			
 
-	def expand(self,myvar):
+	def expand(self,myvar,options={}):
 		if myvar[-1] == "?":
 			boolean = True
 			myvar = myvar[:-1]
@@ -97,11 +97,11 @@ class collection:
 		if boolean:
 			return "yes"
 		elif type(typetest) == types.ListType:
-			return self.expandMulti(myvar)
+			return self.expandMulti(myvar,options=options)
 		else:
-			return self.expandString(myvar=myvar)
+			return self.expandString(myvar=myvar,options=options)
 
-	def expandString(self,string=None,myvar=None,stack=[]):
+	def expandString(self,string=None,myvar=None,stack=[],options={}):
 		# Expand all variables in a basic value, ie. a string 
 		if string == None:
 			if myvar[-1] == "?":
@@ -173,12 +173,16 @@ class collection:
 				else:
 					raise FlexDataError, "no section name for "+myvar+" in "+string
 			varsplit=varname.split(":")
+			newoptions=options.copy()
 			zapmode=False
 			if len(varsplit) == 1:
 				pass
 			elif len(varsplit) == 2:
 				if varsplit[1] == "zap":
 					zapmode=True
+					varname=varsplit[0]
+				elif varsplit[1] == "lax":
+					newoptions["lax"]=True
 					varname=varsplit[0]
 				else:
 					raise FlexDataError, "expanding variable %s - mode %s does not exist" % (varname, varsplit[1])
@@ -194,7 +198,7 @@ class collection:
 				newstack = stack[:]
 				newstack.append(myvar)
 				if not boolean:
-					newex = self.expandString(self.raw[varname],varname,newstack)
+					newex = self.expandString(self.raw[varname],varname,newstack,options=newoptions)
 					if newex == "" and zapmode==True:
 						# when expandMulti gets None, it won't add this line so we won't get a blank line even
 						return None 
@@ -209,7 +213,7 @@ class collection:
 				if expandme == None:
 					raise KeyError, "Variable %s not found (stack: %s )" % (varname, repr(newstack))
 				if not boolean:
-					ex += self.expandString(expandme,varname,newstack)
+					ex += self.expandString(expandme,varname,newstack,options=newoptions)
 				else:
 					ex += "yes"
 			else:
@@ -217,7 +221,7 @@ class collection:
 					# a ":zap" will cause the line to be deleted if there is no variable defined or the var evals to an empty string
 					# when expandMulti gets None, it won't add this line so we won't get a blank line even
 					return None
-				if len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
+				if ("lax" in newoptions.keys()) or (len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]):
 					# record variables that we attempted to expand but were blank, so we can inform the user of possible bugs
 					if boolean: 
 						ex += "no"
@@ -244,9 +248,21 @@ class collection:
 		return outstring[:-1]
 
 
-	def expandMulti(self,myvar,stack=[]):
+	def expandMulti(self,myvar,stack=[],options={}):
 		# TODO: ADD BOOLEAN SUPPORT HERE - NOT DONE YET
 		mylocals = {}
+		myvarsplit=myvar.split(":")
+		# any future expansions will get our "new" options, but we don't want to pollute our current options by modifying
+		# options...
+		newoptions=options.copy()
+		# detect and properly handle $[[foo:lax]] 
+		if len(myvarsplit) == 2:
+			if myvarsplit[1] == "lax":
+				newoptions["lax"] = True
+				myvar = myvarsplit[0]
+			else:
+				raise FlexDataError, "Invalid multi-line variable"
+
 		# Expand all variables in a multi-line value. stack is used internally to detect circular references.
 		if self.raw.has_key(myvar):
 			multi = self.raw[myvar]
@@ -255,7 +271,7 @@ class collection:
 		else:
 			multi = self.get_condition_for(myvar)
 			if multi == None:
-				if len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
+				if ("lax" in newoptions.keys()) or (len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]):
 					self.blanks[myvar] = True
 					return [self.laxstring % ( myvar, "oni" ) ]
 				else:
@@ -272,7 +288,7 @@ class collection:
 					raise FlexDataError,"Circular reference of '"+myref+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
 				newstack = stack[:]
 				newstack.append(myvar)
-				newlines += self.expandMulti(self.expandString(string=myref),newstack)
+				newlines += self.expandMulti(self.expandString(string=myref),newstack,options=newoptions)
 			elif len(mysplit) >=1 and mysplit[0] == "<?python":
 				sys.stdout = StringIO.StringIO()
 				mycode=""
@@ -288,7 +304,7 @@ class collection:
 				newlines.append(sys.stdout.getvalue())
 				sys.stdout = sys.__stdout__
 			else:	
-				newline = self.expandString(string=multi[pos])
+				newline = self.expandString(string=multi[pos],options=newoptions)
 				if newline != None:
 					newlines.append(newline)
 			pos += 1
