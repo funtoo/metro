@@ -199,12 +199,14 @@ class chroot(target):
 
 	def getActiveMounts(self):
 		prefix=self.settings["path/work"]	
-		myf=os.popen("mount")
+		# this used to have a "os.popen("mount")" which is not as accurate as the kernel list /proc/mounts.
+		# The "mount" command relies on /etc/mtab which is not necessarily correct.
+		myf=open("/proc/mounts","r")
 		mylines=myf.readlines()
 		myf.close()
 		outlist=[]
 		for line in mylines:
-			mypath = line.split()[2]
+			mypath = line.split()[1]
 			if mypath[0:len(prefix)] == prefix:
 				outlist.append(mypath)
 		return outlist
