@@ -154,7 +154,7 @@ def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,retur
 				return None
 			myc = find_binary(myc)
 			if myc == None:
-			    return None
+				return None
         mypid=[]
 	if logfile:
 		pr,pw=os.pipe()
