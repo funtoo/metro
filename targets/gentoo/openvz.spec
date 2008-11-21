@@ -91,9 +91,9 @@ chroot/run: [
 	mknod /lib/udev/devices/ptyp0 c 2 0 || exit 9
 	mknod /lib/udev/devices/ptmx c 5 2 || exit 10
 	
-	# OpenRC
-	cp /etc/rc.conf /etc/rc.conf.orig || exit 11
-	cat /etc/rc.conf.orig | sed -e "/^#rc_devices/c\\" -e 'rc_devices="static"' > /etc/rc.conf || exit 12
+	# OpenRC - prior to 0.3.0
+	# cp /etc/rc.conf /etc/rc.conf.orig || exit 11
+	# cat /etc/rc.conf.orig | sed -e "/^#rc_devices/c\\" -e 'rc_devices="static"' > /etc/rc.conf || exit 12
 	
 	# timezone
 	rm /etc/localtime
