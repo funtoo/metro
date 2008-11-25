@@ -15,6 +15,10 @@ bin={
 
 class target:
 
+	def run(self):
+		self.runScript("steps/run")
+		return
+
 	def runScript(self,key,chroot=None):
 		if not self.settings.has_key(key):
 			raise MetroError, "runScript: key \""+key+"\" not found."

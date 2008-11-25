@@ -1,0 +1,142 @@
+<?python
+import os
+bit64=["amd64","core2"]
+unstab=["~core2","~amd64","~pentium4","~athlon-xp","~i686","~x86"]
+stab=["amd64","pentium4","athlon-xp","i686","x86"]
+import time, datetime, string
+
+def dateFromString(date):
+	ds=date.split(".")
+	return datetime.date(string.atoi(ds[0]),string.atoi(ds[1]),string.atoi(ds[2]))
+
+
+def friendlyDate(date):
+	today=time.strftime("%Y.%m.%d")
+	s_today=dateFromString(today)
+	s_date = dateFromString(date)
+	if date == today:
+		new = "<span style=\"color: #a00000;\">NEW!</span>"
+		date = "Today"
+	else:
+		new = "NEW!"
+		datediff = s_today - s_date
+		if datediff.days == 1:
+			date = "Yesterday"
+		else:
+			date = repr(datediff.days) + " days ago"
+	return date, new
+
+def printBuilds(mylist,pattern="/*/stage3*"):
+	for subarch in mylist:
+		realsubarch=subarch
+		if subarch[0] == "~":
+			realsubarch=realsubarch[1:]
+		if realsubarch in bit64:
+			bits="64"
+		else:
+			bits="32"
+		cmd=os.popen("cd /home/mirror/linux; ls "+subarch+pattern+" | sort -r | head -n 1")
+		cmdout=cmd.readline()[:-1].split("/")
+		cmd.close()
+		if len(cmdout) != 3:
+			continue
+		date=cmdout[1].split("-")[-1]
+		date, new = friendlyDate(date)
+		link="http://www.funtoo.org/linux/"+cmdout[0]+"/"+cmdout[1]+"/"
+		out = "<li class=\"linux_project\"><b>%s</b> <a href=\"%s\">%s</a>  <span class=\"light\">(%s bit, %s)</span></li>" % ( new, link, subarch, bits, date )
+		print out
+
+def printOpenVZ(mylist=unstab):
+	for subarch in mylist:
+		cmd=os.popen("cd /home/mirror/linux/openvz; ls "+subarch+"/gentoo*.tar.gz | sort -r | head -n 1")
+		cmdout=cmd.readline()[:-1].split("/")
+		cmd.close()
+		realsubarch=subarch
+		if subarch[0] == "~":
+			realsubarch=realsubarch[1:]
+		if realsubarch in bit64:
+			bits="64"
+		else:
+			bits="32"
+		if len(cmdout) != 2:
+			continue
+		date=cmdout[1].split("-")[-1][:-7]
+		date, new = friendlyDate(date)
+		link = "<li class=\"linux_project\"><b>%s</b> <a href=\"%s\">%s</a>  <span class=\"light\">(%s bit, %s)</span></li>" % ( new, "http://www.funtoo.org/linux/openvz/"+cmdout[0]+"/"+cmdout[1], subarch, bits, date )
+		print link
+
+def printFuntoo():
+	return printBuilds(unstab)
+
+def printGentoo():
+	return printBuilds(stab)
+
+?>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="copyright" content="Copyright (c) 2006-2007 Funtoo Technologies, LLC unless otherwise noted"/>
+    <title>
+	Funtoo - Daniel Robbins, Blog, Web Design, Linux Articles, Tips and Projects: Gentoo</title>
+    <meta name="keywords" content="funtoo, Daniel Robbins, Linux, Gentoo"/>
+    <link rel="alternate" type="application/atom+xml" title="hello to you!" href="http://feeds.feedburner.com/HelloToYou"/>
+    <link href="css/article.css" rel="stylesheet" type="text/css" media="screen"/>
+  </head>
+  <body>
+    <div id="mainlogo">
+      <img src="img/funky.png" alt="funtoo"/>
+    </div>
+    <div id="mainpage">
+      <div class="box">
+      <center><img src="/img/funtoo-small.png" alt="Funtoo Builds"/></center>
+   		<ul>
+<?python
+printFuntoo()
+?>
+<li class="sun_list"><b>In a Nutshell:</b> Freshly-built Gentoo Linux variant, optimized for your processor, Funtoo Portage unstable branch, includes OpenRC, dhcpcd and git.</li>
+		<li class="im_list"><b>Join us:</b> <b>#funtoo</b> on <b>irc.freenode.net</b></li>
+		<li class="social_list"><b>Info:</b> <a href="http://www.funtoo.org">Funtoo</a> is a Gentoo Linux variant maintained by Daniel Robbins. Funtoo has its own git-based Portage tree that tracks the upstream Gentoo tree.</li>
+		<li class="linux_article_list"><b>To Install:</b> Grab a Funtoo stage3 and install just like Gentoo - follow <a href="http://www.gentoo.org/doc/en/handbook/handbook-x86.xml?part=1&chap=5">the Gentoo Handbook</a>. Grab a <a href="http://www.funtoo.org/linux/snapshots">Funtoo Linux snapshot</a> for the installation.</li>
+		</ul>
+		</div>
+		
+			<div class="box">
+			<center><img src="/img/openvz-funtoo-small.png" alt="Funtoo OpenVZ Builds"/></center>
+		<ul>
+<?python
+printOpenVZ()
+?>
+		<li class="social_list"><b>Info:</b> <a href="http://www.openvz.org">OpenVZ</a> is a high-performance, lightweight Open Source Linux virtualization technology. It allows you to run many (even hundreds) of independent instances of Linux on a single physical machine.</li>
+<li class="linux_article_list"><b>To Install:</b> On an OpenVZ-enabled system, copy template to /vz/template/cache.</li>
+		</ul>
+				</div>
+
+	<div class="box">
+		<center><img src="/img/gentoo-small.png" alt="Gentoo Builds"/></center>
+ 		<ul>
+<?python
+printGentoo()
+?>
+<li class="sun_list"><b>In a Nutshell:</b> Freshly-built Gentoo Linux stable stages, optimized for your processor, built by Daniel Robbins using official Gentoo stable branch.</li>
+		<li class="social_list"><b>Info:</b> <a href="http://www.gentoo.org">Gentoo Linux</a> is a Linux metadistribution created by Daniel Robbins.</li>
+	<li class="linux_article_list"><b>To Install:</b> Follow <a href="http://www.gentoo.org/doc/en/handbook/handbook-x86.xml?part=1&chap=5">the Gentoo Handbook</a>.</li>
+	
+		</ul>
+		</div>
+	<div class="box">
+		<h3>Get Metro:</h3>
+		<p><a href="http://www.github.com/funtoo/metro/wikis/">Metro</a> is the tool that's used to build all our stuff. You can use it to build stuff too.</p>
+
+	<object width="425" height="344"><param name="movie" value="http://www.youtube.com/v/5pFv8CAniYQ&hl=en&fs=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/5pFv8CAniYQ&hl=en&fs=1" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="425" height="344"></embed></object>
+</div>
+	</div>
+    <script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+	_uacct = "UA-1947562-1";
+	urchinTracker();
+	</script>
+  </body>
+</html>

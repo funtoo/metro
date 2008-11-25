@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+# pytext 2.1
+# Copyright 1999-2001 Daniel Robbins
+# Distributed under the GPL
+
+import sys,os
+
+def runfile(myarg):
+	"interprets a text file with embedded elements"
+	mystuff={"os":os}
+	try:
+		a=open(myarg,'r')
+	except IOError:
+		sys.stderr.write("!!! Error opening "+myarg+"!\n")
+		return
+	mylines=a.readlines()
+	a.close()
+	pos=0
+	while pos<len(mylines):
+		if mylines[pos][0:8]=="<?python":
+			mycode=""
+			pos=pos+1
+			while (pos<len(mylines)) and (mylines[pos][0:2]!="?>"):
+				mycode=mycode+mylines[pos]
+				pos=pos+1
+			pos += 1
+			exec mycode in mystuff
+		else:
+			sys.stdout.write(mylines[pos])
+			pos=pos+1
+if len(sys.argv)>1:
+	for x in sys.argv[1:]:
+		runfile(x)
+	sys.exit(0)
+else:
+	sys.stderr.write("pytext 2.1 -- Copyright 1999-2001 Daniel Robbins. ")
+	sys.stderr.write("Distributed under the\nGNU Public License\n\n")
+	sys.stderr.write("Usage: "+sys.argv[0]+" file0 [file1]...\n")
+	sys.exit(1)
