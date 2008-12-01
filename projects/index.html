@@ -5,6 +5,14 @@ unstab=["~core2","~amd64","~pentium4","~athlon-xp","~i686","~x86"]
 stab=["amd64","pentium4","athlon-xp","i686","x86"]
 import time, datetime, string
 
+from xml.dom import minidom
+from xml.dom import EMPTY_NAMESPACE
+import sys
+import urllib
+
+ATOM_NS = 'http://www.w3.org/2005/Atom'
+FEEDBURNER_NS = 'http://rssnamespace.org/feedburner/ext/1.0'
+
 def dateFromString(date):
 	ds=date.split(".")
 	return datetime.date(string.atoi(ds[0]),string.atoi(ds[1]),string.atoi(ds[2]))
@@ -71,6 +79,51 @@ def printFuntoo():
 def printGentoo():
 	return printBuilds(stab)
 
+def get_text_from_construct(element):
+    '''
+    Return the content of an Atom element declared with the
+    atomTextConstruct pattern.  Handle both plain text and XHTML
+    forms.  Return a UTF-8 encoded string.
+    '''
+    if element.getAttributeNS(EMPTY_NAMESPACE, u'type') == u'xhtml':
+        #Grab the XML serialization of each child
+        childtext = [ c.toxml('utf-8') for c in element.childNodes ]
+        #And stitch it together
+        content = ''.join(childtext).strip()
+        return content
+    else:
+        return element.firstChild.data.encode('utf-8')
+
+def generateAtomSummary(atomurl):
+	myfile=urllib.urlopen(atomurl)
+	doc = minidom.parse(myfile)
+	#Ensure that all text nodes can be simply retrieved
+	doc.normalize()
+
+	#process overall feed:
+	
+	#First title element in doc order is the feed title
+	feedtitle = doc.getElementsByTagNameNS(ATOM_NS, u'title')[0]
+
+	#Field titles are atom text constructs: no markup
+	#So just print the text node content
+	#print 'Feed title:', get_text_from_construct(feedtitle)
+
+	feedlink = doc.getElementsByTagNameNS(ATOM_NS, u'link')[0]
+	#print 'Feed link:', feedlink.getAttributeNS(EMPTY_NAMESPACE, u'href')
+
+	#print
+	#print 'Entries:'
+
+	for entry in doc.getElementsByTagNameNS(ATOM_NS, u'entry')[0:8]:
+	#First title element in doc order within the entry is the title
+		entrytitle = entry.getElementsByTagNameNS(ATOM_NS, u'title')[0]
+		entrylink = entry.getElementsByTagNameNS(ATOM_NS, u'link')[0]
+		etitletext = get_text_from_construct(entrytitle)
+		elinktext = entrylink.getAttributeNS(EMPTY_NAMESPACE, u'href')
+		origlink = entry.getElementsByTagNameNS(FEEDBURNER_NS, u'origLink')[0]
+		origlinktext = get_text_from_construct(origlink)
+		print '<li class="blog_list"><a href="'+origlinktext+'">'+etitletext+'</a></li>'
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1.dtd">
@@ -98,7 +151,7 @@ printFuntoo()
 <li class="sun_list"><b>In a Nutshell:</b> Freshly-built Gentoo Linux variant, optimized for your processor, Funtoo Portage unstable branch, includes OpenRC, dhcpcd and git.</li>
 		<li class="im_list"><b>Join us:</b> <b>#funtoo</b> on <b>irc.freenode.net</b></li>
 		<li class="social_list"><b>Info:</b> <a href="http://www.funtoo.org">Funtoo</a> is a Gentoo Linux variant maintained by Daniel Robbins. Funtoo has its own git-based Portage tree that tracks the upstream Gentoo tree.</li>
-		<li class="linux_article_list"><b>To Install:</b> Grab a Funtoo stage3 and install just like Gentoo - follow <a href="http://www.gentoo.org/doc/en/handbook/handbook-x86.xml?part=1&chap=5">the Gentoo Handbook</a>. Grab a <a href="http://www.funtoo.org/linux/snapshots">Funtoo Linux snapshot</a> for the installation.</li>
+		<li class="linux_article_list"><b>To Install:</b> Grab your favorite LiveCD (we recommend <a href="http://www.sysresccd.org/Main_Page">System Rescue CD</a>,) a funtoo stage3, and during the install process, use git to clone the <a href="http://www.github.com/funtoo/portage/wikis/first-steps">funtoo.org portage tree (click for HOWTO)</a> rather than doing an emerge --sync. In all other respects, install just like Gentoo - refer to <a href="http://www.gentoo.org/doc/en/handbook/handbook-x86.xml?part=1&chap=5">the Gentoo Handbook</a>.</li>
 		</ul>
 		</div>
 		
@@ -108,6 +161,7 @@ printFuntoo()
 <?python
 printOpenVZ()
 ?>
+<li class="sun_list"><b>In a Nutshell:</b> Fresh containers based on the Funtoo build of Gentoo, optimized for your processor -- includes OpenRC, dhcpcd and git.</li>
 		<li class="social_list"><b>Info:</b> <a href="http://www.openvz.org">OpenVZ</a> is a high-performance, lightweight Open Source Linux virtualization technology. It allows you to run many (even hundreds) of independent instances of Linux on a single physical machine.</li>
 <li class="linux_article_list"><b>To Install:</b> On an OpenVZ-enabled system, copy template to /vz/template/cache.</li>
 		</ul>
@@ -126,12 +180,18 @@ printGentoo()
 		</ul>
 		</div>
 	<div class="box">
-		<h3>Get Metro:</h3>
+		<center><h3>Get Metro</h3></center>
 		<p><a href="http://www.github.com/funtoo/metro/wikis/">Metro</a> is the tool that's used to build all our stuff. You can use it to build stuff too.</p>
-
-	<object width="425" height="344"><param name="movie" value="http://www.youtube.com/v/5pFv8CAniYQ&hl=en&fs=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/5pFv8CAniYQ&hl=en&fs=1" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="425" height="344"></embed></object>
+		<center><h3>Daniel Robbins</h3></center>
+		<ul>
+<li class="blog_list"><b>Read</b> <a href="http://blog.funtoo.org">Daniel's Blog</a></li>
+<?python
+generateAtomSummary("http://blog.funtoo.org/feeds/posts/default")
+?>
+<li class="email_list"><b>Email</b> <span class="light"><b>drobbins</b>@funtoo.org</span></li>	
+		</ul>
+	<object width="280" height="240"><param name="movie" value="http://www.youtube.com/v/5pFv8CAniYQ&hl=en&fs=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/5pFv8CAniYQ&hl=en&fs=1" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="280" height="240"></embed></object>
 </div>
-	</div>
     <script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
     </script>
     <script type="text/javascript">
