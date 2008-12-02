@@ -8,6 +8,8 @@ class: snapshot
 # a git-snapshot is a variant of a snapshot tarball that contains a full git repo, not just the bare files.
 type: git-snapshot
 
+[section steps]
+
 run: [
 #!/bin/bash
 
