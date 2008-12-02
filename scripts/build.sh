@@ -57,17 +57,22 @@ do_everything() {
 	echo "Starting..."
 	if [ "$BUILDTYPE" = "full" ]
 	then
-		local builds="snapshot stage1 stage2 stage3"
+		local builds="stage1 stage2 stage3"
 	elif [ "$BUILDTYPE" = "quick" ]
 	then
-		local builds="snapshot stage3-quick"
+		local builds="stage3-quick"
 	elif [ "$BUILDTYPE" = "freshen" ]
 	then
-		local builds="snapshot stage3-freshen"
+		local builds="stage3-freshen"
 	else
 		die "Build type \"$BUILDTYPE\" not recognized."
 	fi
-	[ "${SUBARCH:0:1}" = "~" ] && builds="$builds openvz"
+	if [ "${SUBARCH:0:1}" = "~" ] 
+	then
+		builds="git-snapshot $builds openvz"
+	else
+		builds="snapshot $builds"
+	fi
 	for x in $builds 
 	do
 		metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH || die "$x fail: metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH"

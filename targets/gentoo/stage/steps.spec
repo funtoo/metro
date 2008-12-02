@@ -141,6 +141,11 @@ else
 	echo "Extracting portage snapshot $[path/mirror/snapshot]..."
 	tar xjpf $[path/mirror/snapshot] -C $[path/chroot]/usr || exit 4
 fi
+# support for "live" git snapshot tarballs:
+if [ -e $[path/chroot]/usr/portage/.git ]
+then
+	( cd $[path/chroot]/usr/portage; git checkout $[git/branch] || exit 50 )
+fi
 cat << "EOF" > $[path/chroot]/etc/make.conf || exit 5
 $[[files/make.conf]]
 EOF
