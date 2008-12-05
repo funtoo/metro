@@ -534,8 +534,8 @@ class collection:
 		elif len(cond) == 0:
 			raise FlexDataError, "Condition %s is invalid" % cond
 		elif len(cond) >= 3:
-			if cond[1] != "is":
-				raise FlexDataError, "Expecting IS in %s" % cond
+			if cond[1] not in [ "is", "in"]:
+				raise FlexDataError, "Expecting 'is' or 'in' in %s" % cond
 			if self.raw.has_key(cond[0]):
 				return False
 			elif self.conditionals.has_key(cond[0]):
@@ -554,7 +554,7 @@ class collection:
 				return False
 		elif len(cond) == 0:
 			raise FlexDataError, "Condition "+repr(cond)+" is invalid"
-		elif len(cond) >= 3 and cond[1] == "is":
+		elif len(cond) >= 3 and cond[1] in [ "is", "in" ]:
 			if not self.raw.has_key(cond[0]):
 				# maybe it's not defined
 				return False
