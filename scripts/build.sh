@@ -69,8 +69,10 @@ do_everything() {
 	fi
 	if [ "${SUBARCH:0:1}" = "~" ] 
 	then
+		# for funtoo builds, we create a "live" git snapshot (full repo) and we also build an openvz template
 		builds="git-snapshot $builds openvz"
 	else
+		# for stable builds, we create a traditional portage snapshot that is just a tarball of the physical files
 		builds="snapshot $builds"
 	fi
 	for x in $builds 
@@ -82,6 +84,11 @@ do_everything() {
 			# record a successful build so we use our new stage3 as a seed stage3 for next time.
 			echo $CURDATE > $CONTROL/lastdate
 			echo $SUBARCH > $CONTROL/subarch
+			CURRENT=`metro -k path/mirror/stage3/current target/subarch: $SUBARCH target: gentoo/$x`
+			TARGET=`metro -k path/mirror/stage3/current/dest target/subarch: $SUBARCH target: gentoo/$x target/version: $CURDATE`
+			# update current symlink
+			rm -f "$CURRENT"
+			ln -s "$TARGET" "$CURRENT"
 		fi
 	done
 }
