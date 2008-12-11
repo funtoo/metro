@@ -105,9 +105,15 @@ fi
 # won't work. This is normally okay.
 
 rm -rf $ROOT/var/tmp/* $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
-rm -f $ROOT/var/lib/portage/world || exit 6
-touch $ROOT/var/lib/portage/world
 install -d $ROOT/etc/portage
+
+# ensure that make.conf.example is set up OK...
+if [ ! -e $ROOT/etc/make.conf.example ]
+	if [ -e $ROOT/usr/share/portage/config/make.conf.example ]
+	then
+		ln -s ../usr/share/portage/config/make.conf.example $ROOT/etc/make.conf.example || exit 6
+	fi
+fi
 ]
 
 # do any cleanup that you need with things bind mounted here:
