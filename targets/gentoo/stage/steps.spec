@@ -109,6 +109,7 @@ install -d $ROOT/etc/portage
 
 # ensure that make.conf.example is set up OK...
 if [ ! -e $ROOT/etc/make.conf.example ]
+then
 	if [ -e $ROOT/usr/share/portage/config/make.conf.example ]
 	then
 		ln -s ../usr/share/portage/config/make.conf.example $ROOT/etc/make.conf.example || exit 6
