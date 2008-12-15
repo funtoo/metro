@@ -61,9 +61,11 @@ class target:
 			cmds.append(outfile)
 
 		retval = spawn(cmds, env=self.env )
-
 		if retval != 0:
 			raise MetroError, "Command failure (key %s, return value %s) : %s" % ( key, repr(retval), " ".join(cmds))
+		# it could have been cleaned by our outscript, so if it exists:
+		if os.path.exists(outfile):
+			os.unlink(outfile)
 
 
 	def targetExists(self,key):
@@ -77,16 +79,6 @@ class target:
 			return True
 		else:
 			return False
-
-	def require(self,mylist):
-		missing=self.settings.missing(mylist)
-		if missing:
-			raise MetroError,"Missing required configuration values "+`missing`
-
-	def recommend(self,mylist):
-		missing=self.settings.missing(mylist)
-		for item in missing:
-			print "Warning: recommended value \""+item+"\" not defined."
 
 	def __init__(self,settings):
 		self.settings = settings
@@ -246,13 +238,13 @@ class chroot(target):
 			self.runScriptInChroot("steps/chroot/run")
 			
 			self.unbind()
-			
 		except:
 			self.kill_chroot_pids()
 			self.mount_safety_check()
 			raise
 
 		self.runScript("steps/capture")
+		self.cleanPath()		
 
 
 class snapshot(target):
@@ -271,6 +263,7 @@ class snapshot(target):
 			raise MetroError, "Required steps in %s not found." % runkey
 
 		self.runScript(runkey)
+		self.cleanPath()
 
 class stage(chroot):
 
@@ -324,5 +317,6 @@ class stage(chroot):
 			raise
 
 		self.runScript("steps/capture")
+		self.cleanPath()
 
 #vim: ts=4 sw=4 sta et sts=4 ai
