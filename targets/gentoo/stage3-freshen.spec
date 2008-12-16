@@ -14,7 +14,7 @@ then
 fi
 if [ "$[emerge/packages/force?]" = "yes" ]
 then
-	emerge -f $[emerge/options] $[emerge/packages/force:lax] || exit 2
+	emerge $[emerge/options] $[emerge/packages/force:lax] || exit 2
 fi
 ]
 
