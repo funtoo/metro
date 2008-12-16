@@ -94,10 +94,11 @@ class collection:
 				return "no"
 			else:
 				raise FlexDataError,"Variable \""+myvar+"\" not found foo"
-		if boolean:
-			return "yes"
-		elif type(typetest) == types.ListType:
-			return self.expandMulti(myvar,options=options)
+		if type(typetest) == types.ListType:
+			if boolean:
+				return "yes"
+			else:
+				return self.expandMulti(myvar,options=options)
 		else:
 			return self.expandString(myvar=myvar,options=options)
 
@@ -111,7 +112,11 @@ class collection:
 				boolean = False
 			if self.raw.has_key(myvar):
 				if boolean:
-					string = "yes"
+					if self.raw[myvar].strip() == "":
+						# blanks are considered undefined
+						string = "no"
+					else:
+						string = "yes"
 				else:
 					string = self.raw[myvar]
 			else:
@@ -204,6 +209,8 @@ class collection:
 						return None 
 					else:
 						ex += newex
+				elif self.raw[varname].strip() == "":
+					ex += "no"
 				else: 
 					ex += "yes"
 			elif self.conditionals.has_key(varname):
