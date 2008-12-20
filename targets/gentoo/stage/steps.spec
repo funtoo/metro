@@ -40,14 +40,17 @@ then
 	# this problem in the future. This problem crops up when you are using an i486-pc-linux-gnu CHOST stage3 to create an 
 	# i686-pc-linux-gnu CHOST stage1. It will probably crop up whenever the CHOST gets changed. For now, it's fixed :)
 
-	for x in i386 i486 i586 i686 x86_64
-	do
-		ccache-config --remove-links $x-pc-linux-gnu
-	done
-	gccprofile="`gcc-config -c`"
-	gccchost=`gcc-config -S $gccprofile | cut -f1 -d" "`
-	echo "Setting ccache links to: $gccchost"
-	ccache-config --install-links $gccchost
+	if [ -e /usr/bin/ccache-config ]
+	then
+		for x in i386 i486 i586 i686 x86_64
+		do
+			ccache-config --remove-links $x-pc-linux-gnu
+		done
+		gccprofile="`gcc-config -c`"
+		gccchost=`gcc-config -S $gccprofile | cut -f1 -d" "`
+		echo "Setting ccache links to: $gccchost"
+		ccache-config --install-links $gccchost
+	fi
 fi
 # the quotes below prevent variable expansion of anything inside make.conf
 cat > /etc/make.conf << "EOF"

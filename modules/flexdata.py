@@ -209,10 +209,12 @@ class collection:
 						return None 
 					else:
 						ex += newex
-				elif self.raw[varname].strip() == "":
-					ex += "no"
-				else: 
-					ex += "yes"
+				else:
+					# self.raw[varname] can be a list .. if it's a string and blank, we treat it as undefined.
+					if type(self.raw[varname]) == types.StringType and self.raw[varname].strip() == "":
+						ex += "no"
+					else: 
+						ex += "yes"
 			elif self.conditionals.has_key(varname):
 				expandme = self.get_condition_for(varname)
 				newstack=stack[:]
