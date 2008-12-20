@@ -2,6 +2,15 @@
 # Copyright 2008-2009 Funtoo Technologies, LLC; Distributed under the GPL v2
 # Portions Copyright 1999-2007 Gentoo Foundation;
 
+*metro-1.2.2 (19 Dec 2008)
+
+  19 Dec 2008; Daniel Robbins <drobbins@funtoo.org>: Parser bug fix.
+
+*metro-1.2.1 (17 Dec 2008)
+
+  17 Dec 2008; Daniel Robbins <drobbins@funtoo.org>: New release: fix a
+  couple of silly bugs.
+
 *metro-1.2 (15 Dec 2008)
 
   15 Dec 2008; Daniel Robbins <drobbins@funtoo.org>: New release:
