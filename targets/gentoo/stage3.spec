@@ -8,9 +8,11 @@ $[[steps/setup]]
 USE="build" emerge --oneshot --nodeps portage || exit 1
 export USE="$[portage/USE] bindist"
 emerge $[emerge/options] -e system || exit 1
-if [ "$[emerge/packages]" != "" ]
+# zap the world file...
+rm -f /var/lib/portage/world || exit 2
+if [ "$[emerge/packages?]" = "yes" ]
 then
-	emerge $[emerge/options] $[emerge/packages] || exit 1
+	emerge $[emerge/options] $[emerge/packages:lax] || exit 1
 fi
 ]
 
