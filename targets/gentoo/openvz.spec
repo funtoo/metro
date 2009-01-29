@@ -72,21 +72,25 @@ chroot/run: [
 	fi
 
 	# mounts
+	echo "Updating mtab and fstab..."
 	rm -f /etc/mtab
 	ln -s /proc/mounts /etc/mtab || exit 1
 	echo "proc /proc proc defaults 0 0" > /etc/fstab
 
 	# turn off gettys
+	echo "Updating inittab..."
 	mv /etc/inittab /etc/inittab.orig || exit 2
 	cat /etc/inittab.orig | sed -e '/getty/s/^/#/' > /etc/inittab || exit 3
 	rm -f /etc/inittab.orig || exit 4
 
 	# reset root password
+	echo "Updating root password..."
 	cat /etc/shadow | sed -e 's/^root:[^:]*:/root:!:/' > /etc/shadow.new || exit 5
 	cat /etc/shadow.new > /etc/shadow || exit 6
 	rm /etc/shadow.new || exit 7
 
 	# device nodes
+	echo "Creating device nodes..."
 	mknod /lib/udev/devices/ttyp0 c 3 0 || exit 8
 	mknod /lib/udev/devices/ptyp0 c 2 0 || exit 9
 	mknod /lib/udev/devices/ptmx c 5 2 || exit 10
@@ -96,13 +100,16 @@ chroot/run: [
 	# cat /etc/rc.conf.orig | sed -e "/^#rc_devices/c\\" -e 'rc_devices="static"' > /etc/rc.conf || exit 12
 	
 	# timezone
+	echo "Setting time zone..."
 	rm /etc/localtime
 	ln -s /usr/share/zoneinfo/UTC /etc/localtime || exit 13
 
 	# sshd
+	echo "Adding sshd to default runlevel..."
 	rc-update add sshd default
 
 	#hostname - change periods from target/name into dashes
+	echo "Setting hostname..."
 	myhost=`echo $[target/name] | tr . -`
 	cat > /etc/conf.d/hostname << EOF || exit 14
 # /etc/conf.d/hostname
@@ -112,24 +119,21 @@ hostname=${myhost}
 EOF
 
 	#motd
+	echo "Creating motd..."
 	cat > /etc/motd << "EOF"
 $[[files/motd]]
 EOF
 	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf 
 
 	# TESTS
-
+	echo "Performing QA checks..."
 	# root password blank
 	[ "`cat /etc/shadow | grep ^root | cut -b1-7`" != 'root:!:' ] && exit 15
+	echo "Root password check: PASSED"
 	# tty must exist
 	[ ! -e /dev/tty ] && exit 16
-
-	myvar=`cat $TMPDIR/etc/shadow | grep ^root | cut -b1-7`
-	if [ "$myvar" != 'root:!:' ]
-	then
-		exit 17
-	fi
-
+	echo "/dev/tty check: PASSED"
+	echo "OpenVZ script complete."
 ]
 
 [section files]

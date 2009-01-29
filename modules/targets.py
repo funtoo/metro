@@ -146,17 +146,22 @@ class chroot(target):
 		if not self.settings.has_key("metro/class"):
 			return
 	
-		settingkey="metro/options/"+self.settings["metro/class"]
-		if self.settings.has_key(settingkey) and "ccache" in self.settings[settingkey].split():
-			if os.environ.has_key("CCACHE_DIR"):
-				ccdir=os.environ["CCACHE_DIR"]
-			else:
-				ccdir="/root/.ccache"
-			if not os.path.isdir(ccdir):
-					raise MetroError, "Compiler cache support can't be enabled (can't find "+ccdir+")"
-			self.mounts.append("/var/tmp/ccache")
-			self.mountmap["/var/tmp/ccache"]=ccdir
-	
+		skey="metro/options/"+self.settings["metro/class"]
+
+		# enable ccache and pkgcache support - all we do in python is bind-mount the right directory to the right place.
+
+		for key, name, dest in [ 
+				[ "path/cache/compiler", "cache/compiler", "/var/tmp/cache/compiler" ] , 
+				[ "path/cache/package", "cache/package", "/var/tmp/cache/package" ] ,
+				[ "path/cache/probe", "probe", "/var/tmp/cache/probe" ] ]:
+			if self.settings.has_key(skey) and name in self.settings[skey].split():
+				if not self.settings.has_key(key):
+					raise MetroError, "Required setting %s not found (for %s option support)" % ( key, name )
+				if not os.path.exists(self.settings[key]):
+					os.makedirs(self.settings[key])
+				self.mounts.append(dest)
+				self.mountmap[dest]=self.settings[key]
+
 	def bind(self):
 		""" Perform bind mounts """
 		for x in self.mounts: 
@@ -167,6 +172,7 @@ class chroot(target):
 				os.makedirs(self.mountmap[x],0755)
 			
 			src=self.mountmap[x]
+			print "Mounting %s to %s..." % (src, x)
 			if os.system(bin["mount"]+" --bind "+src+" "+self.settings["path/work"]+x) != 0:
 				self.unbind()
 				raise MetroError,"Couldn't bind mount "+src
@@ -240,7 +246,7 @@ class chroot(target):
 			self.unbind()
 		except:
 			self.kill_chroot_pids()
-			self.mount_safety_check()
+			self.checkMounts()
 			raise
 
 		self.runScript("steps/capture")

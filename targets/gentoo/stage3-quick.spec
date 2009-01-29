@@ -5,14 +5,22 @@
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
+emerge -u portage || exit 1
 export ROOT=$[portage/ROOT]
-USE="build" emerge --oneshot --nodeps portage || exit 1
 export USE="$[portage/USE] bindist"
-emerge $[emerge/options] system || exit 1
+if [ -e /var/tmp/cache/package ]
+then
+	export PKGDIR=/var/tmp/cache/package
+	eopts="$[emerge/options] --usepkg"
+	export FEATURES="$FEATURES buildpkg"
+else
+	eopts="$[emerge/options]"
+fi
+emerge $eopts system || exit 1
 # we are using a non-/ ROOT, so zapping the world file should not be necessary...
 if [ "$[emerge/packages?]" = "yes" ]
 then
-	emerge $[emerge/options] $[emerge/packages:lax] || exit 1
+	emerge $eopts $[emerge/packages:lax] || exit 1
 fi
 ]
 

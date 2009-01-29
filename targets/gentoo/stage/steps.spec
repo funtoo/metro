@@ -19,12 +19,12 @@ export CLEAN_DELAY=0
 export EBEEP_IGNORE=0
 export EPAUSE_IGNORE=0
 export CONFIG_PROTECT="-* /etc/locale.gen"
-if [ -d /var/tmp/ccache ] 
+if [ -d /var/tmp/cache/compiler ] 
 then
 	! [ -e /usr/bin/ccache ] && emerge --oneshot --nodeps ccache
-	export CCACHE_DIR=/var/tmp/ccache
+	export CCACHE_DIR=/var/tmp/cache/compiler
 	export FEATURES="ccache"
-
+	ccache -M 1G
 	# The ccache ebuild has a bug where it will install links in /usr/lib/ccache/bin to reflect the current setting of CHOST.
 	# But the current setting of CHOST may not reflect the current compiler available (remember, CHOST can be overridden in /etc/make.conf)
 	
@@ -68,7 +68,7 @@ cat > /etc/portage/package.keywords << "EOF"
 $[[portage/files/package.keywords:lax]]
 EOF
 fi
-if [ "$[probe/setup?]" = "yes" ]
+if [ -d /var/tmp/cache/probe ]
 then
 $[[probe/setup:lax]]
 fi
