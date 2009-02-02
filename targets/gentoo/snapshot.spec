@@ -58,6 +58,7 @@ then
 	# if we have the "pull" option in git/options, then make sure we're up-to-date
 	git pull > /dev/null || die "Couldn't perform git pull"
 fi
+git gc || die "git cd failed"
 echo "Creating $[path/mirror/snapshot]..."
 install -d `dirname $[path/mirror/snapshot]` || die "Couldn't create output directory"
 tarout="$[path/mirror/snapshot]"

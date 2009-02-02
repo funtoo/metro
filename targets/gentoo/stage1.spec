@@ -69,5 +69,13 @@ export ROOT="$[portage/ROOT]"
 install -d ${ROOT}
 # let's see if we can get away without merging baselayout first:
 #emerge baselayout || exit 1
-emerge $[emerge/options] --noreplace --oneshot ${buildpkgs} || exit 1
+if [ -e /var/tmp/cache/package ]
+then
+	export PKGDIR=/var/tmp/cache/package
+	eopts="$[emerge/options] --usepkg"
+	export FEATURES="$FEATURES buildpkg"
+else
+	eopts="$[emerge/options]"
+fi
+emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
 ]

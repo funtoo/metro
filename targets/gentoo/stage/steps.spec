@@ -21,10 +21,10 @@ export EPAUSE_IGNORE=0
 export CONFIG_PROTECT="-* /etc/locale.gen"
 if [ -d /var/tmp/cache/compiler ] 
 then
-	! [ -e /usr/bin/ccache ] && emerge --oneshot --nodeps ccache
+	! [ -e /usr/bin/ccache ] && emerge --oneshot --nodeps ccache || exit 2
 	export CCACHE_DIR=/var/tmp/cache/compiler
 	export FEATURES="ccache"
-	ccache -M 1G
+	/usr/bin/ccache -M 1G
 	# The ccache ebuild has a bug where it will install links in /usr/lib/ccache/bin to reflect the current setting of CHOST.
 	# But the current setting of CHOST may not reflect the current compiler available (remember, CHOST can be overridden in /etc/make.conf)
 	
@@ -124,7 +124,6 @@ fi
 
 chroot/postrun: [
 #!/bin/bash
-$[[steps/setup]]
 if [ "$[target]" != "stage1" ] && [ -e /usr/bin/ccache ] 
 then
 	emerge -C dev-util/ccache 

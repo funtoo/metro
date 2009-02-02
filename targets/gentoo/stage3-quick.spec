@@ -16,6 +16,7 @@ then
 else
 	eopts="$[emerge/options]"
 fi
+emerge $eopts --nodeps sys-apps/baselayout || exit 1
 emerge $eopts system || exit 1
 # we are using a non-/ ROOT, so zapping the world file should not be necessary...
 if [ "$[emerge/packages?]" = "yes" ]
