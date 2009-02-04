@@ -321,8 +321,13 @@ class stage(chroot):
 			self.kill_chroot_pids()
 			self.checkMounts()
 			raise
-
+		# The build completed successfully.
+		# Capture the results of our efforts:
 		self.runScript("steps/capture")
+		# Now, we want to delete our build directory...
 		self.cleanPath()
+		# Now, we want to clean up our build-related caches:
+		if self.settings.has_key("path/cache/build"):
+			self.cleanPath(self.settings["path/cache/build"])
 
 #vim: ts=4 sw=4 sta et sts=4 ai

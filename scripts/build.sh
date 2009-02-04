@@ -31,14 +31,6 @@ then
 	die "This script requires one, two or three arguments"
 fi
 
-SUBARCH=$1
-if [ "$#" = "3" ]
-then
-	CURDATE=$3
-else
-	CURDATE=`date +%Y.%m.%d`
-fi
-
 if [ "$#" = "2" ] || [ "$#" = "3" ]
 then
 	BUILDTYPE=$2
@@ -46,46 +38,56 @@ else
 	BUILDTYPE=full
 fi
 
-CONTROL=`metro -k path/mirror/control target/subarch: $SUBARCH`
+SUBARCH=$1
+if [ "$#" = "3" ]
+then
+	CURDATE=$3
+else
+	CURDATE=`date +%Y.%m.%d`
+fi
+if [ "$BUILDTYPE" = "full" ]
+then
+	builds="stage1 stage2 stage3"
+elif [ "$BUILDTYPE" = "quick" ]
+then
+	builds="stage3-quick"
+elif [ "$BUILDTYPE" = "freshen" ]
+then
+	builds="stage3-freshen"
+else
+	die "Build type \"$BUILDTYPE\" not recognized."
+fi
+	if [ "${SUBARCH:0:1}" = "~" ] 
+then
+	# for funtoo builds, we create a "live" git snapshot (full repo) and we also build an openvz template
+	builds="git-snapshot $builds openvz"
+	bt="funtoo"
+else
+	# for stable builds, we create a traditional portage snapshot that is just a tarball of the physical files
+	builds="snapshot $builds"
+	bt="funtoo"
+fi
+
+CONTROL=`metro -k path/mirror/control build/type: $bt target/subarch: $SUBARCH`
 
 if [ ! -d "$CONTROL" ]
 then
-	die "Control directory $CONTROL (from 'metro -k path/mirror/control target/subarch: $SUBARCH') does not exist."
+	die "Control directory $CONTROL (from 'metro -k path/mirror/control build/type: $bt target/subarch: $SUBARCH') does not exist."
 fi
 
 do_everything() {
 	echo "Starting..."
-	if [ "$BUILDTYPE" = "full" ]
-	then
-		local builds="stage1 stage2 stage3"
-	elif [ "$BUILDTYPE" = "quick" ]
-	then
-		local builds="stage3-quick"
-	elif [ "$BUILDTYPE" = "freshen" ]
-	then
-		local builds="stage3-freshen"
-	else
-		die "Build type \"$BUILDTYPE\" not recognized."
-	fi
-	if [ "${SUBARCH:0:1}" = "~" ] 
-	then
-		# for funtoo builds, we create a "live" git snapshot (full repo) and we also build an openvz template
-		builds="git-snapshot $builds openvz"
-	else
-		# for stable builds, we create a traditional portage snapshot that is just a tarball of the physical files
-		builds="snapshot $builds"
-	fi
-	for x in $builds 
+for x in $builds 
 	do
-		metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH || die "$x fail: metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH"
+		metro target/version: $CURDATE build/type: $bt target: gentoo/$x target/subarch: $SUBARCH || die "$x fail: metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH"
 		if [ "${x:0:6}" = "stage3" ]
 		then
 			# Did we just complete a stage3* build? OK, then
 			# record a successful build so we use our new stage3 as a seed stage3 for next time.
 			echo $CURDATE > $CONTROL/lastdate
 			echo $SUBARCH > $CONTROL/subarch
-			CURRENT=`metro -k path/mirror/stage3/current target/subarch: $SUBARCH target: gentoo/$x`
-			TARGET=`metro -k path/mirror/stage3/current/dest target/subarch: $SUBARCH target: gentoo/$x target/version: $CURDATE`
+			CURRENT=`metro -k path/mirror/stage3/current build/type: $bt target/subarch: $SUBARCH target: gentoo/$x`
+			TARGET=`metro -k path/mirror/stage3/current/dest build/type: $bt target/subarch: $SUBARCH target: gentoo/$x target/version: $CURDATE`
 			# update current symlink
 			rm -f "$CURRENT"
 			ln -s "$TARGET" "$CURRENT"
