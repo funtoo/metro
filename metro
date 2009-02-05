@@ -129,7 +129,7 @@ def main():
 	settings=flexdata.collection()
 
 	if os.path.exists("/etc/metro/metro.conf"):
-		settings.collect("/etc/metro/metro.conf")
+		settings.collect("/etc/metro/metro.conf",None)
 	else:
 		print "Warning: /etc/metro/metro.conf not found."
 	

@@ -1,5 +1,5 @@
-[collect $[path/metro]/targets/gentoo/stage/files.spec]
-[collect $[path/metro]/targets/gentoo/stage/steps.spec]
+[collect ./files.spec]
+[collect ./steps.spec]
 
 [section portage]
 

@@ -61,33 +61,34 @@ fi
 then
 	# for funtoo builds, we create a "live" git snapshot (full repo) and we also build an openvz template
 	builds="git-snapshot $builds openvz"
-	bt="funtoo"
+	mb="funtoo"
 else
 	# for stable builds, we create a traditional portage snapshot that is just a tarball of the physical files
 	builds="snapshot $builds"
-	bt="funtoo"
+	mb="funtoo"
 fi
 
-CONTROL=`metro -k path/mirror/control build/type: $bt target/subarch: $SUBARCH`
+MAINARGS="metro/build: $mb target/subarch: $SUBARCH target/version: $CURDATE"
+CONTROL=`metro -k path/mirror/control $MAINARGS`
 
 if [ ! -d "$CONTROL" ]
 then
-	die "Control directory $CONTROL (from 'metro -k path/mirror/control build/type: $bt target/subarch: $SUBARCH') does not exist."
+	die "Control directory $CONTROL (from 'metro -k path/mirror/control $MAINARGS') does not exist."
 fi
 
 do_everything() {
 	echo "Starting..."
-for x in $builds 
+	for x in $builds 
 	do
-		metro target/version: $CURDATE build/type: $bt target: gentoo/$x target/subarch: $SUBARCH || die "$x fail: metro target/version: $CURDATE target: gentoo/$x target/subarch: $SUBARCH"
+		metro $MAINARGS target: $x || die "$x fail: metro $MAINARGS target: $x"
 		if [ "${x:0:6}" = "stage3" ]
 		then
 			# Did we just complete a stage3* build? OK, then
 			# record a successful build so we use our new stage3 as a seed stage3 for next time.
 			echo $CURDATE > $CONTROL/lastdate
 			echo $SUBARCH > $CONTROL/subarch
-			CURRENT=`metro -k path/mirror/stage3/current build/type: $bt target/subarch: $SUBARCH target: gentoo/$x`
-			TARGET=`metro -k path/mirror/stage3/current/dest build/type: $bt target/subarch: $SUBARCH target: gentoo/$x target/version: $CURDATE`
+			CURRENT=`metro -k path/mirror/stage3/current $MAINARGS target: $x`
+			TARGET=`metro -k path/mirror/stage3/current/dest $MAINARGS target: $x`
 			# update current symlink
 			rm -f "$CURRENT"
 			ln -s "$TARGET" "$CURRENT"

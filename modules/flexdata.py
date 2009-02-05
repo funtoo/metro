@@ -369,7 +369,7 @@ class collection:
 			else:
 				continue
 
-	def parseline(self,openfile=None,dups=False):
+	def parseline(self,filename,openfile=None,dups=False):
 		
 		# parseline() will parse a line and return None on EOF, return [] on a blank line with no data, or will
 		# return a list of string elements if there is data on the line, split along whitespace: [ "foo:", "bar", "oni" ]
@@ -473,17 +473,19 @@ class collection:
 					if len(mysection)>=3:
 						raise FlexDataError, "Conditional collect annotations not allowed inside \"when\" annotations: %s" % repr(mysection)
 					self.collectorcond[mysection[1]]=self.conditional
-					self.collector.append(mysection[1])
+					# append what to collect, followed by the filename that the collect annotation appeared in. We will use this later, for
+					# expanding relative paths.
+					self.collector.append([mysection[1],filename]),
 				elif len(mysection)>3:
 					if mysection[2] == "when":
 						self.collectorcond[mysection[1]]=" ".join(mysection[3:])
 						# even with a conditional, we still put the thing on the main collector list:
-						self.collector.append(mysection[1])
+						self.collector.append([mysection[1],filename])
 						#self.collector.append(mysection[1])
 					else:
 						raise FlexDataError,"Ow, [collect] clause seems invalid"
 				elif len(mysection)==2:
-					self.collector.append(mysection[1])
+					self.collector.append([mysection[1],filename])
 				else:
 					raise FlexDataError,"Ow, [collect] expects 1 or 4+ arguments."
 			else:
@@ -511,7 +513,10 @@ class collection:
 				self.raw[mykey] = myvalue
 		return mysplit	
 	
-	def collect(self,filename):
+	def collect(self,filename,origfile):
+		if not os.path.isabs(filename):
+			# relative path - use origfile (the file the collect annotation appeared in) to figure out what we are relative to
+			filename=os.path.normpath(os.path.dirname(origfile)+"/"+filename)
 		if not os.path.exists(filename):
 			raise IOError, "File '"+filename+"' does not exist."
 		if not os.path.isfile(filename):
@@ -520,7 +525,7 @@ class collection:
 		openfile = open(filename,"r")
 		self.section=""
 		while 1:
-			out=self.parseline(openfile)
+			out=self.parseline(filename,openfile)
 			if out == None:
 				break
 		openfile.close()
@@ -589,7 +594,7 @@ class collection:
 		self.lax = False
 		while len(self.collector) != 0 and contfails < len(self.collector):
 			# grab the first item from our collector list
-			myitem = self.collector[0]
+			myitem, origfile = self.collector[0]
 			if self.collectorcond.has_key(myitem):
 				cond = self.collectorcond[myitem]
 				if self.conditionOnConditional(cond):
@@ -606,7 +611,7 @@ class collection:
 						contfails +=1
 						self.collector = self.collector[1:] + [self.collector[0]]
 						continue
-					self.collect(myexpand)
+					self.collect(myexpand, origfile)
 					self.collector=self.collector[1:]
 					contfails = 0
 			else:
@@ -618,7 +623,7 @@ class collection:
 					self.collector = self.collector[1:] + [self.collector[0]]
 					continue
 				# read in data:
-				self.collect(myexpand)
+				self.collect(myexpand, origfile)
 				# we already parsed it, so remove filename from list:
 				self.collector = self.collector[1:]
 				# reset continuous fail counter, we are making progress:

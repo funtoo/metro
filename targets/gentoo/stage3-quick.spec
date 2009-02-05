@@ -1,4 +1,4 @@
-[collect $[path/metro]/targets/gentoo/stage/main.spec]
+[collect ./stage/main.spec]
 
 [section steps]
 
