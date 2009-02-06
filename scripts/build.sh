@@ -65,7 +65,7 @@ then
 else
 	# for stable builds, we create a traditional portage snapshot that is just a tarball of the physical files
 	builds="snapshot $builds"
-	mb="funtoo"
+	mb="gentoo"
 fi
 
 MAINARGS="metro/build: $mb target/subarch: $SUBARCH target/version: $CURDATE"
