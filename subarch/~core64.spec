@@ -1,1 +1,0 @@
-core64.spec
