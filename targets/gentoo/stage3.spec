@@ -23,6 +23,10 @@ if [ "$[emerge/packages?]" = "yes" ]
 then
 	emerge $eopts $[emerge/packages:lax] || exit 1
 fi
+if [ "$[metro/build]" = "funtoo" ]
+then
+	eselect vi set busybox
+fi
 ]
 
 [section portage]
