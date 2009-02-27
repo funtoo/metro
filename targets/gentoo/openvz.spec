@@ -89,6 +89,9 @@ chroot/run: [
 	cat /etc/shadow.new > /etc/shadow || exit 6
 	rm /etc/shadow.new || exit 7
 
+	# set proper permissions on /etc/shadow!
+	chmod 0600 /etc/shadow || exit 7
+
 	# device nodes
 	echo "Creating device nodes..."
 	mknod /lib/udev/devices/ttyp0 c 3 0 || exit 8

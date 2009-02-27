@@ -5,7 +5,11 @@ import os, sys
 filename = None
 lineno = None
 
-class FlexDataError(Exception):
+class ExpandError(Exception):
+	def __init__(self, message):
+		print message
+
+class ParseError(Exception):
 	def __init__(self, message, type="" ):
 		if type:
 			out="\nParser %s exception" % type
@@ -29,80 +33,53 @@ class FlexDataError(Exception):
 		print out
 
 class conditionAtom:
-	def __init__(self,value):
-		# This filename and line records the line at which the condition was applied, not defined
+	def __init__(self,condition=None):
 
 		global filename
 		global lineno
+		global cgNone
 
-		self.value=value
+		self.filename = filename
+		self.lineno = lineno
+		self.parent = None
+		self.parentNegated = False
+		self.condition = condition
 
-		self.filename=filename
-		self.lineno=lineno
-		self.negated = False
-
-	def negate(self):
-		# For conditionAtoms, "negate" is a toggle
-		self.negated = not self.negated
+	def refine(self,condition):
+		newatom = conditionAtom(condition)
+		newatom.sibling = self
+		return newatom
 	
-	def __repr__(self):
-		if self.negated:
-			return "cond: NOT '%s'" % self.value
-		else:
-			return "cond: '%s'" % self.value
+	def negateAndRefine(self,condition):
+		if self == cgNone:
+			raise ParseError("Attempt to negate the ANY condition (which would always be false)")
+		newatom = conditionAtom(condition)
+		newatom.parent = self
+		newatom.parentNegated = True
+		return newatom
 
-class conditionGroup:
-	def __init__(self,immutable=False):
-		self.immutable=False
-		self.clear()
-		self.immutable=immutable
-	def replace(self,catom):
-		if self.immutable:
-			raise FlexDataError
-		self.list=[catom]
-	def add(self,catom):
-		if self.immutable:
-			raise FlexDataError
-		self.list.append(catom)
-	def isEmpty(self):
-		return self.list == []
-	def clear(self):
-		if self.immutable:
-			raise FlexDataError
-		self.list=[]
-		self.negated=False
-	def copy(self,immutable=False):
-		newcg = conditionGroup()
-		newcg.list = self.list
-		newcg.negated = self.negated
-		newcg.immutable=immutable
-		return newcg
 	def negate(self):
-		# A negated condition is used for else: clauses - it negates the entire condition group.
-		# There is currently no functionality to "un-negate" a condition as this isn't required
-		# by Metro right now.
-		if self.immutable:
-			raise FlexDataError
-		if self.negated:
-			raise FlexDataError("Condition double-negation",type="internal")
-		self.negated=True
-	def __repr__(self):
-		out = "cg:"
-		if self.negated:
-			out += " NOT ( "
-		else:
-			out += " ( "
-		if len(self.list) == 0:
-			out += "EMPTY"
-		elif len(self.list) >= 1:
-			out += repr(self.list[0])
-			if len(self.list) >1:
-				for item in self.list[1:]:
-					out += " AND "+repr(item)
-		return out+" )"
+		if self == cgNone:
+			raise ParseError("Attempt to negate the ANY condition (which should always be false)")
+		newatom = conditionAtom()
+		newatom.parent = self
+		newatom.parentNegated = True	
+		return newatom
 
-# we use this as the default "empty" condition group
-cgempty = conditionGroup(immutable=True)
+	def __repr__(self):
+		if self.condition == None:
+			return "ANY"
+		out=repr(self.condition) 
+		if self.parent:
+			if self.parent.negated:
+				out += "AND NOT ( "+repr(self.parent)+" ) "
+			else:
+				out += "AND ( "+repr(self.parent)+" ) "
+		return out
+
+	def isTrue(self):
+		# TODO: fix
+		return True
 
 class metroCollection:
 	def __init__(self):
@@ -113,24 +90,85 @@ class metroCollection:
 		self.filelist.append(metroParsedFile(filename,self))
 	def queue(self,filename):
 		self.cq.append(filename)
+
 class metroNameSpace:
 	def __init__(self):
 		self.elements={}
 		# Structure of self.elements is:
-		# {"varname" : { element-object:condition-group } 
-		# Now would be a good time to add "else" clauses.....
+		# {"varname" : [ element-object(contains value):condition-group ] 
+	def __getitem__(self,val):
+		return self.elements[val]
 	def add(self,element,cg):
-		if not self.elements.has_key(element.name()):
-			self.elements[element.name()]={}
-		self.elements[element.name()][element] = cg	
+		elname = element.name()
+		if not self.elements.has_key(elname):
+			self.elements[elname]=[]
+		# Note that we do not check for duplicates and throw exceptions at this stage. The following elements
+		# could be added to the namespace just fine:
+		#
+		# foo: bar
+		# foo: oni
+		#
+		# or even
+		#
+		# foo: bar
+		# foo: bar
+		# 
+		# we will check for dupes on evaluation, where the above values will throw an exception due to having
+		# multiple definitions.
+		self.elements[elname].append([element, cg])	
 	def debugDump(self):
 		keys=self.elements.keys()
 		keys.sort()
 		for key in keys:
 			print key+":"
-			elkeys=self.elements[key].keys()
-			for elkey in elkeys:
-				print "\t"+repr(elkey)+": "+repr(self.elements[key][elkey])
+			for el, cond in self.elements[key]:
+				print "\t"+repr(el)+": "+repr(cond)
+	
+	def expand(self,name,stack=[]):
+		if not self.elements.has_key(name):
+			raise ExpandError(name+" not found")
+		eclist = self.elements[name]
+		ectrue = None
+		for el, cond in eclist:
+			if cond.isTrue():
+				if ectrue != None:
+					raise ExpandError("multiple definitions")
+				else:
+					ectrue = [ el, cond ]
+		# we now have a single "true" element - time to expand it.
+		el, cond = ectrue
+		if el.varname in stack:
+			raise ExpandError("recursive reference")
+		if isinstance(el,singleLineElement):
+			newstr = ""
+			for substr in el.getExpansion():
+				if substr[0:2] != "$[":
+					newstr += substr
+				else:
+					# TODO: handle :zap, :lax, and "?" at the end
+					# we're expanding something...
+					if substr in [ "$[]", "$[:]"]:
+						# $[] or $[:]
+						expandme = el.section
+					elif substr[2] == ":":
+						# $[:foo]
+						expandme = el.section + "/" + substr[3:-1]
+					else:
+						# $[foo/bar/oni]
+						expandme = substr[2:-1]
+					# TODO: add the element itself rather than just its name to the stack
+					# so we can do type checking against the stack.
+					newstack = stack[:]
+					newstack.append(el.varname)
+					newstr += self.expand(expandme,newstack)
+			return newstr
+		elif isinstance(el,multiLineElement):
+			#TODO: write the multi-line expansion
+			pass
+		else:
+			raise ExpandError("unknown element type")
+
+cgNone = conditionAtom()
 
 class metroParsedFile:
 	def __init__(self,filename,collection):
@@ -144,12 +182,10 @@ class metroParsedFile:
 		return self.filename
 
 	def parse(self):
-
 		# Using globals isn't always the best programming practice, but in our case of a single-threaded
 		# parser, it is a handy way to allow various parts of the parser to access relevant information
 		# without passing arguments all over the place.
 
-		global cgempty
 		global prevlineno
 		global lineno
 		global curline
@@ -159,9 +195,8 @@ class metroParsedFile:
 		lineno = 0
 		prevlineno = 0
 
-		# By default, set our conditions to empty by referencing the default "empty" live conditiongroup object
-
-		self.cg = cgempty
+		global cgNone
+		self.cg = cgNone
 
 		# This function parses the high-level structure of the document, identifying data elements
 		# and annotations, and creates appropriate internal objects and then adds them to the namespace.
@@ -169,9 +204,7 @@ class metroParsedFile:
 		try:
 			myfile=open(self.filename,"r")
 		except:
-			print "DEBUG: can't open file %s" % self.filename
-			return
-			#raise FlexDataError("Cannot open file %s" % self.filename)
+			raise ParseError("can't open file")
 		section = ""
 		while 1:	
 			try:
@@ -208,7 +241,7 @@ class metroParsedFile:
 				# and add it to the namespace.
 				
 				prevlineno = lineno
-				varname = mysplit[0:-1]
+				varname = mysplit[0][0:-1]
 				mylines = []
 				while 1:
 					try:
@@ -218,14 +251,15 @@ class metroParsedFile:
 						if len(mysplit) == 1 and mysplit[0] == "]":
 							# Add condition:multi-line element pair to namespace
 							self.namespace.add(multiLineElement(self.section,varname,mylines),self.cg)
+							break
 						else:
 							mylines.append(curline)
 					except StopIteration:
-						raise FlexDataError("incomplete (unclosed) multi-line block (started on line %i)" % prevlineno )
+						raise ParseError("incomplete (unclosed) multi-line block (started on line %i)" % prevlineno )
 
 			elif mysplit[0][0]=="[" and mysplit[-1][-1]=="]":
 				if len(mysplit) == 0:
-					raise FlexDataError("empty annotation")
+					raise ParseError("empty annotation")
 				elif len(mysplit) == 1:
 					insides = mysplit[0][1:-1]
 				elif len(mysplit) == 2:
@@ -238,49 +272,39 @@ class metroParsedFile:
 
 				if insidesplit[0] == "when":
 					# Conditional annotation - create new live object, don't modify the old one!
-					self.cg = conditionGroup()
-					self.cg.add(conditionAtom(insides))
-					self.cg.immutable = True
+					self.cg = conditionAtom(insides)
 				elif insidesplit[0] in [ "+when", "-when" ]:
 					# Compound conditional annotation - create a new live object to modify, in case the old cg was used
-					self.cg = self.cg.copy()
-					self.cg.add(conditionAtom(insides))
-					self.cg.immutable = True
+					self.cg = self.cg.extend(insides)
 				elif insidesplit[0] == "else":
-					self.cg = self.cg.copy()
-					self.cg.negate()
-					self.cg.immutable = True
+					self.cg = self.cg.negate()
 				elif insidesplit[0] == "collect":
 					# Collect annotation
 					if len(insidesplit)==2:
 						self.collection.queue(insidesplit[1])	
 					elif len(insidesplit)>3 and insidesplit[2] == "when":
 						# special case: Conditional collect annotation
-						if not self.cg.isEmpty():
-							raise FlexDataError("not permitted to use conditional collect annotation from within a conditional block")
-						loccg = conditionGroup()
-						loccg.add(conditionAtom(" ".join(insidesplit[2:])))
-						loccg.immutable = True
+						if self.cg != cgNone:
+							raise ParseError("not permitted to use conditional collect annotation from within a conditional block")
+						loccg = conditionAtom(" ".join(insidesplit[2:]))
 						# TODO: add collect atom to collection list to get to later
 					else:
-						raise FlexDataError("invalid collect annotation")
+						raise ParseError("invalid collect annotation")
 				elif insidesplit[0] == "section":
 					# Section annotation
 					# Conditions are always reset when we enter a new section, so reference our immutable empty
 					# condition group.
-					self.cg = cgempty
+					self.cg = cgNone
 					if len(insidesplit)==2:
 						self.section=insidesplit[1]
 					elif len(insidesplit)>3 and insidesplit[2] == "when":
 						# Special case: conditional section annotation
 						self.section=insidesplit[1]
-						self.cg = conditionGroup()
-						self.cg.add(conditionAtom(" ".join(insidesplit[2:])))
-						self.cg.immutable = True
+						self.cg = self.cg.extend(" ".join(insidesplit[2:]))
 					else:
-						raise FlexDataError("invalid section annotation")
+						raise ParseError("invalid section annotation")
 				else:
-					raise FlexDataError("invalid annotation")
+					raise ParseError("invalid annotation")
 			elif mysplit[0][-1] == ":":
 				
 				# We have found a single-line element. We will create a corresponding singleLineElement object and add it
@@ -288,7 +312,7 @@ class metroParsedFile:
 				varname=mysplit[0][0:-1]
 				self.namespace.add(singleLineElement(self.section,varname," ".join(mysplit[1:])),self.cg)
 			else:
-				raise FlexDataError("invalid line")
+				raise ParseError("invalid line")
 class element:
 	def __init__(self,section,varname,rawvalue):
 
@@ -309,15 +333,40 @@ class element:
 		
 		self.filename = filename
 		self.lineno = lineno
+		self.section = section
 	
 	def name(self):
 		return self.varname
+	
+	def __repr__(self):
+		return repr(self.rawvalue)
 
 class singleLineElement(element):
+
 	def __init__(self,section,varname,rawvalue):
 		element.__init__(self,section,varname,rawvalue)
-	def __repr__(self):
-		return "'"+self.rawvalue+"'"
+
+	def expand(self):
+		gen = self.getExpansion()
+		newstring = ""
+
+
+	def getExpansion(self):
+		pos = 0
+		rv = self.rawvalue
+		while pos < len(rv):
+			found = rv.find("$[",pos)
+			if found == -1:
+				yield rv[pos:]
+				break
+			if rv[pos:found] != "":
+				yield rv[pos:found]
+			found2 = rv.find("]",pos+2)
+			if pos == -1:
+				# TODO: THROW EXCEPTION HERE
+				break
+			pos = found2 + 1
+			yield(rv[found:found2+1])
 
 class multiLineElement(element):
 	def __init__(self,section,varname,rawvalue):
@@ -326,8 +375,6 @@ class multiLineElement(element):
 
 		self.endline = prevlineno
 		element.__init__(self,section,varname,rawvalue)
-	def __repr__(self):
-		return "'"+self.rawvalue+"'"
 
 if __name__ == "__main__":
 	coll = metroCollection()
@@ -335,8 +382,13 @@ if __name__ == "__main__":
 		for arg in sys.argv[1:]:
 			coll.collect(arg)
 		coll.namespace.debugDump()
-	except:
+	except ParseError:
 		sys.exit(1)
-	sys.exit(0)
 
-
+el, cond = coll.namespace["path/cache/foo"][0]
+print el
+print cond
+exp = el.getExpansion()
+for myex in exp:
+	print "*:'%s'" % myex
+print coll.namespace.expand("path/cache/foo")
