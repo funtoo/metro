@@ -18,8 +18,10 @@ if [ "$[emerge/packages?]" = "yes" ]
 then
 	emerge --deep --newuse -u $[emerge/options] $[emerge/packages:lax] || exit 1
 fi
+emerge @preserved-rebuild || exit 3
+# to handle lib upgrades, etc.
 ]
-
+#make sure the parser detects stray data out here....
 [section portage]
 
 ROOT: /

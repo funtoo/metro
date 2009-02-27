@@ -36,7 +36,7 @@ for idx in range(0, len(pkgs)):
 			buildpkgs[bidx] = buildpkgs[bidx][1:]
 	except: pass
 
-for b in buildpkgs: print b,
+for b in buildpkgs: print b
 print
 ]
 
@@ -77,5 +77,6 @@ then
 else
 	eopts="$[emerge/options]"
 fi
+emerge $eopts --nodeps baselayout || exit 1
 emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
 ]
