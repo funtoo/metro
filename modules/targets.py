@@ -241,8 +241,12 @@ class chroot(target):
 
 			self.bind()
 
+			if self.settings.has_key("steps/chroot/prerun"):
+				self.runScriptInChroot("steps/chroot/prerun")
 			self.runScriptInChroot("steps/chroot/run")
-			
+			if self.settings.has_key("steps/chroot/postrun"):
+				self.runScriptInChroot("steps/chroot/postrun")
+
 			self.unbind()
 		except:
 			self.kill_chroot_pids()
