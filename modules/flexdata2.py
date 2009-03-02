@@ -6,8 +6,15 @@ filename = None
 lineno = None
 
 class ExpandError(Exception):
-	def __init__(self, message):
-		print message
+	def __init__(self, message=None,els=[]):
+		out="\nExpansion exception: %s\n" % message
+		if len(els) == 0:
+			pass
+		else:
+			out += "\n"
+			for el in els:
+				out += "\tfile '%s', line %i: '%s'\n" % ( el.filename, el.lineno, el.rawvalue )
+		print out	
 
 class ParseError(Exception):
 	def __init__(self, message, type="" ):
@@ -133,17 +140,21 @@ class metroNameSpace:
 			else:
 				raise ExpandError(name+" not found")
 		eclist = self.elements[name]
-		ectrue = None
+		ectrue = [] 
 		for el, cond in eclist:
 			if cond.isTrue():
-				if ectrue != None:
-					raise ExpandError("multiple definitions")
-				else:
-					ectrue = [ el, cond ]
+				ectrue.append([el,cond])
+		if len(ectrue) == 0:
+			raise ExpandError("no true definitions of '%s' in:" % name, els=[x[0] for x in eclist])
+		elif len(ectrue) == 1:
+			ectrue = ectrue[0]
+		else:
+			raise ExpandError("multiple true definitions of '%s':" % name,els=[x[0] for x in ectrue])
 		# we now have a single "true" element - time to expand it.
 		el, cond = ectrue
-		if el.varname in stack:
-			raise ExpandError("recursive reference")
+		for otherel in stack:
+			if otherel.varname == el.varname:
+				raise ExpandError("recursive reference of '%s'" % el.varname ,els=[el])
 		if isinstance(el,singleLineElement):
 			newstr = ""
 			for substr in el.getExpansion():
@@ -186,8 +197,7 @@ class metroNameSpace:
 					# TODO: add the element itself rather than just its name to the stack
 					# so we can do type checking against the stack.
 					newstack = stack[:]
-					newstack.append(el.varname)
-					print "DEBUG: expandme is %s" % expandme
+					newstack.append(el)
 					exp = self.expand(expandme,newstack,mods)
 					if ("zap" in mods) and (exp == None):
 						return ""
@@ -198,7 +208,7 @@ class metroNameSpace:
 			#TODO: write the multi-line expansion
 			pass
 		else:
-			raise ExpandError("unknown element type")
+			raise ExpandError("unknown element type",els=[el])
 
 cgNone = conditionAtom()
 
