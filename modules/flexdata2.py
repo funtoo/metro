@@ -124,9 +124,14 @@ class metroNameSpace:
 			for el, cond in self.elements[key]:
 				print "\t"+repr(el)+": "+repr(cond)
 	
-	def expand(self,name,stack=[]):
+	def expand(self,name,stack=[],mods=[]):
 		if not self.elements.has_key(name):
-			raise ExpandError(name+" not found")
+			if "lax" in mods:
+				return "(lax-%s)" % name
+			elif "zap" in mods:
+				return None
+			else:
+				raise ExpandError(name+" not found")
 		eclist = self.elements[name]
 		ectrue = None
 		for el, cond in eclist:
@@ -142,6 +147,9 @@ class metroNameSpace:
 		if isinstance(el,singleLineElement):
 			newstr = ""
 			for substr in el.getExpansion():
+				# reset "mods" so we don't pass "lax" or "zap" to new evaluations (sibling or child (resursive))
+				mods = []
+				bool = None
 				if substr[0:2] != "$[":
 					newstr += substr
 				else:
@@ -156,11 +164,35 @@ class metroNameSpace:
 					else:
 						# $[foo/bar/oni]
 						expandme = substr[2:-1]
+						
+				
+					# handle modifiers
+					if expandme[-4:] == ":zap":
+						mods.append("zap")
+						expandme = expandme[:-4]
+					elif expandme[-4:] == ":lax":
+						mods.append("lax")
+						expandme = expandme[:-4]
+
+					# handle ? at end - this code allows $[foo:lax?] and $[bar:zap?]
+					
+					if expandme[-1] == "?":
+						if self.elements.has_key(expandme[:-1]):
+							newstr += "yes"
+						else:
+							newstr += "no"
+						continue
+
 					# TODO: add the element itself rather than just its name to the stack
 					# so we can do type checking against the stack.
 					newstack = stack[:]
 					newstack.append(el.varname)
-					newstr += self.expand(expandme,newstack)
+					print "DEBUG: expandme is %s" % expandme
+					exp = self.expand(expandme,newstack,mods)
+					if ("zap" in mods) and (exp == None):
+						return ""
+					else:
+						newstr += exp
 			return newstr
 		elif isinstance(el,multiLineElement):
 			#TODO: write the multi-line expansion
@@ -350,7 +382,6 @@ class singleLineElement(element):
 		gen = self.getExpansion()
 		newstring = ""
 
-
 	def getExpansion(self):
 		pos = 0
 		rv = self.rawvalue
@@ -391,4 +422,4 @@ print cond
 exp = el.getExpansion()
 for myex in exp:
 	print "*:'%s'" % myex
-print coll.namespace.expand("path/cache/foo")
+print "output: '%s'" % coll.namespace.expand("path/cache/foo")
