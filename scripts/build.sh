@@ -13,10 +13,11 @@ do_help() {
 
   Metro Automation Engine Script
   by Daniel Robbins (drobbins@funtoo.org)
+  and Benedikt Böhm (hollow@gentoo.org)
 
-  Usage: $0 arch [version]
-  Example: $0 amd64
-
+  Usage: $0 arch [buildtype] [version]
+  Examples: $0 amd64
+            $0 amd64 quick
 EOF
 }
 
@@ -31,20 +32,22 @@ then
 	die "This script requires one, two or three arguments"
 fi
 
-if [ "$#" = "2" ] || [ "$#" = "3" ]
+SUBARCH=$1
+
+if [ $# -gt 1 ]
 then
 	BUILDTYPE=$2
 else
 	BUILDTYPE=full
 fi
 
-SUBARCH=$1
-if [ "$#" = "3" ]
+if [ $# -eq 3 ]
 then
 	CURDATE=$3
 else
-	CURDATE=`date +%Y.%m.%d`
+	CURDATE=`date +%Y%m%d`
 fi
+
 if [ "$BUILDTYPE" = "full" ]
 then
 	builds="stage1 stage2 stage3"
@@ -57,16 +60,9 @@ then
 else
 	die "Build type \"$BUILDTYPE\" not recognized."
 fi
-	if [ "${SUBARCH:0:1}" = "~" ] 
-then
-	# for funtoo builds, we create a "live" git snapshot (full repo) and we also build an openvz template
-	builds="git-snapshot $builds openvz"
-	mb="funtoo"
-else
-	# for stable builds, we create a traditional portage snapshot that is just a tarball of the physical files
-	builds="snapshot $builds"
-	mb="gentoo"
-fi
+
+builds="snapshot $builds vserver"
+mb="hollow"
 
 MAINARGS="metro/build: $mb target/subarch: $SUBARCH target/version: $CURDATE"
 CONTROL=`metro -k path/mirror/control $MAINARGS`
@@ -87,6 +83,10 @@ do_everything() {
 			# record a successful build so we use our new stage3 as a seed stage3 for next time.
 			echo $CURDATE > $CONTROL/lastdate
 			echo $SUBARCH > $CONTROL/subarch
+		fi
+
+		if [ "${x:0:6}" = "stage3" ] || [ "${x}" = "vserver" ]
+		then
 			CURRENT=`metro -k path/mirror/stage3/current $MAINARGS target: $x`
 			TARGET=`metro -k path/mirror/stage3/current/dest $MAINARGS target: $x`
 			# update current symlink
