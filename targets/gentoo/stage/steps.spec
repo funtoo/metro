@@ -76,6 +76,10 @@ fi
 
 #[option parse/strict]
 
+chroot/posclean: [
+rm -rf $[portage/ROOT]/tmp/*
+]
+
 chroot/clean: [
 #!/bin/bash
 # We only do this cleanup if ROOT = / - in other words, if we are going to be packing up /,
@@ -108,6 +112,8 @@ fi
 # won't work. This is normally okay.
 
 rm -rf $ROOT/var/tmp/* $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
+rm -f $ROOT/etc/{passwd,group,shadow}- $ROOT/etc/.pwd.lock
+rm -f $ROOT/etc/portage/bashrc
 install -d $ROOT/etc/portage
 
 # ensure that make.conf.example is set up OK...
@@ -128,6 +134,53 @@ if [ "$[target]" != "stage1" ] && [ -e /usr/bin/ccache ]
 then
 	emerge -C dev-util/ccache 
 fi
+]
+
+chroot/test: [
+#!/usr/bin/python
+import os,sys
+from stat import *
+
+root="$[portage/ROOT]"
+
+etcSecretFiles = [
+	"/etc/default/useradd",
+	"/etc/securetty",
+	"/etc/shadow",
+	"/etc/sshd/sshd_config" ]
+
+etcSecretDirs = [
+	"/etc/skel/.ssh",
+	"/etc/ssl/private" ]
+
+abort=False
+
+# If a secret file exists, then ensure it has proper perms, otherwise abort
+for file in etcSecretFiles:
+	myfile = os.path.normpath(root+"/"+file)
+	if os.path.exists(myfile):
+		mystat = "%o" % os.stat(myfile)[ST_MODE]
+		if mystat != "100600":
+			print "ERROR: secret file %s does not have proper perms" % myfile
+			abort = True
+		else:
+			print "TEST: secret file %s OK" % myfile
+
+# If a secret dir exists, then ensure it has proper perms, otherwise exit
+for dir in etcSecretDirs:
+	mydir = os.path.normpath(root+"/"+dir)
+	if os.path.exists(mydir):
+		mystat = "%o" % os.stat(mydir)[ST_MODE]
+		if mystat != "40700":
+			print "ERROR: secret dir %s does not have proper perms" % mydir
+			abort = True
+		else:
+			print "TEST: secret dir %s OK" % myfile
+if abort:
+	sys.exit(1)
+else:
+	sys.exit(0)
+
 ]
 
 unpack: [
@@ -220,3 +273,4 @@ else
 	fi
 fi
 ]
+
