@@ -88,7 +88,7 @@ class conditionAtom:
 		# TODO: fix
 		return True
 
-class metroCollection:
+class collection:
 	def __init__(self):
 		self.filelist=[]
 		self.namespace = metroNameSpace()
@@ -98,11 +98,11 @@ class metroCollection:
 	def queue(self,filename):
 		self.cq.append(filename)
 
-class metroNameSpace:
+class nameSpace:
 	def __init__(self):
 		self.elements={}
 		# Structure of self.elements is:
-		# {"varname" : [ element-object(contains value):condition-group ] 
+		# {"varname" : [ element-object, element-object ] 
 	def __getitem__(self,val):
 		return self.elements[val]
 	def add(self,element,cg):
@@ -122,93 +122,35 @@ class metroNameSpace:
 		# 
 		# we will check for dupes on evaluation, where the above values will throw an exception due to having
 		# multiple definitions.
-		self.elements[elname].append([element, cg])	
+		self.elements[elname].append(element)	
 	def debugDump(self):
 		keys=self.elements.keys()
 		keys.sort()
 		for key in keys:
 			print key+":"
-			for el, cond in self.elements[key]:
-				print "\t"+repr(el)+": "+repr(cond)
-	
-	def expand(self,name,stack=[],mods=[]):
+			for el in self.elements[key]:
+				print "\t"+repr(el)+": "+repr(el.condition)
+
+	def find(self,name,strict=False):
+		# STEP 1: FIND LITERAL DATA TO EXPAND
 		if not self.elements.has_key(name):
-			if "lax" in mods:
-				return "(lax-%s)" % name
-			elif "zap" in mods:
-				return None
-			else:
-				raise ExpandError(name+" not found")
+			return None
 		eclist = self.elements[name]
 		ectrue = [] 
-		for el, cond in eclist:
+		for el in elist:
 			if cond.isTrue():
 				ectrue.append([el,cond])
 		if len(ectrue) == 0:
-			raise ExpandError("no true definitions of '%s' in:" % name, els=[x[0] for x in eclist])
+			if strict:
+				raise ExpandError("no true definitions of '%s' in:" % name, els=[x[0] for x in eclist])
+			else:
+				return None
 		elif len(ectrue) == 1:
-			ectrue = ectrue[0]
+			el, cond = ectrue[0]
+			return el
 		else:
 			raise ExpandError("multiple true definitions of '%s':" % name,els=[x[0] for x in ectrue])
-		# we now have a single "true" element - time to expand it.
-		el, cond = ectrue
-		for otherel in stack:
-			if otherel.varname == el.varname:
-				raise ExpandError("recursive reference of '%s'" % el.varname ,els=[el])
-		if isinstance(el,singleLineElement):
-			newstr = ""
-			for substr in el.getExpansion():
-				# reset "mods" so we don't pass "lax" or "zap" to new evaluations (sibling or child (resursive))
-				mods = []
-				bool = None
-				if substr[0:2] != "$[":
-					newstr += substr
-				else:
-					# TODO: handle :zap, :lax, and "?" at the end
-					# we're expanding something...
-					if substr in [ "$[]", "$[:]"]:
-						# $[] or $[:]
-						expandme = el.section
-					elif substr[2] == ":":
-						# $[:foo]
-						expandme = el.section + "/" + substr[3:-1]
-					else:
-						# $[foo/bar/oni]
-						expandme = substr[2:-1]
-						
-				
-					# handle modifiers
-					if expandme[-4:] == ":zap":
-						mods.append("zap")
-						expandme = expandme[:-4]
-					elif expandme[-4:] == ":lax":
-						mods.append("lax")
-						expandme = expandme[:-4]
 
-					# handle ? at end - this code allows $[foo:lax?] and $[bar:zap?]
-					
-					if expandme[-1] == "?":
-						if self.elements.has_key(expandme[:-1]):
-							newstr += "yes"
-						else:
-							newstr += "no"
-						continue
-
-					# TODO: add the element itself rather than just its name to the stack
-					# so we can do type checking against the stack.
-					newstack = stack[:]
-					newstack.append(el)
-					exp = self.expand(expandme,newstack,mods)
-					if ("zap" in mods) and (exp == None):
-						return ""
-					else:
-						newstr += exp
-			return newstr
-		elif isinstance(el,multiLineElement):
-			#TODO: write the multi-line expansion
-			pass
-		else:
-			raise ExpandError("unknown element type",els=[el])
 
 cgNone = conditionAtom()
 
@@ -355,59 +297,124 @@ class metroParsedFile:
 				self.namespace.add(singleLineElement(self.section,varname," ".join(mysplit[1:])),self.cg)
 			else:
 				raise ParseError("invalid line")
-class element:
-	def __init__(self,section,varname,rawvalue):
 
-		global filename
-		global lineno
+class stringLiteral():
 
-		if varname == ":":
-			# Properly handle $[:]
-			varname = ""
-		if section != "":
-			self.varname = section + "/" + varname
-			if self.varname[-1] == "/":
-				self.varname = self.varname[:-1]
-		else:
-			self.varname = varname
-		
-		self.rawvalue = rawvalue
-		
-		self.filename = filename
-		self.lineno = lineno
-		self.section = section
-	
-	def name(self):
-		return self.varname
-	
-	def __repr__(self):
-		return repr(self.rawvalue)
-
-class singleLineElement(element):
-
-	def __init__(self,section,varname,rawvalue):
-		element.__init__(self,section,varname,rawvalue)
-
-	def expand(self):
-		gen = self.getExpansion()
-		newstring = ""
+	def __init__(self,value,parent):
+		self.value = value
+		self.parent = parent
 
 	def getExpansion(self):
 		pos = 0
-		rv = self.rawvalue
 		while pos < len(rv):
-			found = rv.find("$[",pos)
+			found = self.value.find("$[",pos)
 			if found == -1:
-				yield rv[pos:]
+				yield self.value[pos:]
 				break
-			if rv[pos:found] != "":
+			if self.value[pos:found] != "":
 				yield rv[pos:found]
-			found2 = rv.find("]",pos+2)
+			found2 = self.value.find("]",pos+2)
 			if pos == -1:
 				# TODO: THROW EXCEPTION HERE
 				break
 			pos = found2 + 1
-			yield(rv[found:found2+1])
+			yield(self.value[found:found2+1])
+
+	def expand(self,stack=[]):
+		newstr = ""
+		for substr in self.getExpansion():
+			# reset "mods" so we don't pass "lax" or "zap" to new evaluations (sibling or child (resursive))
+			mods = []
+			bool = None
+			if substr[0:2] != "$[":
+				newstr += substr
+				continue
+				
+			# we're expanding something...
+			if substr in [ "$[]", "$[:]"]:
+				# $[] or $[:]
+				expandme = parent.section
+			elif substr[2] == ":":
+				# $[:foo]
+				expandme = parent.section + "/" + substr[3:-1]
+			else:
+				# $[foo/bar/oni]
+				if parent.section:
+					expandme = parent.section + "/" substr[2:-1]
+				else:
+					expandme = substr[2:-1]
+		
+			# handle modifiers
+			if expandme[-4:] == ":zap":
+				mods.append("zap")
+				expandme = expandme[:-4]
+			elif expandme[-4:] == ":lax":
+				mods.append("lax")
+				expandme = expandme[:-4]
+
+			# handle ? at end - this code allows $[foo:lax?] and $[bar:zap?]
+
+			if expandme[-1] == "?":
+				expandme = expandme[:-1]
+				if self.parent.namespace.find(expandme):
+					newstr += "yes"
+				else:
+					newstr += "no"
+				continue
+
+			newstack = stack[:]
+			newstack.append(self.parent)
+			newel = self.parent.namespace.find(expandme,strict=False)
+			
+			
+			for otherel in stack:
+				if otherel.varname == newel.varname:
+					raise ExpandError("recursive reference of '%s'" % el.varname ,els=[el])
+			
+			if newel == None:
+				if "lax" in mods:
+					newstr += "(lax-not-found-%s)" % expandme
+					continue
+				else:
+					# This will throw an exception and give us a nice error message:
+					self.parent.namespace.find(expandme,strict=True)
+			else:
+				exp = newel.expand(newstack)
+				if ("zap" in mods) and (exp == None):
+					return ""
+				else:
+					newstr += exp
+		return newstr
+
+class element:
+	def __init__(self,section,varname,namespace,condition):
+		global filename
+		global lineno
+		self.filename = filename
+		self.lineno = lineno
+		self.section = section
+		self.varname = varname
+		self.namespace = namespace
+		self.condition = condition
+	
+	def name(self):
+		if self.section != "":
+			return self.section + "/" + self.varname
+		else:
+			return self.varname
+	
+	def __repr__(self):
+		return repr(self.rawvalue)
+
+
+class singleLineElement(element):
+
+	def __init__(self,section,varname,namespace,condition,rawvalue):
+		self.literal=stringLiteral(rawvalue,self)
+		element.__init__(self,section,varname,namespace,condition)
+
+	def expand(self):
+		return self.literal.expand()
 
 class multiLineElement(element):
 	def __init__(self,section,varname,rawvalue):
