@@ -71,11 +71,6 @@ chroot/run: [
 		exit 1
 	fi
 
-	# mounts
-	echo "Updating mtab and fstab..."
-	rm -f /etc/mtab
-	ln -s /proc/mounts /etc/mtab || exit 1
-
 	# turn off gettys
 	echo "Updating inittab..."
 	mv /etc/inittab /etc/inittab.orig || exit 2

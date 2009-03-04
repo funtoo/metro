@@ -68,6 +68,12 @@ cat > /etc/portage/package.keywords << "EOF"
 $[[portage/files/package.keywords:lax]]
 EOF
 fi
+if [ "$[portage/files/package.unmask?]" = "yes" ]
+then
+cat > /etc/portage/package.unmask << "EOF"
+$[[portage/files/package.unmask:lax]]
+EOF
+fi
 if [ -d /var/tmp/cache/probe ]
 then
 $[[probe/setup:lax]]
