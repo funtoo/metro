@@ -5,15 +5,6 @@
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
-if [ -e /var/tmp/cache/package ]
-then
-	export PKGDIR=/var/tmp/cache/package
-	eopts="$[emerge/options] --usepkg"
-	export FEATURES="$FEATURES buildpkg"
-else
-	eopts="$[emerge/options]"
-fi
-
 USE="build" emerge --oneshot --nodeps $eopts portage || exit 1
 export USE="$[portage/USE] bindist"
 emerge $eopts --deep --newuse -u system || exit 1

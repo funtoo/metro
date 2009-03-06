@@ -52,6 +52,14 @@ then
 		ccache-config --install-links $gccchost
 	fi
 fi
+if [ -e /var/tmp/cache/package ]
+then
+	export PKGDIR=/var/tmp/cache/package
+	eopts="$[emerge/options] --usepkg"
+	export FEATURES="$FEATURES buildpkg"
+else
+	eopts="$[emerge/options]"
+fi
 # the quotes below prevent variable expansion of anything inside make.conf
 cat > /etc/make.conf << "EOF"
 $[[files/make.conf]]

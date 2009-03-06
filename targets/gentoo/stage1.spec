@@ -67,16 +67,7 @@ fi
 
 export ROOT="$[portage/ROOT]"
 install -d ${ROOT}
-# let's see if we can get away without merging baselayout first:
-#emerge baselayout || exit 1
-if [ -e /var/tmp/cache/package ]
-then
-	export PKGDIR=/var/tmp/cache/package
-	eopts="$[emerge/options] --usepkg"
-	export FEATURES="$FEATURES buildpkg"
-else
-	eopts="$[emerge/options]"
-fi
+# It's important to merge baselayout first so it can set perms on key dirs
 emerge $eopts --nodeps baselayout || exit 1
 emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
 ]
