@@ -138,7 +138,7 @@ fi
 
 chroot/test: [
 #!/usr/bin/python
-import os,sys
+import os,sys,glob
 from stat import *
 
 root="$[portage/ROOT]"
@@ -147,35 +147,54 @@ etcSecretFiles = [
 	"/etc/default/useradd",
 	"/etc/securetty",
 	"/etc/shadow",
-	"/etc/sshd/sshd_config" ]
+	"/etc/ssh/sshd_config" ]
 
 etcSecretDirs = [
 	"/etc/skel/.ssh",
 	"/etc/ssl/private" ]
 
+etcROFiles = [ 
+	"/etc/passwd",
+	"/etc/group" ]
+
 abort=False
 
-# If a secret file exists, then ensure it has proper perms, otherwise abort
-for file in etcSecretFiles:
-	myfile = os.path.normpath(root+"/"+file)
-	if os.path.exists(myfile):
-		mystat = "%o" % os.stat(myfile)[ST_MODE]
-		if mystat != "100600":
-			print "ERROR: secret file %s does not have proper perms" % myfile
-			abort = True
-		else:
-			print "TEST: secret file %s OK" % myfile
+def goGlob(myglob):
+	mylist = glob.glob(myglob)
+	outlist = []
+	for x in mylist:
+		if not os.path.islink(x):
+			outlist.append(x)
+	return outlist
 
-# If a secret dir exists, then ensure it has proper perms, otherwise exit
-for dir in etcSecretDirs:
-	mydir = os.path.normpath(root+"/"+dir)
-	if os.path.exists(mydir):
-		mystat = "%o" % os.stat(mydir)[ST_MODE]
-		if mystat != "40700":
-			print "ERROR: secret dir %s does not have proper perms" % mydir
-			abort = True
-		else:
-			print "TEST: secret dir %s OK" % myfile
+def fileCheck(files,perms,uid=0,gid=0):
+	global abort
+	# If a secret file exists, then ensure it has proper perms, otherwise abort
+	for file in files:
+		myfile = os.path.normpath(root+"/"+file)
+		if os.path.exists(myfile):
+			mystat = os.stat(myfile) 
+			myperms = "%o" % mystat[ST_MODE]
+			myuid = mystat[ST_UID]
+			mygid = mystat[ST_GID]
+			if myperms != perms:
+				print "ERROR: file %s does not have proper perms: %s (should be %s)" % ( myfile, myperms, perms )
+				abort = True
+			else:
+				print "TEST: file %s OK" % myfile
+			if myuid != uid:
+				print "ERROR: file %s does not have uid of %i" % ( myfile, uid )
+				abort = True
+			if mygid != gid:
+				print "ERROR: file %s does not have gid of %i" % ( myfile, gid )
+				abort = True
+
+
+fileCheck(etcSecretFiles,"100600")
+fileCheck(etcSecretDirs,"40700")
+fileCheck(etcROFiles,"100644")
+fileCheck(goGlob("/etc/pam.d/*"),"100644")
+
 if abort:
 	sys.exit(1)
 else:
