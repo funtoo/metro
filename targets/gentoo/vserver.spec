@@ -54,7 +54,7 @@ then
 	install -d $outdir || "Output path $outdir does not exist"
 fi
 echo "Creating $[path/mirror/target]..."
-tar czpf $[path/mirror/target] -C $[path/chroot] . 
+tar cjpf $[path/mirror/target] -C $[path/chroot] .
 if [ $? -ge 2 ]
 then
 	die "Error creating tarball"
