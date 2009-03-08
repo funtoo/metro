@@ -52,6 +52,14 @@ then
 		ccache-config --install-links $gccchost
 	fi
 fi
+if [ -e /var/tmp/cache/package ]
+then
+	export PKGDIR=/var/tmp/cache/package
+	eopts="$[emerge/options] --usepkg"
+	export FEATURES="$FEATURES buildpkg"
+else
+	eopts="$[emerge/options]"
+fi
 # the quotes below prevent variable expansion of anything inside make.conf
 cat > /etc/make.conf << "EOF"
 $[[files/make.conf]]
@@ -88,6 +96,10 @@ fi
 
 #[option parse/strict]
 
+chroot/posclean: [
+rm -rf $[portage/ROOT]/tmp/*
+]
+
 chroot/clean: [
 #!/bin/bash
 # We only do this cleanup if ROOT = / - in other words, if we are going to be packing up /,
@@ -120,6 +132,8 @@ fi
 # won't work. This is normally okay.
 
 rm -rf $ROOT/var/tmp/* $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
+rm -f $ROOT/etc/{passwd,group,shadow}- $ROOT/etc/.pwd.lock
+rm -f $ROOT/etc/portage/bashrc
 install -d $ROOT/etc/portage
 
 # ensure that make.conf.example is set up OK...
@@ -140,6 +154,72 @@ if [ "$[target]" != "stage1" ] && [ -e /usr/bin/ccache ]
 then
 	emerge -C dev-util/ccache 
 fi
+]
+
+chroot/test: [
+#!/usr/bin/python
+import os,sys,glob
+from stat import *
+
+root="$[portage/ROOT]"
+
+etcSecretFiles = [
+	"/etc/default/useradd",
+	"/etc/securetty",
+	"/etc/shadow",
+	"/etc/ssh/sshd_config" ]
+
+etcSecretDirs = [
+	"/etc/skel/.ssh",
+	"/etc/ssl/private" ]
+
+etcROFiles = [ 
+	"/etc/passwd",
+	"/etc/group" ]
+
+abort=False
+
+def goGlob(myglob):
+	mylist = glob.glob(myglob)
+	outlist = []
+	for x in mylist:
+		if not os.path.islink(x):
+			outlist.append(x)
+	return outlist
+
+def fileCheck(files,perms,uid=0,gid=0):
+	global abort
+	# If a secret file exists, then ensure it has proper perms, otherwise abort
+	for file in files:
+		myfile = os.path.normpath(root+"/"+file)
+		if os.path.exists(myfile):
+			mystat = os.stat(myfile) 
+			myperms = "%o" % mystat[ST_MODE]
+			myuid = mystat[ST_UID]
+			mygid = mystat[ST_GID]
+			if myperms != perms:
+				print "ERROR: file %s does not have proper perms: %s (should be %s)" % ( myfile, myperms, perms )
+				abort = True
+			else:
+				print "TEST: file %s OK" % myfile
+			if myuid != uid:
+				print "ERROR: file %s does not have uid of %i" % ( myfile, uid )
+				abort = True
+			if mygid != gid:
+				print "ERROR: file %s does not have gid of %i" % ( myfile, gid )
+				abort = True
+
+
+fileCheck(etcSecretFiles,"100600")
+fileCheck(etcSecretDirs,"40700")
+fileCheck(etcROFiles,"100644")
+fileCheck(goGlob("/etc/pam.d/*"),"100644")
+
+if abort:
+	sys.exit(1)
+else:
+	sys.exit(0)
+
 ]
 
 unpack: [
@@ -232,3 +312,4 @@ else
 	fi
 fi
 ]
+

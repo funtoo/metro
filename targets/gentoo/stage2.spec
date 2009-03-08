@@ -21,15 +21,6 @@ python /tmp/bootstrap.py --check || exit 1
 USE="-* build bootstrap" emerge portage || exit 1
 
 export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
-if [ -e /var/tmp/cache/package ]
-then
-	export PKGDIR=/var/tmp/cache/package
-	eopts="$[emerge/options] --usepkg"
-	export FEATURES="$FEATURES buildpkg"
-else
-	eopts="$[emerge/options]"
-fi
-
 emerge $eopts `python /tmp/bootstrap.py --pkglist` || exit 1	
 emerge --clean || exit 1
 emerge --prune sys-devel/gcc || exit 1

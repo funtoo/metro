@@ -320,6 +320,10 @@ class stage(chroot):
 			self.unbind()
 			
 			self.runScriptInChroot("steps/chroot/clean")
+			if self.settings.has_key("steps/chroot/test"):
+				self.runScriptInChroot("steps/chroot/test")
+			if self.settings.has_key("steps/chroot/postclean"):
+				self.runScriptInChroot("steps/chroot/postclean")
 		except:
 			self.kill_chroot_pids()
 			self.checkMounts()
