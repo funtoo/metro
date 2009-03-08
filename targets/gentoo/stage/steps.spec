@@ -74,6 +74,12 @@ cat > /etc/portage/package.unmask << "EOF"
 $[[portage/files/package.unmask:lax]]
 EOF
 fi
+if [ "$[portage/devices?]" = "yes" ]
+then
+	emerge --oneshot --nodeps sys-apps/makedev || exit 2
+	MAKEDEV -d "$[portage/ROOT]/dev/" "$[portage/devices:lax]"
+	emerge -C sys-apps/makedev
+fi
 if [ -d /var/tmp/cache/probe ]
 then
 $[[probe/setup:lax]]

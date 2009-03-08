@@ -290,12 +290,6 @@ class stage(chroot):
 			self.mounts.append("/usr/portage/distfiles")
 			self.mountmap["/usr/portage/distfiles"]=self.settings["path/distfiles"]
 
-		if self.settings["portage/ROOT"] != "/":
-			# this seems to be needed for libperl to build (x2p) during stage1 - so we'll mount it....
-			self.mounts.append("/dev")
-			self.mounts.append("/dev/pts")
-			self.mountmap["/dev"] = "/dev"
-			self.mountmap["/dev/pts"] = "/dev/pts"
 	def run(self):
 		if self.targetExists("path/mirror/target"):
 			return
