@@ -129,10 +129,11 @@ class chroot(target):
 				# not a pid directory
 				continue
 			if mylink[0:len(cdir)] == cdir:
-				pids.append(pid)	
+				pids.append([pid,mylink])	
+		return pids
 
 	def kill_chroot_pids(self):
-		for pid in self.get_chroot_pids():
+		for pid,mylink in self.get_chroot_pids():
 			print "Killing process "+pid+" ("+mylink+")"
 			self.cmd(bin["kill"]+" -9 "+pid)
 
@@ -186,7 +187,7 @@ class chroot(target):
 				self.unbind()
 				raise MetroError,"Couldn't bind mount "+src
 			    
-	def unbind(self,try=0):
+	def unbind(self,attempt=0):
 		myprefix = self.settings["path/work"]
 		mounts = self.getActiveMounts()
 		while len(mounts) != 0:
@@ -195,6 +196,7 @@ class chroot(target):
 			mpos = 0
 			while mpos < len(mounts):
 				self.cmd("umount "+mounts[mpos],badval=10)
+				print "DEBUG: unmounted %s" % mounts[mpos]
 				if not ismount(mounts[mpos]):
 					del mounts[mpos]	
 					progress += 1
@@ -205,16 +207,16 @@ class chroot(target):
 
 		mounts = self.getActiveMounts()
 		if len(mounts):
-			if try >= 3:
+			if attempt >= 3:
 				mstring=""
 				for x in mounts():
 					mstring += x+"\n"
 				raise MetroError,"The following bind mounts could not be unmounted: \n"+mstring
 			else:
-				try += 1
+				attempt += 1
 				print "DEBUG: our unbind didn't work, this is an ERROR, killing pids and trying again"
 				self.kill_chroot_pids()
-				self.unbind(try=try)
+				self.unbind(attempt=attempt)
 
 	def getActiveMounts(self):
 		prefix=self.settings["path/work"]	
