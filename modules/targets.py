@@ -186,7 +186,7 @@ class chroot(target):
 				self.unbind()
 				raise MetroError,"Couldn't bind mount "+src
 			    
-	def unbind(self):
+	def unbind(self,try=0):
 		myprefix = self.settings["path/work"]
 		mounts = self.getActiveMounts()
 		while len(mounts) != 0:
@@ -203,20 +203,18 @@ class chroot(target):
 			if progress == 0:
 				break
 
-		if len(mounts):
-			mstring=""
-			for x in mounts():
-				mstring += x+"\n"
-			raise MetroError,"The following bind mounts could not be unmounted: \n"+mstring
-		# Another check based on "live" mount list, rather than the one we were deleting entries from, just to make sure
-		# we're doing things right:
 		mounts = self.getActiveMounts()
 		if len(mounts):
-			mstring=""
-			for x in mounts():
-				mstring += x+"\n"
-			raise MetroError,"The following bind mounts could not be unmounted: \n"+mstring
-	
+			if try >= 3:
+				mstring=""
+				for x in mounts():
+					mstring += x+"\n"
+				raise MetroError,"The following bind mounts could not be unmounted: \n"+mstring
+			else:
+				try += 1
+				print "DEBUG: our unbind didn't work, this is an ERROR, killing pids and trying again"
+				self.kill_chroot_pids()
+				self.unbind(try=try)
 
 	def getActiveMounts(self):
 		prefix=self.settings["path/work"]	
