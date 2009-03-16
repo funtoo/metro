@@ -117,8 +117,9 @@ class target:
 
 class chroot(target):
 
-	def kill_chroot_pids(self):
+	def get_chroot_pids(self):
 		cdir=self.settings["path/work"]
+		pids=[]
 		for pid in os.listdir("/proc"):
 			if not os.path.isdir("/proc/"+pid):
 				continue
@@ -128,9 +129,13 @@ class chroot(target):
 				# not a pid directory
 				continue
 			if mylink[0:len(cdir)] == cdir:
-				#we got something in our chroot
-				print "Killing process "+pid+" ("+mylink+")"
-				self.cmd(bin["kill"]+" -9 "+pid)
+				pids.append([pid,mylink])	
+		return pids
+
+	def kill_chroot_pids(self):
+		for pid,mylink in self.get_chroot_pids():
+			print "Killing process "+pid+" ("+mylink+")"
+			self.cmd(bin["kill"]+" -9 "+pid)
 
 	def runScriptInChroot(self,key,chroot=None):
 		if chroot == None:
@@ -182,7 +187,7 @@ class chroot(target):
 				self.unbind()
 				raise MetroError,"Couldn't bind mount "+src
 			    
-	def unbind(self):
+	def unbind(self,attempt=0):
 		myprefix = self.settings["path/work"]
 		mounts = self.getActiveMounts()
 		while len(mounts) != 0:
@@ -191,6 +196,7 @@ class chroot(target):
 			mpos = 0
 			while mpos < len(mounts):
 				self.cmd("umount "+mounts[mpos],badval=10)
+				print "DEBUG: unmounted %s" % mounts[mpos]
 				if not ismount(mounts[mpos]):
 					del mounts[mpos]	
 					progress += 1
@@ -198,11 +204,19 @@ class chroot(target):
 					mpos += 1
 			if progress == 0:
 				break
+
+		mounts = self.getActiveMounts()
 		if len(mounts):
-			mstring=""
-			for x in mounts():
-				mstring += x+"\n"
-			raise MetroError,"The following bind mounts could not be unmounted: \n"+mstring
+			if attempt >= 3:
+				mstring=""
+				for x in mounts():
+					mstring += x+"\n"
+				raise MetroError,"The following bind mounts could not be unmounted: \n"+mstring
+			else:
+				attempt += 1
+				print "DEBUG: our unbind didn't work, this is an ERROR, killing pids and trying again"
+				self.kill_chroot_pids()
+				self.unbind(attempt=attempt)
 
 	def getActiveMounts(self):
 		prefix=self.settings["path/work"]	
@@ -216,6 +230,7 @@ class chroot(target):
 			mypath = line.split()[1]
 			if mypath[0:len(prefix)] == prefix:
 				outlist.append(mypath)
+		print "DEBUG: activeMounts:",outlist
 		return outlist
 
 	def checkMounts(self):
@@ -257,7 +272,7 @@ class chroot(target):
 			self.kill_chroot_pids()
 			self.checkMounts()
 			raise
-
+			
 		self.runScript("steps/capture")
 		self.cleanPath()		
 
@@ -316,9 +331,9 @@ class stage(chroot):
 				self.runScriptInChroot("steps/chroot/prerun")
 			self.runScriptInChroot("steps/chroot/run")
 			self.runScriptInChroot("steps/chroot/postrun")
-			
+			print "DEBUG: pids in chroot before unbind:",self.get_chroot_pids()		
 			self.unbind()
-			
+			print "DEBUG: pids in chroot after unbind:",self.get_chroot_pids()
 			self.runScriptInChroot("steps/chroot/clean")
 			if self.settings.has_key("steps/chroot/test"):
 				self.runScriptInChroot("steps/chroot/test")
@@ -332,6 +347,8 @@ class stage(chroot):
 		# Capture the results of our efforts:
 		self.runScript("steps/capture")
 		# Now, we want to delete our build directory...
+		self.kill_chroot_pids()
+		self.checkMounts()
 		self.cleanPath()
 		# Now, we want to clean up our build-related caches:
 		if self.settings.has_key("path/cache/build"):
