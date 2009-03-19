@@ -18,7 +18,10 @@ if [ "$[emerge/packages?]" = "yes" ]
 then
 	emerge --deep --newuse -u $eopts $[emerge/packages:lax] || exit 1
 fi
-emerge $eopts @preserved-rebuild || exit 3
+if [ "`emerge --list-sets | grep preserved-rebuild`" = "preserved-rebuild" ]
+then
+	emerge $eopts @preserved-rebuild || exit 3
+fi
 # to handle lib upgrades, etc.
 ]
 #make sure the parser detects stray data out here....

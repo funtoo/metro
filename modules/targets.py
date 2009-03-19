@@ -17,6 +17,8 @@ class target:
 
 	def run(self):
 		self.runScript("steps/run")
+		if self.settings.has_key("trigger/ok/run"):
+			self.runScript("trigger/ok/run")
 		return
 
 	def runScript(self,key,chroot=None):
@@ -196,7 +198,6 @@ class chroot(target):
 			mpos = 0
 			while mpos < len(mounts):
 				self.cmd("umount "+mounts[mpos],badval=10)
-				print "DEBUG: unmounted %s" % mounts[mpos]
 				if not ismount(mounts[mpos]):
 					del mounts[mpos]	
 					progress += 1
@@ -214,7 +215,6 @@ class chroot(target):
 				raise MetroError,"The following bind mounts could not be unmounted: \n"+mstring
 			else:
 				attempt += 1
-				print "DEBUG: our unbind didn't work, this is an ERROR, killing pids and trying again"
 				self.kill_chroot_pids()
 				self.unbind(attempt=attempt)
 
@@ -230,7 +230,6 @@ class chroot(target):
 			mypath = line.split()[1]
 			if mypath[0:len(prefix)] == prefix:
 				outlist.append(mypath)
-		print "DEBUG: activeMounts:",outlist
 		return outlist
 
 	def checkMounts(self):
@@ -242,6 +241,8 @@ class chroot(target):
 
 	def run(self):
 		if self.targetExists("path/mirror/target"):
+			if self.settings.has_key("trigger/ok/run"):
+				self.runScript("trigger/ok/run")
 			return
 
 		# look for required files
@@ -274,6 +275,8 @@ class chroot(target):
 			raise
 			
 		self.runScript("steps/capture")
+		if self.settings.has_key("trigger/ok/run"):
+			self.runScript("trigger/ok/run")
 		self.cleanPath()		
 
 
@@ -283,16 +286,16 @@ class snapshot(target):
 	
 	def run(self):
 		if self.targetExists("path/mirror/snapshot"):
+			if self.settings.has_key("trigger/ok/run"):
+				self.runScript("trigger/ok/run")
 			return
 
 		self.cleanPath(recreate=True)
-
-		runkey="steps/run"
-
-		if not self.settings.has_key(runkey):
-			raise MetroError, "Required steps in %s not found." % runkey
-
-		self.runScript(runkey)
+		if not self.settings.has_key("steps/run"):
+			raise MetroError, "Required steps in steps/run not found."
+		self.runScript("steps/run")
+		if self.settings.has_key("trigger/ok/run"):
+			self.runScript("trigger/ok/run")
 		self.cleanPath()
 
 class stage(chroot):
@@ -305,8 +308,16 @@ class stage(chroot):
 			self.mounts.append("/usr/portage/distfiles")
 			self.mountmap["/usr/portage/distfiles"]=self.settings["path/distfiles"]
 
+		if self.settings["portage/ROOT"] != "/":
+			# this seems to be needed for libperl to build (x2p) during stage1 - so we'll mount it....
+			self.mounts.append("/dev")
+			self.mounts.append("/dev/pts")
+			self.mountmap["/dev"] = "/dev"
+			self.mountmap["/dev/pts"] = "/dev/pts"
 	def run(self):
 		if self.targetExists("path/mirror/target"):
+			if self.settings.has_key("trigger/ok/run"):
+				self.runScript("trigger/ok/run")
 			return
 
 		# look for required files
@@ -331,9 +342,7 @@ class stage(chroot):
 				self.runScriptInChroot("steps/chroot/prerun")
 			self.runScriptInChroot("steps/chroot/run")
 			self.runScriptInChroot("steps/chroot/postrun")
-			print "DEBUG: pids in chroot before unbind:",self.get_chroot_pids()		
 			self.unbind()
-			print "DEBUG: pids in chroot after unbind:",self.get_chroot_pids()
 			self.runScriptInChroot("steps/chroot/clean")
 			if self.settings.has_key("steps/chroot/test"):
 				self.runScriptInChroot("steps/chroot/test")
@@ -346,6 +355,8 @@ class stage(chroot):
 		# The build completed successfully.
 		# Capture the results of our efforts:
 		self.runScript("steps/capture")
+		if self.settings.has_key("trigger/ok/run"):
+			self.runScript("trigger/ok/run")
 		# Now, we want to delete our build directory...
 		self.kill_chroot_pids()
 		self.checkMounts()
