@@ -56,6 +56,23 @@ else
 # for stable builds, we create a traditional portage snapshot that is just a tarball of the physical files
 	BUILD="gentoo"
 fi
+mycmd="/usr/bin/metro multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE"
+cat << EOF
 
-/usr/bin/metro multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE 
+  PLEASE NOTE:
+  ============
+
+  As of Metro 1.3.0, the metro command itself can perform all the 
+  functionality of this script. 
+  
+  You can perform the same actions as the command above by calling
+  Metro as follows:
+
+  $mycmd
+  
+  The build will continue in 10 seconds...
+
+EOF
+sleep 10
+$mycmd
 exit $?
