@@ -9,31 +9,47 @@
 
   NEW FEATURES:
 
-  Multi-mode:
+  Multi-mode: Metro can now build multiple targets with a single command.
+  This functionality is called "multi-mode" and the multi-mode settings
+  are currently defined on a per-build basis, in /etc/metro/builds/.
+  scripts/build.sh has been updated to take advantage of multi-mode.
+  Multi-mode is used by passing "multi: yes" to Metro.
 
-  Triggers:
- 
-  Linux vserver Target: 
+  Triggers: Triggers are arbitrary scripts that can be run when a build
+  completes. In Metro 1.3.0, "success" triggers have been added to Metro.
+  This allows digests to be generated, or critical files to be updated, when a
+  build completes successfully. Metro currently uses triggers to update the
+  "lastdate" and "subarch" control files. scripts/build.sh has been simplified
+  as it no longer has to manually update the control files.
 
-  TARGETS:
+  Linux vserver Target: Thanks to a contribution by Benedikt Bohm, 
+  Metro can now build Linux vserver templates in addition to OpenVZ
+  templates.
 
-  Old core32 and core64 targets removed.
-
-  New phenom and ~phenom targets added.
-
-  FILESYSTEM LAYOUT:
-
-  New filesystem layout. Funtoo Portage snapshots now use the "portage-"
-  prefix, and portage snapshots exist in the funtoo/ and gentoo/ 
-  subdirectories (rather than a single global directory.) The new
-  filesystem layout is a bit more sane and allows for the addition of
+  New, cleaner filesystem layout for the mirror directory. Funtoo Portage
+  snapshots now use the "portage-" prefix, and portage snapshots exist in the
+  funtoo/ and gentoo/ subdirectories (rather than a single global directory.)
+  The new filesystem layout is a bit more sane and allows for the addition of
   stable Funtoo stages.
 
+  SECURITY: 
+  
+  Local perms: Metro enforces stricter permissions on its work directories in
+  order to prevent malicious injecting of files and/or binaries into builds.
+
+  A security hole in baselayout-2.0.0 has been addressed by ensuring that
+  /etc/shadow is readable and writeable only by the root user. An additional
+  security baseline check has been added to all Gentoo targets which ensures
+  that /etc/shadow and other critical files have proper permissions and
+  ownership.
+  
   PARSER:
 
-  Parser now supports relative paths in collect annotations.
+  Parser now supports relative paths in collect annotations, such as
+  "[collect ./stage/steps.spec]"
 
-  Continued work on "new" parser, which Metro isn't using yet.
+  Continued work on "new" parser, which Metro isn't using yet. Enhanced
+  error reporting capabilities.
 
   BUILD IMPROVEMENTS:
 
@@ -45,8 +61,6 @@
 
   gentoo/stage3-freshen target now emerges @preserved-rebuild set if it
   exists to ensure things are properly rebuilt.
-
-  gentoo/stage{1,2,3,3-freshen,3-quick} can all now utilize a package cache.
 
   chroot-based targets now run steps/chroot/{pre,post}run, just like the
   stage targets. (Contributor: Benedikt Bohm)
@@ -64,17 +78,6 @@
 
   Even more bind-mount robustness fixes, which don't fix a particular bug
   but should handle unusual problems even more carefully.
-
-  SECURITY: 
-  
-  Local perms: Metro enforces stricter permissions on its work directories in
-  order to prevent malicious injecting of files and/or binaries into builds.
-
-  A security hole in baselayout-2.0.0 has been addressed by ensuring that
-  /etc/shadow is readable and writeable only by the root user. An additional
-  security baseline check has been added to all Gentoo targets which ensures
-  that /etc/shadow and other critical files have proper permissions and
-  ownership.
 
 *metro-1.2.3 (02 Feb 2009)
 
