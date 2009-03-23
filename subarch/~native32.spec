@@ -1,0 +1,1 @@
+native32.spec
