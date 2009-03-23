@@ -7,7 +7,74 @@
   18 Mar 2009; Daniel Robbins <drobbins@funtoo.org>: New feature enhancement
   release.
 
+  NEW FEATURES:
 
+  Multi-mode:
+
+  Triggers:
+ 
+  Linux vserver Target: 
+
+  TARGETS:
+
+  Old core32 and core64 targets removed.
+
+  New phenom and ~phenom targets added.
+
+  FILESYSTEM LAYOUT:
+
+  New filesystem layout. Funtoo Portage snapshots now use the "portage-"
+  prefix, and portage snapshots exist in the funtoo/ and gentoo/ 
+  subdirectories (rather than a single global directory.) The new
+  filesystem layout is a bit more sane and allows for the addition of
+  stable Funtoo stages.
+
+  PARSER:
+
+  Parser now supports relative paths in collect annotations.
+
+  Continued work on "new" parser, which Metro isn't using yet.
+
+  BUILD IMPROVEMENTS:
+
+  New chroot/test step which current performs a security baseline check for
+  critical files to ensure that permissions and ownership are correct.
+
+  gentoo/stage3-freshen target now uses --deep and --newuse. gentoo/stage3
+  now runs eselect vi to enable busybox vi on the default stage3 build.
+
+  gentoo/stage3-freshen target now emerges @preserved-rebuild set if it
+  exists to ensure things are properly rebuilt.
+
+  gentoo/stage{1,2,3,3-freshen,3-quick} can all now utilize a package cache.
+
+  chroot-based targets now run steps/chroot/{pre,post}run, just like the
+  stage targets. (Contributor: Benedikt Bohm)
+
+  New portage/devices target to specify the device node sets to create
+  using MAKEDEV (Contributor: Benedikt Bohm). Specifying device node sets
+  will cause Metro to not bind-mount /dev and /dev/pts inside the build
+  chroot.
+
+  GENERAL BUG FIXES:
+
+  Bind mounts will work properly even if /var/tmp/metro contains a symlink
+  somewhere in the path (ie. /var/tmp is a symlink.) (Credit for bug report:
+  Tim Dysinger)
+
+  Even more bind-mount robustness fixes, which don't fix a particular bug
+  but should handle unusual problems even more carefully.
+
+  SECURITY: 
+  
+  Local perms: Metro enforces stricter permissions on its work directories in
+  order to prevent malicious injecting of files and/or binaries into builds.
+
+  A security hole in baselayout-2.0.0 has been addressed by ensuring that
+  /etc/shadow is readable and writeable only by the root user. An additional
+  security baseline check has been added to all Gentoo targets which ensures
+  that /etc/shadow and other critical files have proper permissions and
+  ownership.
 
 *metro-1.2.3 (02 Feb 2009)
 

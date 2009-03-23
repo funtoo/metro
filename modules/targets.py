@@ -219,7 +219,10 @@ class chroot(target):
 				self.unbind(attempt=attempt)
 
 	def getActiveMounts(self):
-		prefix=self.settings["path/work"]	
+		# os.path.realpath should ensure that we are comparing the right thing, if something in the path
+		# is a symlink - like /var/tmp -> /foo. Because /proc/mounts will store the resolved path (ie.
+		# /foo/metro) not the regular one (ie. /var/tmp/metro)
+		prefix=os.path.realpath(self.settings["path/work"])
 		# this used to have a "os.popen("mount")" which is not as accurate as the kernel list /proc/mounts.
 		# The "mount" command relies on /etc/mtab which is not necessarily correct.
 		myf=open("/proc/mounts","r")
@@ -308,12 +311,14 @@ class stage(chroot):
 			self.mounts.append("/usr/portage/distfiles")
 			self.mountmap["/usr/portage/distfiles"]=self.settings["path/distfiles"]
 
-		if self.settings["portage/ROOT"] != "/":
-			# this seems to be needed for libperl to build (x2p) during stage1 - so we'll mount it....
-			self.mounts.append("/dev")
-			self.mounts.append("/dev/pts")
-			self.mountmap["/dev"] = "/dev"
-			self.mountmap["/dev/pts"] = "/dev/pts"
+		if not self.settings.has_key("portage/devices"):
+			# if device nodes aren't to be manually created, let's bind-mount our main system's device nodes in place
+			if self.settings["portage/ROOT"] != "/":
+				# this seems to be needed for libperl to build (x2p) during stage1 - so we'll mount it....
+				self.mounts.append("/dev")
+				self.mounts.append("/dev/pts")
+				self.mountmap["/dev"] = "/dev"
+				self.mountmap["/dev/pts"] = "/dev/pts"
 	def run(self):
 		if self.targetExists("path/mirror/target"):
 			if self.settings.has_key("trigger/ok/run"):
