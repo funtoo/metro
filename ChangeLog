@@ -26,14 +26,29 @@
   Metro can now build Linux vserver templates in addition to OpenVZ
   templates.
 
-  native32 and native64 subarches: have gcc optimize for your locally-detected
+  New native32 and native64 subarches: have gcc optimize for your locally-detected
   CPU - contributed by Jeff Mitchell.
 
-  New, cleaner filesystem layout for the mirror directory. Funtoo Portage
-  snapshots now use the "portage-" prefix, and portage snapshots exist in the
-  ~funtoo/ and gentoo/ subdirectories (rather than a single global directory.)
-  The new filesystem layout is a bit more sane and allows for the addition of
-  stable Funtoo stages.
+  New generic32 and generic64 subarches, which will use -mtune=generic and build
+  a generic version optimized for modern CPUs. Be sure to use an x86 or
+  amd64 seed stage for building your own generic32 and generic64 builds.
+
+  New opteron and opteron-sse3 subarches. These are AMD-specific 64-bit
+  builds.
+
+  Phenom and i686 subarches have been improved.
+
+  New, cleaner filesystem layout for the mirror directory -- yes, even more
+  reorganization. Unstable funtoo builds are now in the "~funtoo" directory.
+  Notice how the "~" is now associated with the build (there is a
+  corresponding /etc/metro/builds/~funtoo.conf) rather than the subarch. If
+  you want to build an unstable funtoo amd64 build, set metro/build: to
+  ~funtoo and target/subarch: to amd64 (not ~amd64). This is a more logical
+  and normalized path structure.
+  
+  scripts/build.sh has been updated so that it works the same way it always
+  did -- "scripts/build.sh ~amd64 freshen" still does the same thing, for
+  example, even though Metro no longer uses "~amd64" internally.
 
   SECURITY: 
   
