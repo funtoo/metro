@@ -1,1 +1,0 @@
-native64.spec
