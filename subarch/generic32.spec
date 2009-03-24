@@ -4,7 +4,7 @@ arch: x86
 
 [section portage]
 
-CFLAGS: -march=generic -O2 -pipe
+CFLAGS: -mtune=generic -O2 -pipe
 CHOST: i686-pc-linux-gnu
 HOSTUSE: 
 
