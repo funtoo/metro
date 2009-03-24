@@ -51,7 +51,9 @@ fi
 SUBARCH="$1"
 if [ "${SUBARCH:0:1}" = "~" ] 
 then
-	BUILD="funtoo"
+	BUILD="~funtoo"
+	# strip ~ from subarch, as Metro doesn't work this way anymore.
+	SUBARCH="${SUBARCH:1}"
 else
 # for stable builds, we create a traditional portage snapshot that is just a tarball of the physical files
 	BUILD="gentoo"

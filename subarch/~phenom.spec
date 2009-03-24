@@ -1,1 +1,0 @@
-phenom.spec

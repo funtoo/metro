@@ -1,1 +1,0 @@
-pentium4.spec

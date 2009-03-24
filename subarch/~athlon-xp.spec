@@ -1,1 +1,0 @@
-athlon-xp.spec
