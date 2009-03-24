@@ -22,13 +22,16 @@
   "lastdate" and "subarch" control files. scripts/build.sh has been simplified
   as it no longer has to manually update the control files.
 
-  Linux vserver Target: Thanks to a contribution by Benedikt Bohm, 
+  Linux vserver target: Thanks to a contribution by Benedikt Bohm, 
   Metro can now build Linux vserver templates in addition to OpenVZ
   templates.
 
+  native32 and native64 subarches: have gcc optimize for your locally-detected
+  CPU - contributed by Jeff Mitchell.
+
   New, cleaner filesystem layout for the mirror directory. Funtoo Portage
   snapshots now use the "portage-" prefix, and portage snapshots exist in the
-  funtoo/ and gentoo/ subdirectories (rather than a single global directory.)
+  ~funtoo/ and gentoo/ subdirectories (rather than a single global directory.)
   The new filesystem layout is a bit more sane and allows for the addition of
   stable Funtoo stages.
 
