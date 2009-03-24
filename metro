@@ -163,6 +163,7 @@ def main():
 
 	if valueme:
 		print settings[valueme]
+		sys.exit(1)
 	if settings.has_key("multi") and settings["multi"]=="yes":
 		targetlist=string.split(settings["multi/targets"])
 		# build automation mode
