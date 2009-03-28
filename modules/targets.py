@@ -43,7 +43,7 @@ class target:
 		if not os.path.exists(outdir):
 			os.makedirs(outdir)
 		outfd = open(outfile,"w")
-		
+
 		for x in self.settings[key]:
 			outfd.write(x+"\n")
 
@@ -99,7 +99,7 @@ class target:
 			# This creates the directory we want.
 			self.cmd(bin["install"]+" -d -m 0700 -g root -o root "+path)
 			# The 0700 perms prevent Metro-generated /tmp directories from being abused by others -
-			# because they are world-writeable, they could be used by malicious local users to 
+			# because they are world-writeable, they could be used by malicious local users to
 			# inject arbitrary data/executables into a Metro build.
 	def cmd(self,mycmd,myexc="",badval=None):
 		print "Executing \""+mycmd+"\"..."
@@ -131,7 +131,7 @@ class chroot(target):
 				# not a pid directory
 				continue
 			if mylink[0:len(cdir)] == cdir:
-				pids.append([pid,mylink])	
+				pids.append([pid,mylink])
 		return pids
 
 	def kill_chroot_pids(self):
@@ -152,18 +152,18 @@ class chroot(target):
 
 		self.mounts=[ "/proc" ]
 		self.mountmap={"/proc":"/proc" }
-		
+
 		# CCACHE SUPPORT FOR CHROOTS
 
 		if not self.settings.has_key("metro/class"):
 			return
-	
+
 		skey="metro/options/"+self.settings["metro/class"]
 
 		# enable ccache and pkgcache support - all we do in python is bind-mount the right directory to the right place.
 
-		for key, name, dest in [ 
-				[ "path/cache/compiler", "cache/compiler", "/var/tmp/cache/compiler" ] , 
+		for key, name, dest in [
+				[ "path/cache/compiler", "cache/compiler", "/var/tmp/cache/compiler" ] ,
 				[ "path/cache/package", "cache/package", "/var/tmp/cache/package" ] ,
 				[ "path/cache/probe", "probe", "/var/tmp/cache/probe" ] ]:
 			if self.settings.has_key(skey) and name in self.settings[skey].split():
@@ -176,19 +176,19 @@ class chroot(target):
 
 	def bind(self):
 		""" Perform bind mounts """
-		for x in self.mounts: 
+		for x in self.mounts:
 			if not os.path.exists(self.settings["path/work"]+x):
 				os.makedirs(self.settings["path/work"]+x,0755)
-			
+
 			if not os.path.exists(self.mountmap[x]):
 				os.makedirs(self.mountmap[x],0755)
-			
+
 			src=self.mountmap[x]
 			print "Mounting %s to %s..." % (src, x)
 			if os.system(bin["mount"]+" --bind "+src+" "+self.settings["path/work"]+x) != 0:
 				self.unbind()
 				raise MetroError,"Couldn't bind mount "+src
-			    
+
 	def unbind(self,attempt=0):
 		myprefix = self.settings["path/work"]
 		mounts = self.getActiveMounts()
@@ -199,7 +199,7 @@ class chroot(target):
 			while mpos < len(mounts):
 				self.cmd("umount "+mounts[mpos],badval=10)
 				if not ismount(mounts[mpos]):
-					del mounts[mpos]	
+					del mounts[mpos]
 					progress += 1
 				else:
 					mpos += 1
@@ -276,17 +276,17 @@ class chroot(target):
 			self.kill_chroot_pids()
 			self.checkMounts()
 			raise
-			
+
 		self.runScript("steps/capture")
 		if self.settings.has_key("trigger/ok/run"):
 			self.runScript("trigger/ok/run")
-		self.cleanPath()		
+		self.cleanPath()
 
 
 class snapshot(target):
 	def __init__(self,settings):
 		target.__init__(self,settings)
-	
+
 	def run(self):
 		if self.targetExists("path/mirror/snapshot"):
 			if self.settings.has_key("trigger/ok/run"):

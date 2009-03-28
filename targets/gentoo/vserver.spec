@@ -24,7 +24,7 @@ chroot: $[path/work]
 
 unpack: [
 #!/bin/bash
-[ ! -d $[path/chroot] ] && install -d $[path/chroot] 
+[ ! -d $[path/chroot] ] && install -d $[path/chroot]
 [ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777 || exit 2
 if [ -e /usr/bin/pbzip2 ]
 then
@@ -97,5 +97,5 @@ chroot/run: [
 	done
 
 	# cleanup
-	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf 
+	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf
 ]

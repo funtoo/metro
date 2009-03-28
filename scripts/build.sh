@@ -46,10 +46,10 @@ then
 	VERS=$3
 else
 	VERS=`date +%Y.%m.%d`
-fi 
+fi
 
 SUBARCH="$1"
-if [ "${SUBARCH:0:1}" = "~" ] 
+if [ "${SUBARCH:0:1}" = "~" ]
 then
 	BUILD="~funtoo"
 	# strip ~ from subarch, as Metro doesn't work this way anymore.
@@ -64,14 +64,14 @@ cat << EOF
   PLEASE NOTE:
   ============
 
-  As of Metro 1.3.0, the metro command itself can perform all the 
-  functionality of this script. 
-  
+  As of Metro 1.3.0, the metro command itself can perform all the
+  functionality of this script.
+
   You can perform the same actions as the command above by calling
   Metro as follows:
 
   $mycmd
-  
+
   The build will continue in 10 seconds...
 
 EOF

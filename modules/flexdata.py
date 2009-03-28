@@ -8,10 +8,10 @@ class FlexDataError(Exception):
 			print
 			print "Metro Parser: "+message
 			print
-	
+
 class collection:
 	""" The collection class holds our parser.
-	
+
 	__init__() contains several important variable definitions.
 
 	self.immutable - if set to true, the parser will throw a warning if a variable is redefined. Otherwise it will not.
@@ -60,7 +60,7 @@ class collection:
 			if self.conditionTrue(cond):
 				truekeys.append(cond)
 			if len(truekeys) > 1:
-				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (varname, repr(truekeys)) 
+				raise FlexDataError, "Multiple true conditions exist for %s: conditions: %s" % (varname, repr(truekeys))
 		if len(truekeys) == 1:
 			return self.conditionals[varname][truekeys[0]]
 		elif len(truekeys) == 0:
@@ -68,7 +68,7 @@ class collection:
 		else:
 			#shouldn't get here
 			raise FlexDataError
-			
+
 
 	def expand(self,myvar,options={}):
 		if myvar[-1] == "?":
@@ -103,7 +103,7 @@ class collection:
 			return self.expandString(myvar=myvar,options=options)
 
 	def expandString(self,string=None,myvar=None,stack=[],options={}):
-		# Expand all variables in a basic value, ie. a string 
+		# Expand all variables in a basic value, ie. a string
 		if string == None:
 			if myvar[-1] == "?":
 				boolean = True
@@ -130,13 +130,13 @@ class collection:
 						raise KeyError, "Variable "+repr(myvar)+" not found."
 				elif boolean:
 					string = "yes"
-			
+
 		if type(string) != types.StringType:
 			if len(stack) >=1:
 				raise FlexDataError("expandString received non-string when expanding "+repr(myvar)+" ( stack = "+repr(stack)+")")
 			else:
 				raise FlexDataError("expandString received non-string: %s" % repr(string) )
-		
+
 		mysplit = string.strip().split(" ")
 
 		if len(mysplit) == 2 and mysplit[0] == "<<":
@@ -206,14 +206,14 @@ class collection:
 					newex = self.expandString(self.raw[varname],varname,newstack,options=newoptions)
 					if newex == "" and zapmode==True:
 						# when expandMulti gets None, it won't add this line so we won't get a blank line even
-						return None 
+						return None
 					else:
 						ex += newex
 				else:
 					# self.raw[varname] can be a list .. if it's a string and blank, we treat it as undefined.
 					if type(self.raw[varname]) == types.StringType and self.raw[varname].strip() == "":
 						ex += "no"
-					else: 
+					else:
 						ex += "yes"
 			elif self.conditionals.has_key(varname):
 				expandme = self.get_condition_for(varname)
@@ -232,7 +232,7 @@ class collection:
 					return None
 				if ("lax" in newoptions.keys()) or (len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]):
 					# record variables that we attempted to expand but were blank, so we can inform the user of possible bugs
-					if boolean: 
+					if boolean:
 						ex += "no"
 					else:
 						self.blanks[varname] = True
@@ -264,7 +264,7 @@ class collection:
 		# any future expansions will get our "new" options, but we don't want to pollute our current options by modifying
 		# options...
 		newoptions=options.copy()
-		# detect and properly handle $[[foo:lax]] 
+		# detect and properly handle $[[foo:lax]]
 		if len(myvarsplit) == 2:
 			if myvarsplit[1] == "lax":
 				newoptions["lax"] = True
@@ -312,7 +312,7 @@ class collection:
 				exec mycode in { "os": os }, mylocals
 				newlines.append(sys.stdout.getvalue())
 				sys.stdout = sys.__stdout__
-			else:	
+			else:
 				newline = self.expandString(string=multi[pos],options=newoptions)
 				if newline != None:
 					newlines.append(newline)
@@ -370,7 +370,7 @@ class collection:
 				continue
 
 	def parseline(self,filename,openfile=None,dups=False):
-		
+
 		# parseline() will parse a line and return None on EOF, return [] on a blank line with no data, or will
 		# return a list of string elements if there is data on the line, split along whitespace: [ "foo:", "bar", "oni" ]
 		# parseline() will also remove "# comments" from a line as appropriate
@@ -398,7 +398,7 @@ class collection:
 				mysplit=mysplit[0:spos]
 				break
 			spos += 1
-		
+
 		if len(mysplit) == 0:
 			return []
 
@@ -511,8 +511,8 @@ class collection:
 				if not dups and self.raw.has_key(mykey):
 					raise FlexDataError,"Error - \""+mykey+"\" already defined. Value: %s. New line: %s." % ( repr(self.raw[mykey]), curline[:-1] )
 				self.raw[mykey] = myvalue
-		return mysplit	
-	
+		return mysplit
+
 	def collect(self,filename,origfile):
 		if not os.path.isabs(filename):
 			# relative path - use origfile (the file the collect annotation appeared in) to figure out what we are relative to
@@ -584,7 +584,7 @@ class collection:
 	def runCollector(self):
 		# BUG? we may need to have an expandString option that will disable the ability to go to the evaluated dict,
 		# because as we parse new files, we have new data and some "lax" evals may evaluate correctly now.
-	
+
 		# BUG: detect if we are trying to collect a single file multiple times. :)
 
 		# contfails means "continuous expansion failures" - if we get to the point where we are not making progress,
@@ -599,7 +599,7 @@ class collection:
 				cond = self.collectorcond[myitem]
 				if self.conditionOnConditional(cond):
 					raise FlexDataError,"Collect annotation %s has conditional %s that references a conditional variable, which is not allowed." % (myitem, cond)
-				# is the condition true?: 
+				# is the condition true?:
 				if not self.conditionTrue(cond):
 					contfails += 1
 					self.collector = self.collector[1:] + [self.collector[0]]
@@ -637,6 +637,6 @@ if __name__ == "__main__":
 	coll = collection(debug=False)
 	for arg in sys.argv[1:]:
 		coll.collect(arg)
-	coll.runCollector()	
+	coll.runCollector()
 	sys.exit(0)
 
