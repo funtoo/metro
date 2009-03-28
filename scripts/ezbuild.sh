@@ -16,7 +16,7 @@ do_help() {
   Metro Automation Engine Script
   by Daniel Robbins (drobbins@funtoo.org)
 
-  Usage: $0 arch [ full|freshen|quick [date] ]
+  Usage: $0 build arch [ full|freshen|quick [date] ]
   Examples: 
   	# $0 funtoo amd64
 	# $0 ~funtoo core2 freshen
@@ -29,28 +29,27 @@ then
 	die "Metro is required for build.sh to run"
 fi
 
-if [ $# -lt 1 ] || [ $# -gt 4 ]
+if [ $# -lt 2 ] || [ $# -gt 4 ]
 then
 	do_help
 	die "This script requires two, three or four arguments"
 fi
 
-if [ "$#" = "2" ] || [ "$#" = "3" ]
+BUILD="$1"
+SUBARCH="$2"
+
+if [ "$#" -ge "3" ]
 then
-	MODE=$2
+	MODE=$3
 else
 	MODE=full
 fi
 
-if [ "$#" = "3" ]
+if [ "$#" -ge "4" ]
 then
-	VERS=$3
+	VERS=$4
 else
 	VERS=`date +%Y.%m.%d`
 fi 
 
-BUILD="$1"
-SUBARCH="$2"
-mycmd="/usr/bin/metro multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE"
-$mycmd
-exit $?
+exec /usr/bin/metro multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE
