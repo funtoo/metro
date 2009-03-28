@@ -17,7 +17,7 @@ do_help() {
   by Daniel Robbins (drobbins@funtoo.org)
 
   Usage: $0 build arch [ full|freshen|quick [date] ]
-  Examples: 
+  Examples:
   	# $0 funtoo amd64
 	# $0 ~funtoo core2 freshen
 	# $0 gentoo pentium4 full 2009.01.03
@@ -50,6 +50,6 @@ then
 	VERS=$4
 else
 	VERS=`date +%Y.%m.%d`
-fi 
+fi
 
 exec /usr/bin/metro multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE

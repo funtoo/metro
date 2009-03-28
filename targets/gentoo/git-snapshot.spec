@@ -59,7 +59,7 @@ tar cf $tarout portage || die "couldn't create git archive"
 if [ -e /usr/bin/pbzip2 ]
 then
 	echo "Compressing $tarout using pbzip2..."
-	pbzip2 -p4 $tarout || die "Git pbzip2 failure" 
+	pbzip2 -p4 $tarout || die "Git pbzip2 failure"
 else
 	echo "Compressing $tarout using bzip2..."
 	bzip2 $tarout || die "Git bzip2 failure"

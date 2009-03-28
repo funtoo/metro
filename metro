@@ -25,7 +25,7 @@ def usage():
 
  -h, --help			Print this message
  -V, --version			Display version information
- 
+
  -d, --debug			Enable debug mode
  -v, --verbose			Verbose mode
 
@@ -48,20 +48,20 @@ def version():
 	print __license__
 
 def find_target(settings):
-	""" 
-	
+	"""
+
 	Use the "metro/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
-	
+
 	The targets.__dict__ dictionary contains all the objects in the targets module. We look inside it to see if the class
 	defined in "metro/class" exists in there and is a class. If not, we raise an exception.
-	
+
 	"""
 	if not targets.__dict__.has_key(settings["metro/class"]):
 		raise MetroError, "Metro class "+settings["metro/class"]+" not defined in modules/targets.py."
 	if type(targets.__dict__[settings["metro/class"]]) != types.ClassType:
 		raise MetroError, "Metro class "+settings["metro/class"]+" does not appear to be a class."
 	return targets.__dict__[settings["metro/class"]](settings)
-	
+
 debug=False
 
 def initSettings(args,extraargs={}):
@@ -71,7 +71,7 @@ def initSettings(args,extraargs={}):
 		settings.collect("/etc/metro/metro.conf",None)
 	else:
 		print "Warning: /etc/metro/metro.conf not found."
-	
+
 	# parse command-line supplied configuration files and spec files in the order they were specified
 
 	apos = 0
@@ -89,9 +89,9 @@ def initSettings(args,extraargs={}):
 	for arg in extraargs.keys():
 		settings[arg]=extraargs[arg]
 	settings.runCollector()
-	return settings	
+	return settings
 
-	
+
 def main():
 	if os.getuid() != 0:
 		print __app__ + ": This script requires root privileges to operate."
@@ -108,7 +108,7 @@ def main():
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
-	
+
 	# defaults for commandline opts
 	verbose=False
 	myopts=[]
@@ -176,16 +176,16 @@ def main():
 
 		print "Multi-mode: running target %s" % targetname
 		settings = initSettings(args,{"target":targetname})
-		
+
 		# Step 7c: find and run target
-		
+
 		target = find_target(settings)
 		print __app__+": running target \""+settings["target"]+"\"."
 		target.run()
 		print __app__+": complete."
 
 
-try:		
+try:
 	main()
 except MetroError,arg:
 	print __app__+":",arg

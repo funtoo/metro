@@ -14,7 +14,7 @@ class ExpandError(Exception):
 			out += "\n"
 			for el in els:
 				out += "\tfile '%s', line %i: '%s'\n" % ( el.filename, el.lineno, el.rawvalue )
-		print out	
+		print out
 
 class ParseError(Exception):
 	def __init__(self, message, type="" ):
@@ -56,7 +56,7 @@ class conditionAtom:
 		newatom = conditionAtom(condition)
 		newatom.sibling = self
 		return newatom
-	
+
 	def negateAndRefine(self,condition):
 		if self == cgNone:
 			raise ParseError("Attempt to negate the ANY condition (which would always be false)")
@@ -70,13 +70,13 @@ class conditionAtom:
 			raise ParseError("Attempt to negate the ANY condition (which should always be false)")
 		newatom = conditionAtom()
 		newatom.parent = self
-		newatom.parentNegated = True	
+		newatom.parentNegated = True
 		return newatom
 
 	def __repr__(self):
 		if self.condition == None:
 			return "ANY"
-		out=repr(self.condition) 
+		out=repr(self.condition)
 		if self.parent:
 			if self.parent.negated:
 				out += "AND NOT ( "+repr(self.parent)+" ) "
@@ -102,7 +102,7 @@ class metroNameSpace:
 	def __init__(self):
 		self.elements={}
 		# Structure of self.elements is:
-		# {"varname" : [ element-object(contains value):condition-group ] 
+		# {"varname" : [ element-object(contains value):condition-group ]
 	def __getitem__(self,val):
 		return self.elements[val]
 	def add(self,element,cg):
@@ -119,10 +119,10 @@ class metroNameSpace:
 		#
 		# foo: bar
 		# foo: bar
-		# 
+		#
 		# we will check for dupes on evaluation, where the above values will throw an exception due to having
 		# multiple definitions.
-		self.elements[elname].append([element, cg])	
+		self.elements[elname].append([element, cg])
 	def debugDump(self):
 		keys=self.elements.keys()
 		keys.sort()
@@ -130,7 +130,7 @@ class metroNameSpace:
 			print key+":"
 			for el, cond in self.elements[key]:
 				print "\t"+repr(el)+": "+repr(cond)
-	
+
 	def expand(self,name,stack=[],mods=[]):
 		if not self.elements.has_key(name):
 			if "lax" in mods:
@@ -140,7 +140,7 @@ class metroNameSpace:
 			else:
 				raise ExpandError(name+" not found")
 		eclist = self.elements[name]
-		ectrue = [] 
+		ectrue = []
 		for el, cond in eclist:
 			if cond.isTrue():
 				ectrue.append([el,cond])
@@ -175,8 +175,8 @@ class metroNameSpace:
 					else:
 						# $[foo/bar/oni]
 						expandme = substr[2:-1]
-						
-				
+
+
 					# handle modifiers
 					if expandme[-4:] == ":zap":
 						mods.append("zap")
@@ -186,7 +186,7 @@ class metroNameSpace:
 						expandme = expandme[:-4]
 
 					# handle ? at end - this code allows $[foo:lax?] and $[bar:zap?]
-					
+
 					if expandme[-1] == "?":
 						if self.elements.has_key(expandme[:-1]):
 							newstr += "yes"
@@ -219,7 +219,7 @@ class metroParsedFile:
 		self.collection = collection
 
 		self.parse()
-	
+
 	def name(self):
 		return self.filename
 
@@ -232,7 +232,7 @@ class metroParsedFile:
 		global lineno
 		global curline
 		global filename
-		
+
 		filename = self.filename
 		lineno = 0
 		prevlineno = 0
@@ -248,7 +248,7 @@ class metroParsedFile:
 		except:
 			raise ParseError("can't open file")
 		section = ""
-		while 1:	
+		while 1:
 			try:
 				curline = myfile.next()[:-1]
 				lineno += 1
@@ -260,16 +260,16 @@ class metroParsedFile:
 
 			if len(mysplit) == 1 and mysplit[0] == '':
 				continue
-			
+
 			# 2. Detect comments and truncate mysplit appropriately
-			
+
 			spos = 0
 			while spos < len(mysplit):
 				if len(mysplit[spos]) and mysplit[spos][0] == "#":
 					mysplit=mysplit[0:spos]
 					break
 				spos += 1
-			
+
 			# 3. If the line just included comments, move on to next line
 
 			if len(mysplit) == 0:
@@ -278,16 +278,16 @@ class metroParsedFile:
 			# 4. Identify and parse elements
 
 			if len(mysplit) == 2 and mysplit[0][-1] == ":" and mysplit[1] == "[":
-				
+
 				# We have found a multi-line element. We will grab all the lines of this element and create a new multiLineElement object,
 				# and add it to the namespace.
-				
+
 				prevlineno = lineno
 				varname = mysplit[0][0:-1]
 				mylines = []
 				while 1:
 					try:
-						curline = myfile.next() 	
+						curline = myfile.next()
 						lineno += 1
 						mysplit = curline[:-1].strip().split(" ")
 						if len(mysplit) == 1 and mysplit[0] == "]":
@@ -323,7 +323,7 @@ class metroParsedFile:
 				elif insidesplit[0] == "collect":
 					# Collect annotation
 					if len(insidesplit)==2:
-						self.collection.queue(insidesplit[1])	
+						self.collection.queue(insidesplit[1])
 					elif len(insidesplit)>3 and insidesplit[2] == "when":
 						# special case: Conditional collect annotation
 						if self.cg != cgNone:
@@ -348,7 +348,7 @@ class metroParsedFile:
 				else:
 					raise ParseError("invalid annotation")
 			elif mysplit[0][-1] == ":":
-				
+
 				# We have found a single-line element. We will create a corresponding singleLineElement object and add it
 				# to the namespace.
 				varname=mysplit[0][0:-1]
@@ -370,16 +370,16 @@ class element:
 				self.varname = self.varname[:-1]
 		else:
 			self.varname = varname
-		
+
 		self.rawvalue = rawvalue
-		
+
 		self.filename = filename
 		self.lineno = lineno
 		self.section = section
-	
+
 	def name(self):
 		return self.varname
-	
+
 	def __repr__(self):
 		return repr(self.rawvalue)
 

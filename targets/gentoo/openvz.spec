@@ -24,7 +24,7 @@ chroot: $[path/work]
 
 unpack: [
 #!/bin/bash
-[ ! -d $[path/chroot] ] && install -d $[path/chroot] 
+[ ! -d $[path/chroot] ] && install -d $[path/chroot]
 [ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777 || exit 2
 if [ -e /usr/bin/pbzip2 ]
 then
@@ -54,7 +54,7 @@ then
 	install -d $outdir || "Output path $outdir does not exist"
 fi
 echo "Creating $[path/mirror/target]..."
-tar czpf $[path/mirror/target] -C $[path/chroot] . 
+tar czpf $[path/mirror/target] -C $[path/chroot] .
 if [ $? -ge 2 ]
 then
 	die "Error creating tarball"
@@ -97,11 +97,11 @@ chroot/run: [
 	mknod /lib/udev/devices/ttyp0 c 3 0 || exit 8
 	mknod /lib/udev/devices/ptyp0 c 2 0 || exit 9
 	mknod /lib/udev/devices/ptmx c 5 2 || exit 10
-	
+
 	# OpenRC - prior to 0.3.0
 	# cp /etc/rc.conf /etc/rc.conf.orig || exit 11
 	# cat /etc/rc.conf.orig | sed -e "/^#rc_devices/c\\" -e 'rc_devices="static"' > /etc/rc.conf || exit 12
-	
+
 	# timezone
 	echo "Setting time zone..."
 	rm /etc/localtime
@@ -126,7 +126,7 @@ EOF
 	cat > /etc/motd << "EOF"
 $[[files/motd]]
 EOF
-	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf 
+	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf
 
 	# TESTS
 	echo "Performing QA checks..."
@@ -144,11 +144,11 @@ EOF
 motd: [
 
  >>> OpenVZ Template:               $[target/name]
- >>> Version:                       $[target/version] 
- >>> Created by:                    $[local/author] 
+ >>> Version:                       $[target/version]
+ >>> Created by:                    $[local/author]
 
- >>> Send suggestions, improvements, bug reports relating to... 
- 
+ >>> Send suggestions, improvements, bug reports relating to...
+
  >>> This OpenVZ template:          $[local/author]
  >>> Gentoo Linux (general):        Gentoo Linux (http://www.gentoo.org)
  >>> OpenVZ (general):              OpenVZ (http://www.openvz.org)
@@ -158,7 +158,7 @@ motd: [
  2. set root password
  3. 'vzsplit'/'vzctl' to get/set resource usage (basic config bad for gentoo)
  4. 'emerge --sync' to retrieve a portage tree
- 
+
  NOTE: This message can be removed by deleting /etc/motd.
 
 ]

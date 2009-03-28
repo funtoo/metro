@@ -15,7 +15,7 @@ class MetroError(Exception):
 			return self.message
 		else:
 			return "(no message)"
-	
+
 try:
         import resource
         max_fd_limit=resource.getrlimit(RLIMIT_NOFILE)
@@ -55,7 +55,7 @@ def cleanup(pids,block_exceptions=True):
                 except IndexError:      pass
 
 verbosity=1
-		
+
 def warn(msg):
 	print "!!! metro: "+msg
 
@@ -127,19 +127,19 @@ def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,retur
 	Can either have a tuple, or a string passed in.  If uid/gid/groups/umask specified, it changes
 	the forked process to said value.  If path_lookup is on, a non-absolute command will be converted
 	to an absolute command, otherwise it returns None.
-	
+
 	selinux_context is the desired context, dependant on selinux being available.
 	opt_name controls the name the processor goes by.
 	fd_pipes controls which file descriptor numbers are left open in the forked process- it's a dict of
 	current fd's raw fd #, desired #.
-	
+
 	func_call is a boolean for specifying to execute a python function- use spawn_func instead.
 	raise_signals is questionable.  Basically throw an exception if signal'd.  No exception is thrown
 	if raw_input is on.
-	
+
 	logfile overloads the specified fd's to write to a tee process which logs to logfile
 	returnpid returns the relevant pids (a list, including the logging process if logfile is on).
-	
+
 	non-returnpid calls to spawn will block till the process has exited, returning the exitcode/signal
 	raw_exit_code controls whether the actual waitpid result is returned, or intrepretted."""
 
@@ -165,7 +165,7 @@ def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,retur
 			if raw_exit_code:
 				return retval
 			return process_exit_code(retval)
-		
+
 		if fd_pipes == None:
 			fd_pipes={}
 			fd_pipes[0] = 0
@@ -198,7 +198,7 @@ def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,retur
 			for x in k:
 				trg_fd.append(x)
 				src_fd.append(fd_pipes[x])
-	
+
 			# run through said list dup'ing descriptors so that they won't be waxed
 			# by other dup calls.
 			for x in range(0,len(trg_fd)):
@@ -221,7 +221,7 @@ def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,retur
 					os.dup2(src_fd[x], trg_fd[x])
 		else:
 			trg_fd=[0,1,2]
-		
+
 		# wax all open descriptors that weren't requested be left open.
 		for x in range(0,max_fd_limit):
 			if x not in trg_fd:
