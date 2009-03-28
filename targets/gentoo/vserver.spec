@@ -97,5 +97,5 @@ chroot/run: [
 	done
 
 	# cleanup
-	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history
+	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf 
 ]
