@@ -104,7 +104,7 @@ chroot/run: [
 
 	# timezone
 	echo "Setting time zone..."
-	rm /etc/localtime
+	rm -f /etc/localtime
 	ln -s /usr/share/zoneinfo/UTC /etc/localtime || exit 13
 
 	# sshd
