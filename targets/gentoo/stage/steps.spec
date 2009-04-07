@@ -47,9 +47,16 @@ then
 			ccache-config --remove-links $x-pc-linux-gnu
 		done
 		gccprofile="`gcc-config -c`"
-		gccchost=`gcc-config -S $gccprofile | cut -f1 -d" "`
-		echo "Setting ccache links to: $gccchost"
-		ccache-config --install-links $gccchost
+		if [ $? -eq 0 ]
+		then
+			gccchost=`gcc-config -S $gccprofile | cut -f1 -d" "`
+			echo "Setting ccache links to: $gccchost"
+			ccache-config --install-links $gccchost
+		else
+			echo "There was an error using gcc-config. Ccache not enabled."
+			unset CCACHE_DIR
+			export FEATURES=""
+		fi
 	fi
 fi
 if [ -e /var/tmp/cache/package ]
