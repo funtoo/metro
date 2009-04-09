@@ -3,11 +3,6 @@
 # This defines what internal Metro class is used to build this target
 class: snapshot
 
-[section target]
-
-# a git-snapshot is a variant of a snapshot tarball that contains a full git repo, not just the bare files.
-type: git-snapshot
-
 [section steps]
 
 run: [

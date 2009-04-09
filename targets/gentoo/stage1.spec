@@ -1,4 +1,5 @@
 [collect ./stage/main.spec]
+[collect ./stage/capture/tar.spec]
 
 [section portage]
 

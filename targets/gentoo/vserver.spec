@@ -6,7 +6,6 @@ class: chroot
 
 [section target]
 
-type: vserver
 name: gentoo-vserver-$[target/subarch]-$[target/version]
 
 [section source]

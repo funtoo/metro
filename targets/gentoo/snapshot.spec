@@ -3,10 +3,6 @@
 # This defines what internal Metro class is used to build this target
 class: snapshot
 
-[section target]
-
-type: snapshot
-
 [section steps when snapshot/type is rsync]
 
 run: [
