@@ -7,12 +7,11 @@ selinux_capable = False
 BASH_BINARY             = "/bin/bash"
 
 class MetroError(Exception):
-	def __init__(self, message):
-		if message:
-			self.message = message
+	def __init__(self, *args):
+		self.args = args
 	def __str__(self):
-		if self.message:
-			return self.message
+		if len(self.args) == 1:
+			return str(self.args[0])
 		else:
 			return "(no message)"
 
