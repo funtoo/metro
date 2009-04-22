@@ -1,3 +1,5 @@
+ISO support
+
 add kernel build support (genkernel or raw)
 
 add a way to unmerge things you don't want, and maybe for Metro 1.4:
