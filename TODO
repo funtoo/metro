@@ -1,6 +1,23 @@
-create a "collapsible" variable reference so that if it is not defined,
-a null string is used and an exception is not thrown. Handy way to deal
-with some issues and avoid the need for [option parser/lax]. Simply do
-something like: $[~foo]
+ISO support
+
+add kernel build support (genkernel or raw)
+
+add a way to unmerge things you don't want, and maybe for Metro 1.4:
+
+add a way to extend steps, so you can have a target-specific "Clean"
+as well as a global clean. This should be part of the data model and
+may use some kind of OOP or list concept?
+
+allow multi-line references to be expanded into single-line references
+with newlines/extra whitespace removed. This way we can have package
+lists that look like this:
+
+packages: [
+	foo
+	bar
+	oni
+]
+
+A lot easier to maintain and read. Request from Caleb Cushing.
 
 do lastdate with snapshots to avoid creating identical snapshot files

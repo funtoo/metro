@@ -15,9 +15,8 @@ __license__=""" Distributed under the terms of the GNU General Public License ve
  Metro comes with ABSOLUTELY NO WARRANTY; This is free software, and you are welcome to
  redistribute it under certain conditions. See /usr/lib/metro/LICENSE for details.
 """
-__status__="Development"
-__version__="1.1"
-
+__status__="Release"
+__version__="1.3"
 
 def usage():
 	version()

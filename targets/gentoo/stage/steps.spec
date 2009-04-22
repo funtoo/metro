@@ -47,9 +47,16 @@ then
 			ccache-config --remove-links $x-pc-linux-gnu
 		done
 		gccprofile="`gcc-config -c`"
-		gccchost=`gcc-config -S $gccprofile | cut -f1 -d" "`
-		echo "Setting ccache links to: $gccchost"
-		ccache-config --install-links $gccchost
+		if [ $? -eq 0 ]
+		then
+			gccchost=`gcc-config -S $gccprofile | cut -f1 -d" "`
+			echo "Setting ccache links to: $gccchost"
+			ccache-config --install-links $gccchost
+		else
+			echo "There was an error using gcc-config. Ccache not enabled."
+			unset CCACHE_DIR
+			export FEATURES=""
+		fi
 	fi
 fi
 if [ -e /var/tmp/cache/package ]
@@ -96,7 +103,7 @@ fi
 
 #[option parse/strict]
 
-chroot/posclean: [
+chroot/postclean: [
 rm -rf $[portage/ROOT]/tmp/*
 ]
 
@@ -280,36 +287,3 @@ do
 	fi
 done
 ]
-
-capture: [
-#!/bin/bash
-outdir=`dirname $[path/mirror/target]`
-if [ ! -d $outdir ]
-then
-	install -d $outdir || exit 1
-fi
-if [ -e /usr/bin/pbzip2 ]
-then
-	# multi-core friendly pbzip2 option...
-	echo "Creating $[path/mirror/target] using pbzip2..."
-	tarout="$[path/mirror/target]"
-	tarout="${tarout%.*}"
-	tar cpf $tarout -C $[path/chroot/stage] .
-	if [ $? -ge 2 ]
-	then
-		rm -f "$tarout" "$[path/mirror/target]"
-		exit 1
-	else
-		pbzip2 -p4 $tarout || exit 2
-	fi
-else
-	echo "Creating $[path/mirror/target]..."
-	tar cjpf $[path/mirror/target] -C $[path/chroot/stage] .
-	if [ $? -ge 2 ]
-	then
-		rm -f $[path/mirror/target]
-		exit 1
-	fi
-fi
-]
-
