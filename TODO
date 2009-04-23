@@ -1,3 +1,14 @@
+Grab patch from Benedikt
+
+Clean up fslayout to make it more manageable -- move some stuff into
+the gentoo targets themselves to make things cleaner. Simplify the
+path definitions. Add target/type to specify whether something is
+a snapshot, a install tarball, or a template. Use this in combination
+with the priority system to define paths.
+
+Add priority option for when and section annotations, so Metro can
+choose one based on priority if multiple ones match.
+
 ISO support
 
 add kernel build support (genkernel or raw)
