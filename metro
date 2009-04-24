@@ -27,6 +27,7 @@ def usage():
 
  -d, --debug			Enable debug mode
  -v, --verbose			Verbose mode
+ -c [file], --config [file]	Use alternate config file (default /etc/metro/metro.conf)
 
  -N, --notrigger		Disable build triggers
 
@@ -63,13 +64,14 @@ def find_target(settings):
 
 debug=False
 
-def initSettings(args,extraargs={}):
+def initSettings(configfile,args,extraargs={}):
 	settings=flexdata.collection()
 
-	if os.path.exists("/etc/metro/metro.conf"):
-		settings.collect("/etc/metro/metro.conf",None)
+	if os.path.exists(configfile):
+		settings.collect(configfile,None)
 	else:
-		print "Warning: /etc/metro/metro.conf not found."
+		print "Error: config file %s not found." % configfile
+		sys.exit(1)
 
 	# parse command-line supplied configuration files and spec files in the order they were specified
 
@@ -103,7 +105,7 @@ def main():
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "dhvxVk:", ["debug","help", "verbose", "version","key="])
+		opts,args = getopt.getopt(sys.argv[1:], "dhvxVk:c:", ["debug","help", "verbose", "version","key=","config="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -136,6 +138,14 @@ def main():
 	if optdict.has_key("-v") or optdict.has_key("--verbose"):
 		verbose=True
 
+	configfile = "/etc/metro/metro.conf"
+	if optdict.has_key("-c") or optdict.has_key("--config"):
+		if optdict.has_key("-c"):
+			configfile = optdict["-c"]
+		else:
+			configfile = optdict["--config"]
+	
+
 	# Step 3: check for duplicate main options, which is an error
 
 	mainargs=0
@@ -156,7 +166,7 @@ def main():
 
 	# Step 5: Initialize Metro data:
 
-	settings = initSettings(args)
+	settings = initSettings(configfile,args)
 
 	# Step 6: Create list of targets to run, checking whether "multi" mode is enabled
 
@@ -174,7 +184,7 @@ def main():
 		# Step 7a,b: Reinitialize settings, initialize target element to proper value:
 
 		print "Multi-mode: running target %s" % targetname
-		settings = initSettings(args,{"target":targetname})
+		settings = initSettings(configfile,args,{"target":targetname})
 
 		# Step 7c: find and run target
 
