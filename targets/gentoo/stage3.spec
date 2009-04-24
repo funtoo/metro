@@ -1,5 +1,17 @@
 [collect ./stage/main.spec]
 [collect ./stage/capture/tar.spec]
+[collect ./stage/stage3-generator.spec]
+
+[section source]
+
+: stage2
+version: $[target/version]
+subarch: $[target/subarch]
+build: $[target/build]
+
+[section target]
+
+type: binary-image
 
 [section steps]
 

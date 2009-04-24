@@ -1,11 +1,15 @@
 [collect ./stage/main.spec]
 [collect ./stage/capture/tar.spec]
+[collect ./stage/stage3-derivative.spec]
+
+[section path/mirror]
+
+target: $[:source/subpath]/$[target/name].tar.bz2
 
 [section target]
 
-# change prefix: below to specify the name of your custom stage...
-
-prefix: stage4
+name: stage4-$[target/subarch]-$[target/version]
+type: binary-image
 
 [section steps]
 

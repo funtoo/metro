@@ -1,5 +1,11 @@
 [collect ./stage/main.spec]
 [collect ./stage/capture/tar.spec]
+[collect ./stage/stage3-derivative.spec]
+[collect ./stage/stage-intermediate.spec]
+
+[section target]
+
+type: binary-image
 
 [section portage]
 

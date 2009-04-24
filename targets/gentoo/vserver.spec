@@ -6,6 +6,7 @@ class: chroot
 
 [section target]
 
+type: virtual-image
 name: gentoo-vserver-$[target/subarch]-$[target/version]
 
 [section source]
@@ -14,6 +15,11 @@ name: gentoo-vserver-$[target/subarch]-$[target/version]
 name: stage3-$[source/subarch]-$[source/version]
 version: $[target/version]
 subarch: $[target/subarch]
+
+[section path/mirror]
+
+source: $[:subpath]/$[source/name].tar.bz2
+target: $[:subpath]/vserver/$[target/name].tar.bz2
 
 [section path]
 

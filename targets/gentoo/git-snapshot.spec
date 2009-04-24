@@ -1,7 +1,4 @@
-[section metro]
-
-# This defines what internal Metro class is used to build this target
-class: snapshot
+[collect ./snapshot/common.spec]
 
 [section steps]
 
