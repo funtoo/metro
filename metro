@@ -1,9 +1,12 @@
 #!/usr/bin/python -OO
 
-import os,sys,string,getopt,types
-# we need this hard-coded path because we need a module here before we can parse our config file
+import os,sys
 
 __app__=os.path.basename(sys.argv[0])
+
+import string,getopt,types
+
+# we need this hard-coded path because we need a module here before we can parse our config file
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
 
 __license__=""" Distributed under the terms of the GNU General Public License version 2
@@ -133,7 +136,7 @@ def main():
 	if optdict.has_key("-v") or optdict.has_key("--verbose"):
 		verbose=True
 
-	binpath=os.path.normpath(sys.argv[0])
+	binpath=os.path.abspath(sys.argv[0])
 	if os.path.islink(binpath):
 		binpath=os.readlink(binpath)
 	libdir=os.path.dirname(binpath)
@@ -200,7 +203,6 @@ def main():
 		print __app__+": running target \""+settings["target"]+"\"."
 		target.run()
 		print __app__+": complete."
-
 
 try:
 	main()
