@@ -1,7 +1,5 @@
-[collect ./stage/main.spec]
+[collect ./stage/common.spec]
 [collect ./stage/capture/tar.spec]
-[collect ./stage/stage3-generator.spec]
-[collect ./stage/stage-intermediate.spec]
 
 [section source]
 
@@ -13,6 +11,12 @@ build: $[target/build]
 [section target]
 
 type: binary-image
+name: $[target]-$[target/subarch]-$[target/version]
+
+[section path/mirror]
+
+source: $[:source/subpath]/stage1-$[source/subarch]-$[source/version].tar.bz2
+target: $[:target/subpath]/$[target/name].tar.bz2
 
 [section portage]
 

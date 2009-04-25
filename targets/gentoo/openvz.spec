@@ -1,4 +1,5 @@
-[collect $[path/metro]/subarch/$[target/subarch].spec]
+[collect ../../subarch/$[target/subarch].spec]
+[collect ./stage/stage3-derivative.spec]
 
 [section metro]
 
@@ -9,17 +10,9 @@ class: chroot
 type: virtual-image
 name: gentoo-openvz-$[target/subarch]-$[target/version]
 
-[section source]
-
-: gentoo/stage3
-name: stage3-$[source/subarch]-$[source/version]
-version: $[target/version]
-subarch: $[target/subarch]
-
 [section path/mirror]
 
-source: $[:subpath]/$[source/name].tar.bz2
-target: $[:subpath]/openvz/$[target/name].tar.gz
+target: $[:target/subpath]/openvz/$[target/name].tar.gz
 
 [section path]
 

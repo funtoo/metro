@@ -2,11 +2,6 @@
 
 import os,sys,string,getopt,types
 # we need this hard-coded path because we need a module here before we can parse our config file
-sharedir="/usr/lib/metro"
-sys.path.append(sharedir+"/modules")
-import flexdata
-import targets
-from catalyst_support import *
 
 __app__=os.path.basename(sys.argv[0])
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
@@ -27,7 +22,7 @@ def usage():
 
  -d, --debug			Enable debug mode
  -v, --verbose			Verbose mode
- -c [file], --config [file]	Use alternate config file (default /etc/metro/metro.conf)
+ -l [dir], --libdir [dir]	Use alternate library dir (default /usr/lib/metro)
 
  -N, --notrigger		Disable build triggers
 
@@ -105,7 +100,7 @@ def main():
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "dhvxVk:c:", ["debug","help", "verbose", "version","key=","config="])
+		opts,args = getopt.getopt(sys.argv[1:], "dhvxVk:l:", ["debug","help", "verbose", "version","key=","libdir="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -138,13 +133,26 @@ def main():
 	if optdict.has_key("-v") or optdict.has_key("--verbose"):
 		verbose=True
 
-	configfile = "/etc/metro/metro.conf"
-	if optdict.has_key("-c") or optdict.has_key("--config"):
-		if optdict.has_key("-c"):
-			configfile = optdict["-c"]
+	binpath=os.path.normpath(sys.argv[0])
+	if os.path.islink(binpath):
+		binpath=os.readlink(binpath)
+	libdir=os.path.dirname(binpath)
+	if optdict.has_key("-l") or optdict.has_key("--libdir"):
+		if optdict.has_key("-l"):
+			libdir = optdict["-l"]
 		else:
-			configfile = optdict["--config"]
-	
+			libdir = optdict["--libdir"]
+	sys.stderr.write("Metro: Using library directory of %s.\n" % libdir)
+	sys.path.append(libdir+"/modules")
+	configfile = libdir+"/etc/metro.conf"
+	sys.stderr.write("Metro: Using main configuration file %s.\n" % configfile)
+
+	global flexdata
+	global targets
+
+	import flexdata
+	import targets
+	#from catalyst_support import *
 
 	# Step 3: check for duplicate main options, which is an error
 
@@ -196,21 +204,11 @@ def main():
 
 try:
 	main()
-except MetroError,arg:
-	print __app__+":",arg
-	sys.exit(1)
-except KeyError,arg:
-	print __app__+":",arg
-	sys.exit(1)
-except flexdata.FlexDataError,arg:
-	print __app__+":",arg
-	sys.exit(1)
-except IOError:
-	raise
-	sys.exit(1)
 except KeyboardInterrupt:
 	print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
 	print
 	print __app__,"aborting..."
 	raise
 	sys.exit(2)
+
+
