@@ -4,7 +4,7 @@
 
 [section path/mirror]
 
-target: $[:target/subpath]/stage3-$[target/version].tar.bz2
+target: $[:target/subpath]/$[target/name].tar.bz2
 
 # "current" symlink:
 link: $[]/$[target/build]/$[target/subarch]/$[target/name/current].tar.bz2

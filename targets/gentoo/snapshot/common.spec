@@ -10,7 +10,6 @@ name: $[portage/name]-$[target/version]
 
 [section path/mirror]
 
-snapshot: $[:snapshot/subpath]/$[portage/name]-$[target/version].tar.bz2
 # "current" symlink:
 link: $[:snapshot/subpath]/$[portage/name]-current.tar.bz2
 link/dest: $[portage/name]-$[target/version].tar.bz2

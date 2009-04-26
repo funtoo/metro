@@ -1,5 +1,7 @@
 [collect ./snapshot/common.spec]
 
+[section steps]
+
 run: [
 #!/bin/bash
 	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ $[rsync/path]/ $[path/work]/portage/ || exit 1
