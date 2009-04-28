@@ -1,7 +1,4 @@
-[section metro]
-
-# This defines what internal Metro class is used to build this target
-class: snapshot
+[collect ./snapshot/common.spec]
 
 [section steps]
 
@@ -41,6 +38,7 @@ then
 	# if we have the "pull" option in git/options, then make sure we're up-to-date
 	git pull > /dev/null || die "Couldn't perform git pull"
 fi
+git checkout $[git/branch/tar] || die "couldn't check out branch $[git/branch/tar] for tarball"
 git gc || die "couldn't gc"
 echo "Creating $[path/mirror/snapshot]..."
 install -d `dirname $[path/mirror/snapshot]` || die "Couldn't create output directory"

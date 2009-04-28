@@ -1,14 +1,12 @@
 #!/usr/bin/python -OO
 
-import os,sys,string,getopt,types
-# we need this hard-coded path because we need a module here before we can parse our config file
-sharedir="/usr/lib/metro"
-sys.path.append(sharedir+"/modules")
-import flexdata
-import targets
-from catalyst_support import *
+import os,sys
 
 __app__=os.path.basename(sys.argv[0])
+
+import string,getopt,types
+
+# we need this hard-coded path because we need a module here before we can parse our config file
 __maintainer__="Daniel Robbins <drobbins@funtoo.org>"
 
 __license__=""" Distributed under the terms of the GNU General Public License version 2
@@ -27,6 +25,7 @@ def usage():
 
  -d, --debug			Enable debug mode
  -v, --verbose			Verbose mode
+ -l [dir], --libdir [dir]	Use alternate library dir (default /usr/lib/metro)
 
  -N, --notrigger		Disable build triggers
 
@@ -63,13 +62,14 @@ def find_target(settings):
 
 debug=False
 
-def initSettings(args,extraargs={}):
+def initSettings(configfile,args,extraargs={}):
 	settings=flexdata.collection()
 
-	if os.path.exists("/etc/metro/metro.conf"):
-		settings.collect("/etc/metro/metro.conf",None)
+	if os.path.exists(configfile):
+		settings.collect(configfile,None)
 	else:
-		print "Warning: /etc/metro/metro.conf not found."
+		print "Error: config file %s not found." % configfile
+		sys.exit(1)
 
 	# parse command-line supplied configuration files and spec files in the order they were specified
 
@@ -103,7 +103,7 @@ def main():
 
 	# parse out the command line arguments
 	try:
-		opts,args = getopt.getopt(sys.argv[1:], "dhvxVk:", ["debug","help", "verbose", "version","key="])
+		opts,args = getopt.getopt(sys.argv[1:], "dhvxVk:l:", ["debug","help", "verbose", "version","key=","libdir="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -136,6 +136,27 @@ def main():
 	if optdict.has_key("-v") or optdict.has_key("--verbose"):
 		verbose=True
 
+	binpath=os.path.abspath(sys.argv[0])
+	if os.path.islink(binpath):
+		binpath=os.readlink(binpath)
+	libdir=os.path.dirname(binpath)
+	if optdict.has_key("-l") or optdict.has_key("--libdir"):
+		if optdict.has_key("-l"):
+			libdir = optdict["-l"]
+		else:
+			libdir = optdict["--libdir"]
+	sys.stderr.write("Metro: Using library directory of %s.\n" % libdir)
+	sys.path.append(libdir+"/modules")
+	configfile = libdir+"/etc/metro.conf"
+	sys.stderr.write("Metro: Using main configuration file %s.\n" % configfile)
+
+	global flexdata
+	global targets
+
+	import flexdata
+	import targets
+	#from catalyst_support import *
+
 	# Step 3: check for duplicate main options, which is an error
 
 	mainargs=0
@@ -156,7 +177,7 @@ def main():
 
 	# Step 5: Initialize Metro data:
 
-	settings = initSettings(args)
+	settings = initSettings(configfile,args)
 
 	# Step 6: Create list of targets to run, checking whether "multi" mode is enabled
 
@@ -174,7 +195,7 @@ def main():
 		# Step 7a,b: Reinitialize settings, initialize target element to proper value:
 
 		print "Multi-mode: running target %s" % targetname
-		settings = initSettings(args,{"target":targetname})
+		settings = initSettings(configfile,args,{"target":targetname})
 
 		# Step 7c: find and run target
 
@@ -183,24 +204,13 @@ def main():
 		target.run()
 		print __app__+": complete."
 
-
 try:
 	main()
-except MetroError,arg:
-	print __app__+":",arg
-	sys.exit(1)
-except KeyError,arg:
-	print __app__+":",arg
-	sys.exit(1)
-except flexdata.FlexDataError,arg:
-	print __app__+":",arg
-	sys.exit(1)
-except IOError:
-	raise
-	sys.exit(1)
 except KeyboardInterrupt:
 	print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
 	print
 	print __app__,"aborting..."
 	raise
 	sys.exit(2)
+
+

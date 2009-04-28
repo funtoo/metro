@@ -1,9 +1,19 @@
-[collect ./stage/main.spec]
+[collect ./stage/common.spec]
 [collect ./stage/capture/tar.spec]
+[collect ./stage/stage3-derivative.spec]
+
+[section target]
+
+type: binary-image
+name: $[target]-$[target/subarch]-$[target/version]
 
 [section portage]
 
 ROOT: /tmp/stage1root
+
+[section path/mirror]
+
+target: $[:target/subpath]/$[target/name].tar.bz2
 
 [section files]
 

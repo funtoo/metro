@@ -1,4 +1,5 @@
-[collect $[path/metro]/subarch/$[target/subarch].spec]
+[collect ../../subarch/$[target/subarch].spec]
+[collect ./stage/stage3-derivative.spec]
 
 [section metro]
 
@@ -6,14 +7,12 @@ class: chroot
 
 [section target]
 
+type: virtual-image
 name: gentoo-vserver-$[target/subarch]-$[target/version]
 
-[section source]
+[section path/mirror]
 
-: gentoo/stage3
-name: stage3-$[source/subarch]-$[source/version]
-version: $[target/version]
-subarch: $[target/subarch]
+target: $[:target/subpath]/vserver/$[target/name].tar.bz2
 
 [section path]
 

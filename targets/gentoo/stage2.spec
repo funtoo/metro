@@ -1,5 +1,22 @@
-[collect ./stage/main.spec]
+[collect ./stage/common.spec]
 [collect ./stage/capture/tar.spec]
+
+[section source]
+
+: stage1
+version: $[target/version]
+subarch: $[target/subarch]
+build: $[target/build]
+
+[section target]
+
+type: binary-image
+name: $[target]-$[target/subarch]-$[target/version]
+
+[section path/mirror]
+
+source: $[:source/subpath]/stage1-$[source/subarch]-$[source/version].tar.bz2
+target: $[:target/subpath]/$[target/name].tar.bz2
 
 [section portage]
 

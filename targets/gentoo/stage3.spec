@@ -1,5 +1,22 @@
-[collect ./stage/main.spec]
+[collect ./stage/common.spec]
 [collect ./stage/capture/tar.spec]
+[collect ./stage/stage3-generator.spec]
+
+[section path/mirror]
+
+source: $[:source/subpath]/$[source/name].tar.bz2
+
+[section source]
+
+: stage2
+name: $[]-$[:subarch]-$[:version]
+version: $[target/version]
+subarch: $[target/subarch]
+build: $[target/build]
+
+[section target]
+
+type: binary-image
 
 [section steps]
 

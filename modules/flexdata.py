@@ -177,6 +177,13 @@ class collection:
 					varname = self.sectionfor[myvar]
 				else:
 					raise FlexDataError, "no section name for "+myvar+" in "+string
+			# NEW STUFF BELOW:
+			elif varname[0] == ":":
+				# something like $[:foo/bar]
+				if self.sectionfor.has_key(myvar):
+					varname = self.sectionfor[myvar]+"/"+varname[1:]
+				else:
+					raise FlexDataError, "no section name for "+myvar+" in "+string
 			varsplit=varname.split(":")
 			newoptions=options.copy()
 			zapmode=False
