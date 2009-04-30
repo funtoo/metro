@@ -1,3 +1,7 @@
+Add support to targets so they can detect when another metro process
+may be building something identical, so metro doesn't try to kill off
+the other build.
+
 Grab patch from Benedikt DONE
 
 Clean up fslayout to make it more manageable -- move some stuff into
