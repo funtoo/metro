@@ -3,6 +3,10 @@
 # This defines what internal Metro class is used to build this target
 class: snapshot
 
+[section portage]
+
+name: portage
+
 [section target]
 
 type: repository-image
@@ -12,7 +16,7 @@ name: $[portage/name]-$[target/version]
 
 # "current" symlink:
 link: $[:snapshot/subpath]/$[portage/name]-current.tar.bz2
-link/dest: $[portage/name]-$[target/version].tar.bz2
+link/dest: $[target/name].tar.bz2
 
 [section trigger]
 
