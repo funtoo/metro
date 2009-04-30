@@ -1,5 +1,6 @@
 [collect ./files.spec]
 [collect ./steps.spec]
+[collect ../snapshot/global.spec]
 
 [section portage]
 

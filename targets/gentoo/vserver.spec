@@ -1,4 +1,4 @@
-[collect ../../subarch/$[target/subarch].spec]
+collect ../../subarch/$[target/subarch].spec]
 [collect ./stage/stage3-derivative.spec]
 
 [section metro]

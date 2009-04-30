@@ -1,22 +1,19 @@
+[collect ./global.spec]
+
 [section metro]
 
 # This defines what internal Metro class is used to build this target
 class: snapshot
 
-[section portage]
-
-name: portage
-
 [section target]
 
 type: repository-image
-name: $[portage/name]-$[target/version]
 
 [section path/mirror]
 
 # "current" symlink:
 link: $[:snapshot/subpath]/$[portage/name]-current.tar.bz2
-link/dest: $[target/name].tar.bz2
+link/dest: $[portage/name/full].tar.bz2
 
 [section trigger]
 
