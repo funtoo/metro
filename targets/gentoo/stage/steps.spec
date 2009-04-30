@@ -159,7 +159,11 @@ chroot/postrun: [
 #!/bin/bash
 if [ "$[target]" != "stage1" ] && [ -e /usr/bin/ccache ]
 then
-	emerge -C dev-util/ccache
+	emerge -C dev-util/ccache || exit 1
+fi
+if [ "$[emerge/packages/clean:lax]" != "no" ]
+then
+	emerge -C $[emerge/packages/clean:lax] || exit 2
 fi
 ]
 
