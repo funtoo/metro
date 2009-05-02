@@ -40,6 +40,6 @@ packages: [
 	oni
 ]
 
-A lot easier to maintain and read. Request from Caleb Cushing.
+A lot easier to maintain and read. Request from Caleb Cushing. DONE
 
 do lastdate with snapshots to avoid creating identical snapshot files

@@ -102,9 +102,9 @@ class collection:
 		else:
 			return self.expandString(myvar=myvar,options=options)
 
-	def expandString(self,string=None,myvar=None,stack=[],options={}):
+	def expandString(self,mystring=None,myvar=None,stack=[],options={}):
 		# Expand all variables in a basic value, ie. a string
-		if string == None:
+		if mystring == None:
 			if myvar[-1] == "?":
 				boolean = True
 				myvar = myvar[:-1]
@@ -114,38 +114,47 @@ class collection:
 				if boolean:
 					if self.raw[myvar].strip() == "":
 						# blanks are considered undefined
-						string = "no"
+						mystring = "no"
 					else:
-						string = "yes"
+						mystring = "yes"
 				else:
-					string = self.raw[myvar]
+					mystring = self.raw[myvar]
 			else:
-				string = self.get_condition_for(myvar)
-				if string == None:
+				mystring = self.get_condition_for(myvar)
+				if mystring == None:
 					if boolean:
-						string = "no"
+						mystring = "no"
 					elif len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
-						string = self.laxstring % ( myvar, "" )
+						mystring = self.laxstring % ( myvar, "" )
 					else:
 						raise KeyError, "Variable "+repr(myvar)+" not found."
 				elif boolean:
-					string = "yes"
+					mystring = "yes"
 
-		if type(string) != types.StringType:
-			if len(stack) >=1:
-				raise FlexDataError("expandString received non-string when expanding "+repr(myvar)+" ( stack = "+repr(stack)+")")
-			else:
-				raise FlexDataError("expandString received non-string: %s" % repr(string) )
+		#if type(string) != types.StringType:
+		#		if len(stack) >=1:
+		#		raise FlexDataError("expandString received non-string when expanding "+repr(myvar)+" ( stack = "+repr(stack)+")")
+		#	else:
+		#		raise FlexDataError("expandString received non-string: %s" % repr(string) )
 
-		mysplit = string.strip().split(" ")
+		if type(mystring) == types.StringType:
+			mysplit = mystring.strip().split(" ")
+		else:
+			# concatenate multi-line element, then strip
+			mysplit = []
+			for line in mystring:
+				mysplit.append(line.strip())
+			mystring = " ".join(mysplit).strip()
+			mysplit = mystring.split(" ")
+		print "DEBUG:",mysplit
 
 		if len(mysplit) == 2 and mysplit[0] == "<<":
 		 	fromfile = True
-			string = " ".join(mysplit[1:])
+			mystring = " ".join(mysplit[1:])
 		else:
 			fromfile = False
 
-		unex = string
+		unex = mystring
 		ex = ""
 		while unex != "":
 			varpos = unex.find(self.pre)
@@ -164,7 +173,7 @@ class collection:
 			unex = unex[varpos+len(self.pre):] # remove "$["
 			endvarpos = unex.find(self.suf)
 			if endvarpos == -1:
-				raise FlexDataError,"Error expanding variable for '"+string+"'"
+				raise FlexDataError,"Error expanding variable for '"+mystring+"'"
 			varname = unex[0:endvarpos]
 			if len(varname)>0 and varname[-1] == "?":
 				boolean = True
@@ -176,14 +185,14 @@ class collection:
 				if self.sectionfor.has_key(myvar):
 					varname = self.sectionfor[myvar]
 				else:
-					raise FlexDataError, "no section name for "+myvar+" in "+string
+					raise FlexDataError, "no section name for "+myvar+" in "+mystring
 			# NEW STUFF BELOW:
 			elif varname[0] == ":":
 				# something like $[:foo/bar]
 				if self.sectionfor.has_key(myvar):
 					varname = self.sectionfor[myvar]+"/"+varname[1:]
 				else:
-					raise FlexDataError, "no section name for "+myvar+" in "+string
+					raise FlexDataError, "no section name for "+myvar+" in "+mystring
 			varsplit=varname.split(":")
 			newoptions=options.copy()
 			zapmode=False
@@ -205,8 +214,8 @@ class collection:
 				raise KeyError, "Circular reference of '"+varname+"' by "+repr(myvar)+" ( Call stack: "+repr(stack)+' )'
 			if self.raw.has_key(varname):
 				# if myvar == None, we are being called from self.expand_all() and we don't care where we are being expanded from
-				if myvar != None and type(self.raw[varname]) == types.ListType:
-					raise FlexDataError,"Trying to expand multi-line value "+repr(varname)+" in single-line value "+repr(myvar)
+				#if myvar != None and type(self.raw[varname]) == types.ListType:
+				#	raise FlexDataError,"Trying to expand multi-line value "+repr(varname)+" in single-line value "+repr(myvar)
 				newstack = stack[:]
 				newstack.append(myvar)
 				if not boolean:
@@ -256,7 +265,7 @@ class collection:
 		try:
 			myfile=open(ex,"r")
 		except:
-			raise FlexDataError,"Cannot open file "+ex+" specified in variable \""+string+"\""
+			raise FlexDataError,"Cannot open file "+ex+" specified in variable \""+mystring+"\""
 		outstring=""
 		for line in myfile.readlines():
 			outstring=outstring+line[:-1]+" "
@@ -304,7 +313,7 @@ class collection:
 					raise FlexDataError,"Circular reference of '"+myref+"' by '"+stack[-1]+"' ( Call stack: "+repr(stack)+' )'
 				newstack = stack[:]
 				newstack.append(myvar)
-				newlines += self.expandMulti(self.expandString(string=myref),newstack,options=newoptions)
+				newlines += self.expandMulti(self.expandString(mystring=myref),newstack,options=newoptions)
 			elif len(mysplit) >=1 and mysplit[0] == "<?python":
 				sys.stdout = StringIO.StringIO()
 				mycode=""
@@ -320,7 +329,7 @@ class collection:
 				newlines.append(sys.stdout.getvalue())
 				sys.stdout = sys.__stdout__
 			else:
-				newline = self.expandString(string=multi[pos],options=newoptions)
+				newline = self.expandString(mystring=multi[pos],options=newoptions)
 				if newline != None:
 					newlines.append(newline)
 			pos += 1
@@ -613,7 +622,7 @@ class collection:
 					continue
 				else:
 					try:
-						myexpand = self.expandString(string=myitem)
+						myexpand = self.expandString(mystring=myitem)
 					except KeyError:
 						contfails +=1
 						self.collector = self.collector[1:] + [self.collector[0]]
@@ -623,7 +632,7 @@ class collection:
 					contfails = 0
 			else:
 				try:
-					myexpand = self.expandString(string=myitem)
+					myexpand = self.expandString(mystring=myitem)
 				except KeyError:
 					contfails += 1
 					# move failed item to back of list
