@@ -1,3 +1,6 @@
+Support non-standard Portage and distfiles locations (requested
+by Caleb Cushing)
+
 Add support to targets so they can detect when another metro process
 may be building something identical, so metro doesn't try to kill off
 the other build.
