@@ -146,7 +146,6 @@ class collection:
 				mysplit.append(line.strip())
 			mystring = " ".join(mysplit).strip()
 			mysplit = mystring.split(" ")
-		print "DEBUG:",mysplit
 
 		if len(mysplit) == 2 and mysplit[0] == "<<":
 		 	fromfile = True
