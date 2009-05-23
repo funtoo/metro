@@ -21,7 +21,10 @@ export EPAUSE_IGNORE=0
 export CONFIG_PROTECT="-* /etc/locale.gen"
 if [ -d /var/tmp/cache/compiler ]
 then
-	! [ -e /usr/bin/ccache ] && emerge --oneshot --nodeps ccache || exit 2
+	if ! [ -e /usr/bin/ccache ] 
+	then
+		emerge --oneshot --nodeps ccache || exit 2
+	fi
 	export CCACHE_DIR=/var/tmp/cache/compiler
 	export FEATURES="ccache"
 	/usr/bin/ccache -M 1G

@@ -80,5 +80,6 @@ export ROOT="$[portage/ROOT]"
 install -d ${ROOT}
 # It's important to merge baselayout first so it can set perms on key dirs
 emerge $eopts --nodeps baselayout || exit 1
+emerge $eopts -p -v --noreplace --oneshot ${buildpkgs} || exit 3
 emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
 ]
