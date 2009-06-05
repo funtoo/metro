@@ -31,9 +31,6 @@ export AUTOCLEAN="yes"
 export CONFIG_PROTECT="-*"
 export FEATURES="$FEATURES -collision-protect"
 
-# For testing purposes only
-export FEATURES="$FEATURES -sandbox"
-
 cat > /tmp/bootstrap.py << "EOF"
 $[[files/bootstrap.py]]
 EOF
