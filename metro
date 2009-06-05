@@ -83,8 +83,7 @@ def initSettings(configfile,args,extraargs={}):
 			settings[args[apos][:-1]] = args[apos+1]
 			apos += 2
 		else:
-			settings.collector.append(args[apos])
-			apos += 1
+			raise MetroError, "cmdline argument '%s' invalid - does not end in a colon" % args[apos]
 	for arg in extraargs.keys():
 		settings[arg]=extraargs[arg]
 	settings.runCollector()
@@ -152,10 +151,12 @@ def main():
 
 	global flexdata
 	global targets
+	global MetroError
 
 	import flexdata
 	import targets
-	#from catalyst_support import *
+	# for MetroError:
+	from catalyst_support import MetroError
 
 	# Step 3: check for duplicate main options, which is an error
 
@@ -206,6 +207,9 @@ def main():
 
 try:
 	main()
+except MetroError:
+	raise
+	sys.exit(1)
 except KeyboardInterrupt:
 	print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
 	print

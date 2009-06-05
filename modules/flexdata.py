@@ -609,7 +609,10 @@ class collection:
 		self.lax = False
 		while len(self.collector) != 0 and contfails < len(self.collector):
 			# grab the first item from our collector list
-			myitem, origfile = self.collector[0]
+			try:
+				myitem, origfile = self.collector[0]
+			except ValueError:
+				raise FlexDataError, repr(self.collector[0])+" does not appear to be good"
 			if self.collectorcond.has_key(myitem):
 				cond = self.collectorcond[myitem]
 				if self.conditionOnConditional(cond):
