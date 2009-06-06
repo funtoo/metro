@@ -18,6 +18,11 @@ name: $[]-$[:subarch]-$[:version]
 
 build: $[target/build] 
 subarch: $[target/subarch]
-version: $[target/version]
+
+# For a regular full build, the source/version and target/version will be
+# equal. However, for a stage3-freshen build, we will use the last-built
+# stage3 as a seed:
+
+version: << $[path/mirror/control]/stage3/version
 
 
