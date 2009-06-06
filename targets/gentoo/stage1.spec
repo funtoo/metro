@@ -1,6 +1,26 @@
 [collect ./stage/common.spec]
 [collect ./stage/capture/tar.spec]
-[collect ./stage/stage3-derivative.spec]
+
+# A stage1 is no longer considered a stage3 derivative, because it may use
+# a "remote" (ie. not in the current build/subarch directory) stage3 as a seed.
+# True stage3-derivatives use a stage3 that has the same build, subarch and
+# version as the target.
+
+[section source]
+
+: stage3
+name: $[]-$[:subarch]-$[:version]
+
+# When we are building a stage1, we are always going to use the last-built
+# *local* (this build and subarch) stage3.
+
+subarch: $[target/subarch]
+build: $[target/build]
+version: << $[path/mirror/control]/stage3/version
+
+[section path/mirror]
+
+source: $[:source/subpath]/$[source/name].tar.bz2
 
 [section target]
 
@@ -82,4 +102,18 @@ install -d ${ROOT}
 emerge $eopts --nodeps baselayout || exit 1
 emerge $eopts -p -v --noreplace --oneshot ${buildpkgs} || exit 3
 emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
+]
+
+[section trigger]
+
+ok/run: [
+#!/bin/bash
+
+# Since we've completed a successful stage1 build, we will update our
+# .control/stage1/version file. This file records the version of the 
+# last successful stage1 build.
+
+install -d $[path/mirror/control]/stage1 || exit 1
+echo "$[target/version]" > $[path/mirror/control]/stage1/version || exit 1
+
 ]

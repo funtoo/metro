@@ -13,10 +13,11 @@ source: $[:source/subpath]/$[source/name].tar.bz2
 : stage3
 name: $[]-$[:subarch]-$[:version]
 
-# When building from a stage3, use the last sucessfully built stage3:
+# When building from a stage3, we now simply use the stage3 with matching
+# build, subarch and version:
 
-version: << $[path/mirror/control]/lastdate
-subarch: << $[path/mirror/control]/subarch
-build: << $[path/mirror/control]/build
+build: $[target/build] 
+subarch: $[target/subarch]
+version: $[target/version]
 
 

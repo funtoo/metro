@@ -1,0 +1,20 @@
+# This is the "full" multi target, which is used to generate a complete new
+# "full" build.  Note the conditionals below. If our strategy/stage1 is
+# "generic", then this means that we use a "generic" stage1 tarball (ie. x86 or
+# amd64) rather than building our own optimized stage1 tarball (ie. pentium4 or
+# opteron). However, if strategy/stage1 is "optimized", that means that we use
+# the original Metro behavior of building an optimized stage1, and then use
+# this optimized stage1 to build an optimized stage2. The "generic" method is
+# more resource-efficient, but the "optimized" mode is more robust when you
+# have a very experimental tree.
+
+[section multi]
+
+[when strategy/stage1 is remote]
+
+targets: $[:snapshot] stage2 stage3 $[:extras]
+
+[when strategy/stage1 is local]
+
+targets: $[:snapshot] stage1 stage2 stage3 $[:extras]
+

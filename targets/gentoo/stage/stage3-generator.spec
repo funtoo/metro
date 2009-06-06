@@ -20,10 +20,13 @@ name/current: stage3-$[target/subarch]-current
 ok/run: [
 #!/bin/bash
 
-# UPDATE lastdate and subarch for our next build:
-echo "$[target/version]" > $[path/mirror/control]/lastdate || exit 1
-echo "$[target/subarch]" > $[path/mirror/control]/subarch || exit 2
-echo "$[target/build]" > $[path/mirror/control]/build || exit 2
+# We completed a successful stage3 build, so record the version of this build in our
+# .control/stage3/version file so that other builds can see that this new version is
+# available.
+
+install -d $[path/mirror/control]/stage3 || exit 1
+echo "$[target/version]" > $[path/mirror/control]/stage3/version || exit 1
+
 # CREATE current symlink for the stage3
 rm -f $[path/mirror/link]
 ln -s $[path/mirror/link/dest] $[path/mirror/link] || exit 3

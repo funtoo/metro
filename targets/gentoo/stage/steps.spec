@@ -144,6 +144,7 @@ fi
 # won't work. This is normally okay.
 
 rm -rf $ROOT/var/tmp/* $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
+rm -rf $ROOT/car/cache/edb/dep/*
 rm -f $ROOT/etc/{passwd,group,shadow}- $ROOT/etc/.pwd.lock
 rm -f $ROOT/etc/portage/bashrc
 install -d $ROOT/etc/portage

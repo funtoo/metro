@@ -55,8 +55,8 @@ class collection:
 			return None
 		truekeys=[]
 		for cond in self.conditionals[varname].keys():
-			if self.conditionOnConditional(cond):
-				raise FlexDataError, "Not Allowed: conditional variable %s depends on condition %s which is itself a conditional variable." % ( varname, cond )
+			#if self.conditionOnConditional(cond):
+			#	raise FlexDataError, "Not Allowed: conditional variable %s depends on condition %s which is itself a conditional variable." % ( varname, cond )
 			if self.conditionTrue(cond):
 				truekeys.append(cond)
 			if len(truekeys) > 1:

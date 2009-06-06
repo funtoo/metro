@@ -1,3 +1,24 @@
+Things to add to the parser:
+
+Add support for conditional definitions being defined based on conditional
+definitions. It's possible to have loops (detect them) but it's also possible
+to have unrelated conditions that are perfectly fine.  Not supporting
+conditional definitions based on other conditional definitions forces people to
+work-around perfectly fine situations for no apparent reason.
+
+We have support for $[foo:zap], which will be $[foo] if defined, and if not,
+zap the whole line from output.  We also have $[foo?] which will be "yes" if
+$[foo] is defined, and "no" otherwise. But we don't have a modifier like
+$[foo:opt] that will be $[foo] if $[foo] is defined, otherwise "". This seems
+like an obvious and useful addition.
+
+
+
+
+
+
+
+
 Fix this:
 DEBUG: ['/var/tmp/metro']
 Traceback (most recent call last):

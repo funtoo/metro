@@ -4,9 +4,18 @@
 [section source]
 
 : stage1
+
+[when strategy/stage1 is remote]
+
+build: << $[path/mirror/control]/remote/build
+subarch: << $[path/mirror/control]/remote/subarch
+version: << $[path/mirror/source/control]/stage1/version
+
+[when strategy/stage1 is local]
+
 version: $[target/version]
-subarch: $[target/subarch]
 build: $[target/build]
+subarch: $[target/subarch]
 
 [section target]
 
@@ -51,8 +60,8 @@ gcc-config $(gcc-config --get-current-profile)
 
 for prof in /etc/env.d/05gcc*
 do
-	TESTLDPATH=$(unset LDPATH; source $prof; echo $LDPATH)
-	if [ ! -e $TESTLDPATH ]
+	TESTPATH=$(unset PATH; source $prof; echo $PATH)
+	if [ ! -e $TESTPATH ]
 	then
 		echo 
 		echo ">>>"
