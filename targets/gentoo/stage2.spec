@@ -5,17 +5,7 @@
 
 : stage1
 
-[when strategy/stage1 is remote]
-
-build: << $[path/mirror/control]/remote/build
-subarch: << $[path/mirror/control]/remote/subarch
-version: << $[path/mirror/source/control]/stage1/version
-
-[when strategy/stage1 is local]
-
-version: $[target/version]
-build: $[target/build]
-subarch: $[target/subarch]
+[collect ./stage2/strategy-stage1/$[strategy/stage1]]
 
 [section target]
 

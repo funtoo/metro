@@ -1,0 +1,3 @@
+build: << $[path/mirror/control]/remote/build
+subarch: << $[path/mirror/control]/remote/subarch
+version: << $[path/mirror/source/control]/stage1/version
