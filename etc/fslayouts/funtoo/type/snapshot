@@ -1,0 +1,9 @@
+[section path/mirror]
+
+# This is the path where we look for portage tree snapshots, which are tarballs
+# that contain the contents of an entire portage tree. In Metro, portage tree
+# snapshots may be either a simple tarball of file or a tarball of an active
+# git repository. By default, each build has its own snapshot directory, as
+# builds can use different portage trees.
+
+snapshot/subpath: $[]/$[target/build]/snapshots

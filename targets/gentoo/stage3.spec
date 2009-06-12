@@ -14,10 +14,6 @@ version: $[target/version]
 subarch: $[target/subarch]
 build: $[target/build]
 
-[section target]
-
-type: binary-image
-
 [section steps]
 
 chroot/run: [

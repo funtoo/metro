@@ -7,7 +7,7 @@ class: chroot
 
 [section target]
 
-type: virtual-image
+type: image
 name: gentoo-openvz-$[target/subarch]-$[target/version]
 
 [section path/mirror]

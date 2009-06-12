@@ -24,7 +24,6 @@ source: $[:source/subpath]/$[source/name].tar.bz2
 
 [section target]
 
-type: binary-image
 name: $[target]-$[target/subarch]-$[target/version]
 
 [section portage]

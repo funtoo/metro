@@ -1,23 +1,6 @@
-# This file defines the mirror filesystem layout used by funtoo.org, and the
-# default mirror filesystem layout for Metro.
-#
-# In Metro lingo, a "mirror" is a location on disk that holds all the stuff
-# that Metro needs as well as all the stuff it creates. So this means that this
-# file defines the relative paths and filenames of everything (relative to
-# path/mirror, defined in /etc/metro.conf) that Metro will create, and relative
-# paths and filenames of everything that Metro will require for its builds. 
+[collect ./snapshot]
 
 [section path/mirror]
-
-# This is the path where we look for portage tree snapshots, which are tarballs
-# that contain the contents of an entire portage tree. In Metro, portage tree
-# snapshots may be either a simple tarball of file or a tarball of an active
-# git repository. By default, each build has its own snapshot directory, as
-# builds can use different portage trees.
-
-snapshot/subpath: $[]/$[target/build]/snapshots
-
-[when target/type is binary-image virtual-image]
 
 # If we are building a binary-image or a virtual-image (stage tarball or
 # virtual machine template,) then these subpaths specify the directory
@@ -27,8 +10,6 @@ snapshot/subpath: $[]/$[target/build]/snapshots
 
 source/subpath: $[]/$[source/build]/$[source/subarch]/$[source/build]-$[source/subarch]-$[source/version]
 target/subpath: $[]/$[target/build]/$[target/subarch]/$[target/build]-$[target/subarch]-$[target/version]
-
-[when target/subarch]
 
 # This is the location and name of the .control directory. A typical control
 # directory might be located at /home/mirror/linux/~funtoo/pentium4/.control.
@@ -94,3 +75,4 @@ source/control: $[]/$[source/build]/$[source/subarch]/.control
 # build process.
 
 stage1: << $[path/mirror/control]/strategy/stage1
+

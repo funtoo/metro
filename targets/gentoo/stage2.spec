@@ -9,7 +9,6 @@
 
 [section target]
 
-type: binary-image
 name: $[target]-$[target/subarch]-$[target/version]
 
 [section path/mirror]

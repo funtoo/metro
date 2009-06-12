@@ -3,10 +3,6 @@
 [collect ./stage/stage3-generator.spec]
 [collect ./stage/stage3-derivative.spec]
 
-[section target]
-
-type: binary-image
-
 [section steps]
 
 chroot/run: [

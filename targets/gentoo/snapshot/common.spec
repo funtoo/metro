@@ -13,7 +13,7 @@ class: snapshot
 
 [section target]
 
-type: repository-image
+type: repository
 
 [section path/mirror]
 
