@@ -641,7 +641,7 @@ class collection:
 					self.collector = self.collector[1:] + [self.collector[0]]
 					continue
 				# read in data:
-				if myexpand != "":
+				if myexpand not in [ "", None ]:
 					# if expands to blank, with :zap, we skip it: (a silly fix for now)
 					self.collect(myexpand, origfile)
 				# we already parsed it, so remove filename from list:

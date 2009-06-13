@@ -5,4 +5,4 @@
 # However, if strategy/stage1 is "remote", that means that we use
 # another build's stage1 tarball rather than generating our own. 
 
-[collect ./variants/$[target]-$[strategy/stage1]]
+[collect ./variants/$[multi/mode]-$[strategy/stage1]]
