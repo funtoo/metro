@@ -37,7 +37,9 @@ python /tmp/bootstrap.py --check || exit 1
 USE="-* build bootstrap" emerge portage || exit 1
 
 export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
-emerge $eopts `python /tmp/bootstrap.py --pkglist` || exit 1
+# adding oneshot below so "libtool" doesn't get added to the world file... 
+# libtool should be in the system profile, but is not currently there it seems.
+emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
 emerge --clean || exit 1
 emerge --prune sys-devel/gcc || exit 1
 
@@ -96,7 +98,12 @@ for dep in portage.settings.packages:
 	else:
 		pkgdict[catpkg.split("/")[1]]=dep
 
-pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib" , "perl" ]
+pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib" , "perl", "python", "libtool" ]
+
+# perl needs an interim remerge so it references the new CHOST in Config.pm, although this has been fixed in funtoo.
+# python needs  a remerge so it references the new CHOST in its installed Makefile in /usr/lib/pythonx.y.
+# libtool refernces the old CHOST so it seems like a good idea to remerge as well. This is all good stuff
+# when we are using a non-native stage1. Not necessary when using a native stage1.
 
 if "nls" not in use or "gettext" not in pkgdict.keys():
 	pkglist.remove("gettext")
