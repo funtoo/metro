@@ -1,5 +1,4 @@
 # Common stuff used when actually building a snapshot
-[collect ../common.conf]
 [collect ./global.spec]
 
 [section target]
