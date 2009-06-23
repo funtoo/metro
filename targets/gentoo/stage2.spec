@@ -98,7 +98,9 @@ for dep in portage.settings.packages:
 	else:
 		pkgdict[catpkg.split("/")[1]]=dep
 
-pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib" , "perl", "python", "libtool" ]
+pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib" ]
+
+#, "perl", "python", "libtool" ]
 
 # perl needs an interim remerge so it references the new CHOST in Config.pm, although this has been fixed in funtoo.
 # python needs  a remerge so it references the new CHOST in its installed Makefile in /usr/lib/pythonx.y.
