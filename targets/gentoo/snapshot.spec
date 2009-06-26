@@ -2,5 +2,5 @@
 # of files, from either a remote rsync or filesystem location (when
 # snapshot/type: rsync) or a git repository (when snapshot/type: git).
 
-[collect ./snapshot/common.spec]
 [collect ./snapshot/type/$[snapshot/type]]
+[collect ./snapshot/common.spec]

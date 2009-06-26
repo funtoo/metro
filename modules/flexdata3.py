@@ -48,6 +48,9 @@ class collection:
 		self.filelist.append(metroParsedFile(filename,self))
 	def queue(self,filename):
 		self.cq.append(filename)
+	def debugDump(self):
+		self.namespace.debugDump()
+		print self.cq
 
 class nameSpace:
 	def __init__(self):
@@ -220,7 +223,7 @@ class metroParsedFile:
 				# We have found a single-line element. We will create a corresponding singleLineElement object and add it
 				# to the namespace.
 				varname=mysplit[0][0:-1]
-				self.namespace.add(singleLineElement(self.section,varname," ".join(mysplit[1:])))
+				self.namespace.add(singleLineElement(self.section,varname,self.namespace," ".join(mysplit[1:])))
 			else:
 				raise ParseError("invalid line")
 
@@ -328,18 +331,19 @@ class element:
 		else:
 			return self.varname
 
-	def __repr__(self):
-		return repr(self.rawvalue)
-
-
 class singleLineElement(element):
 
 	def __init__(self,section,varname,namespace,rawvalue):
-		self.literal=stringLiteral(rawvalue,self)
+		self.rawvalue=rawvalue
+		self.literal=stringLiteral(self.rawvalue,self)
 		element.__init__(self,section,varname,namespace)
 
 	def expand(self):
 		return self.literal.expand()
+
+	def __repr__(self):
+		return repr(self.rawvalue)
+
 
 class multiLineElement(element):
 	def __init__(self,section,varname,rawvalue):
@@ -351,17 +355,5 @@ class multiLineElement(element):
 
 if __name__ == "__main__":
 	coll = collection()
-	try:
-		for arg in sys.argv[1:]:
-			coll.collect(arg)
-		coll.namespace.debugDump()
-	except ParseError:
-		sys.exit(1)
-
-	el, cond = coll.namespace["path/cache/foo"][0]
-	print el
-	print cond
-	exp = el.getExpansion()
-	for myex in exp:
-		print "*:'%s'" % myex
-	print "output: '%s'" % coll.namespace.expand("path/cache/foo")
+	coll.collect(sys.argv[1])
+	coll.debugDump()
