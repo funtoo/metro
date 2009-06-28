@@ -1,8 +1,4 @@
-# This is the "full" multi target, which is used to generate a complete new
-# "full" build.  Note the collect statemetn below. If our strategy/stage1 is
-# "local", then this means that we generate our own stage1 tarball.
-#
-# However, if strategy/stage1 is "remote", that means that we use
-# another build's stage1 tarball rather than generating our own. 
+# If $[strategy/seed] is stage3, we build a stage1/2/3,
+# otherwise we build a stage2/3:
 
-[collect ./variants/$[multi/mode]-$[strategy/stage1]]
+[collect ./strategy/seed/$[strategy/seed]]

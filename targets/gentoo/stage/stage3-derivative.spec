@@ -23,6 +23,6 @@ subarch: $[target/subarch]
 # equal. However, for a stage3-freshen build, we will use the last-built
 # stage3 as a seed:
 
-version: << $[path/mirror/control]/stage3/version
+version: << $[path/mirror/control]/version/stage3
 
 

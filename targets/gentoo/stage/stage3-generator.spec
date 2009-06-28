@@ -21,11 +21,11 @@ ok/run: [
 #!/bin/bash
 
 # We completed a successful stage3 build, so record the version of this build in our
-# .control/stage3/version file so that other builds can see that this new version is
+# .control/version/stage3 file so that other builds can see that this new version is
 # available.
 
-install -d $[path/mirror/control]/stage3 || exit 1
-echo "$[target/version]" > $[path/mirror/control]/stage3/version || exit 1
+install -d $[path/mirror/control]/version || exit 1
+echo "$[target/version]" > $[path/mirror/control]/version/stage3 || exit 1
 
 # CREATE current symlink for the stage3
 rm -f $[path/mirror/link]

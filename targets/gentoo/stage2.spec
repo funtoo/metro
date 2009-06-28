@@ -5,7 +5,12 @@
 
 : stage1
 
-[collect ./stage2/strategy-stage1/$[strategy/stage1]]
+# The collect annotation below will allow us to grab a remote stage1
+# for our build if $[strategy/build] is "remote" and $[strategy/seed]
+# is "stage1". In all other cases, we use a local stage1 as a seed
+# for our stage2:
+
+[collect ./stage2/strategy/$[strategy/build]/$[strategy/seed]]
 
 [section target]
 
