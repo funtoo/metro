@@ -14,7 +14,7 @@ __license__=""" Distributed under the terms of the GNU General Public License ve
  redistribute it under certain conditions. See /usr/lib/metro/LICENSE for details.
 """
 __status__="Release"
-__version__="1.3"
+__version__="1.4.2"
 
 def usage():
 	version()
@@ -119,16 +119,7 @@ def main():
 	for opt,optarg in opts:
 		optdict[opt]=optarg
 
-	# Step 1: check for "special" help/version options, handle them and exit:
-
-	if optdict.has_key("-h") or optdict.has_key("--help"):
-		usage()
-		sys.exit(1)
-	elif optdict.has_key("-V") or optdict.has_key("--version"):
-		version()
-		sys.exit(1)
-
-	# Step 2: parse optional arguments that affect behavior of the program
+	# Step 1: parse optional arguments that affect behavior of the program
 
 	if optdict.has_key("-d") or optdict.has_key("--debug"):
 		debug=True
@@ -157,6 +148,16 @@ def main():
 	import targets
 	# for MetroError:
 	from catalyst_support import MetroError
+
+	# Step 2: check for "special" help/version options, handle them and exit:
+
+	if optdict.has_key("-h") or optdict.has_key("--help"):
+		usage()
+		sys.exit(1)
+	elif optdict.has_key("-V") or optdict.has_key("--version"):
+		version()
+		sys.exit(1)
+
 
 	# Step 3: check for duplicate main options, which is an error
 
@@ -207,9 +208,6 @@ def main():
 
 try:
 	main()
-except MetroError:
-	raise
-	sys.exit(1)
 except KeyboardInterrupt:
 	print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
 	print

@@ -184,7 +184,7 @@ class metroParsedFile:
 						lineno += 1
 						mysplit = curline[:-1].strip().split(" ")
 						if len(mysplit) == 1 and mysplit[0] == "]":
-							self.namespace.add(multiLineElement(self.section,varname,mylines))
+							self.namespace.add(multiLineElement(self.section,varname,self.namespace,mylines))
 							break
 						else:
 							mylines.append(curline)
@@ -346,12 +346,14 @@ class singleLineElement(element):
 
 
 class multiLineElement(element):
-	def __init__(self,section,varname,rawvalue):
+	def __init__(self,section,varname,namespace,mylines):
 
 		global prevlineno
-
+		self.lines=mylines
 		self.endline = prevlineno
-		element.__init__(self,section,varname,rawvalue)
+		element.__init__(self,section,varname,namespace)
+	def __repr__(self):
+		return repr(self.lines)
 
 if __name__ == "__main__":
 	coll = collection()

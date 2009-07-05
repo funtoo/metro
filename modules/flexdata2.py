@@ -224,12 +224,9 @@ class metroParsedFile:
 		return self.filename
 
 	def parse(self):
-		# Using globals isn't always the best programming practice, but in our case of a single-threaded
-		# parser, it is a handy way to allow various parts of the parser to access relevant information
-		# without passing arguments all over the place.
-
-		global prevlineno
-		global lineno
+		
+		global endline 
+		global line
 		global curline
 		global filename
 
@@ -355,27 +352,24 @@ class metroParsedFile:
 				self.namespace.add(singleLineElement(self.section,varname," ".join(mysplit[1:])),self.cg)
 			else:
 				raise ParseError("invalid line")
+
+
 class element:
-	def __init__(self,section,varname,rawvalue):
-
-		global filename
-		global lineno
-
+	def __init__(self,varname,rawvalue,context):
+	
+		self.filename, self.section, self.lineno = context
+		
 		if varname == ":":
 			# Properly handle $[:]
 			varname = ""
-		if section != "":
-			self.varname = section + "/" + varname
+		if self.section != "":
+			self.varname = self.section + "/" + varname
 			if self.varname[-1] == "/":
 				self.varname = self.varname[:-1]
 		else:
 			self.varname = varname
 
 		self.rawvalue = rawvalue
-
-		self.filename = filename
-		self.lineno = lineno
-		self.section = section
 
 	def name(self):
 		return self.varname
@@ -385,12 +379,8 @@ class element:
 
 class singleLineElement(element):
 
-	def __init__(self,section,varname,rawvalue):
-		element.__init__(self,section,varname,rawvalue)
-
-	def expand(self):
-		gen = self.getExpansion()
-		newstring = ""
+	def __init__(self,varname,rawvalue,context):
+		element.__init__(self,varname,rawvalue,context)
 
 	def getExpansion(self):
 		pos = 0
@@ -410,12 +400,12 @@ class singleLineElement(element):
 			yield(rv[found:found2+1])
 
 class multiLineElement(element):
-	def __init__(self,section,varname,rawvalue):
+	def __init__(self,varname,rawvalue,context):
+		
+		self.endline = context[-1]
+		context = context[:-1]
 
-		global prevlineno
-
-		self.endline = prevlineno
-		element.__init__(self,section,varname,rawvalue)
+		element.__init__(self,varname,rawvalue,context)
 
 if __name__ == "__main__":
 	coll = metroCollection()

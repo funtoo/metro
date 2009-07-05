@@ -28,7 +28,7 @@ if [ "$[emerge/packages?]" = "yes" ]
 then
 	emerge $eopts $[emerge/packages:lax] || exit 1
 fi
-if [ "$[metro/build]" = "funtoo" ]
+if [ "$[metro/build]" = "funtoo" ] || [ "$[metro/build]" = "~funtoo" ]
 then
 	eselect vi set busybox
 fi

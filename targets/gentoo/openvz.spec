@@ -99,7 +99,7 @@ chroot/run: [
 	mknod /lib/udev/devices/urandom c 1 9 || exit 10
 	mknod /lib/udev/devices/random c 1 8 || exit 10
 	mknod /lib/udev/devices/zero c 1 5 || exit 10
-	
+
 	# OpenRC - prior to 0.3.0
 	# cp /etc/rc.conf /etc/rc.conf.orig || exit 11
 	# cat /etc/rc.conf.orig | sed -e "/^#rc_devices/c\\" -e 'rc_devices="static"' > /etc/rc.conf || exit 12
