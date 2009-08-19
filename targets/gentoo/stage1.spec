@@ -82,7 +82,7 @@ EOF
 
 export buildpkgs="$(python /tmp/build.py)"
 export STAGE1_USE="$(portageq envvar STAGE1_USE)"
-export USE="-* bindist build ${STAGE1_USE}"
+export USE="-* bindist build xml ${STAGE1_USE}"
 export FEATURES="$FEATURES nodoc noman noinfo"
 ## Sanity check profile
 if [ -z "${buildpkgs}" ]

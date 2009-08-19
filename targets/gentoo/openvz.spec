@@ -92,13 +92,15 @@ chroot/run: [
 
 	# device nodes
 
+	# This is required for Funtoo udev prior to 135-r8 only.
+	
 	echo "Creating device nodes..."
-	mknod /lib/udev/devices/ttyp0 c 3 0 || exit 8
-	mknod /lib/udev/devices/ptyp0 c 2 0 || exit 9
-	mknod /lib/udev/devices/ptmx c 5 2 || exit 10
-	mknod /lib/udev/devices/urandom c 1 9 || exit 10
-	mknod /lib/udev/devices/random c 1 8 || exit 10
-	mknod /lib/udev/devices/zero c 1 5 || exit 10
+	[ -e /lib/udev/devices/ttyp0 ] || mknod /lib/udev/devices/ttyp0 c 3 0 || exit 8
+	[ -e /lib/udev/devices/ptyp0 ] || mknod /lib/udev/devices/ptyp0 c 2 0 || exit 9
+	[ -e /lib/udev/devices/ptmx ] || mknod /lib/udev/devices/ptmx c 5 2 || exit 10
+	[ -e /lib/udev/devices/urandom ] || mknod /lib/udev/devices/urandom c 1 9 || exit 10
+	[ -e /lib/udev/devices/random ] || mknod /lib/udev/devices/random c 1 8 || exit 10
+	[ -e /lib/udev/devices/zero ] || mknod /lib/udev/devices/zero c 1 5 || exit 10
 
 	# OpenRC - prior to 0.3.0
 	# cp /etc/rc.conf /etc/rc.conf.orig || exit 11
