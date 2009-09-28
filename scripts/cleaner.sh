@@ -35,8 +35,9 @@ done
 
 # keep only the last 7 portage snapshots - any older than that are added to our wipe list
 
-for build in gentoo funtoo
+for build in gentoo funtoo ~funtoo
 do
+	[ -d $build ] || continue
 	numsnaps=`ls -d $build/snapshots/* | grep -v "current.tar.bz2" | wc -l`
 	numtozap=$(( $numsnaps - 7 ))
 	if [ $numtozap -le 0 ]
