@@ -32,6 +32,20 @@ do
 		zapme="$zapme $dirtozap"
 	done
 done
+	
+# also remove empty build directories
+
+for x in `ls -d */* | grep -v snapshots`
+do
+
+	for y in `ls -d ${x}/*`
+	do
+		if [ -d $y ] && [ "`ls $y | wc -l`" = "0" ]
+		then
+			zapme="$zapme $y"
+		fi
+	done
+done
 
 # keep only the last 7 portage snapshots - any older than that are added to our wipe list
 
