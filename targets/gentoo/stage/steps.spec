@@ -94,6 +94,12 @@ cat > /etc/portage/package.unmask << "EOF"
 $[[portage/files/package.unmask:lax]]
 EOF
 fi
+if [ "$[portage/files/package.mask?]" = "yes" ]
+then
+cat > /etc/portage/package.mask << "EOF"
+$[[portage/files/package.mask:lax]]
+EOF
+fi
 if [ "$[portage/devices?]" = "yes" ]
 then
 	emerge --oneshot --nodeps sys-apps/makedev || exit 2
