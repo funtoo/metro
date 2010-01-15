@@ -18,7 +18,7 @@ export EMERGE_WARNING_DELAY=0
 export CLEAN_DELAY=0
 export EBEEP_IGNORE=0
 export EPAUSE_IGNORE=0
-export CONFIG_PROTECT="-* /etc/locale.gen"
+export CONFIG_PROTECT="-*"
 if [ -d /var/tmp/cache/compiler ]
 then
 	if ! [ -e /usr/bin/ccache ] 
