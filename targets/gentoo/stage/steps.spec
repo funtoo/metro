@@ -262,7 +262,7 @@ fi
 # support for "live" git snapshot tarballs:
 if [ -e $[path/chroot]/usr/portage/.git ]
 then
-	( cd $[path/chroot]/usr/portage; git checkout $[git/branch] || exit 50 )
+	( cd $[path/chroot]/usr/portage; git checkout $[snapshot/source/branch] || exit 50 )
 fi
 cat << "EOF" > $[path/chroot]/etc/make.conf || exit 5
 $[[files/make.conf]]
