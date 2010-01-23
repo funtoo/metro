@@ -1,9 +1,13 @@
-Grab patch from Benedikt
+Grab patch from Benedikt DONE
 
 Clean up fslayout to make it more manageable -- move some stuff into
 the gentoo targets themselves to make things cleaner. Simplify the
-path definitions. Add target/type to specify whether something is
-a snapshot, a install tarball, or a template. Use this in combination
+path definitions. DONE
+
+Add target/type to specify whether something is
+a snapshot, a install tarball, or a template. DONE
+
+Use this in combination
 with the priority system to define paths.
 
 Add priority option for when and section annotations, so Metro can
