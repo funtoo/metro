@@ -183,8 +183,10 @@ root="$[portage/ROOT]"
 etcSecretFiles = [
 	"/etc/default/useradd",
 	"/etc/securetty",
-	"/etc/shadow",
 	"/etc/ssh/sshd_config" ]
+
+etcSecretGroupFiles = [
+	"/etc/shadow" ]
 
 etcSecretDirs = [
 	"/etc/skel/.ssh",
@@ -228,6 +230,7 @@ def fileCheck(files,perms,uid=0,gid=0):
 
 
 fileCheck(etcSecretFiles,"100600")
+fileCheck(etcSecretGroupFiles,"100640")
 fileCheck(etcSecretDirs,"40700")
 fileCheck(etcROFiles,"100644")
 fileCheck(goGlob("/etc/pam.d/*"),"100644")
