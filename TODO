@@ -1,3 +1,48 @@
+Things to add to the parser:
+
+Add support for conditional definitions being defined based on conditional
+definitions. It's possible to have loops (detect them) but it's also possible
+to have unrelated conditions that are perfectly fine.  Not supporting
+conditional definitions based on other conditional definitions forces people to
+work-around perfectly fine situations for no apparent reason.
+
+We have support for $[foo:zap], which will be $[foo] if defined, and if not,
+zap the whole line from output.  We also have $[foo?] which will be "yes" if
+$[foo] is defined, and "no" otherwise. But we don't have a modifier like
+$[foo:opt] that will be $[foo] if $[foo] is defined, otherwise "". This seems
+like an obvious and useful addition.
+
+
+
+
+
+
+
+
+Fix this:
+DEBUG: ['/var/tmp/metro']
+Traceback (most recent call last):
+ File "/usr/bin/metro", line 208, in <module>
+   main()
+ File "/usr/bin/metro", line 204, in main
+   target.run()
+ File "/usr/lib/metro/modules/targets.py", line 293, in run
+   self.runScript("trigger/ok/run")
+ File "/usr/lib/metro/modules/targets.py", line 44, in runScript
+   os.makedirs(outdir)
+ File "/usr/lib64/python2.6/os.py", line 157, in makedirs
+   mkdir(name, mode)
+OSError: [Errno 17] File exists: '/var/tmp/metro/pid'
+Job /usr/lib/metro/scripts/ezbuild.sh funtoo amd64 terminated (exit status: 1) (mailing output)
+This is a race condition in os.makedirs: http://bugs.python.org/issue1675
+
+Support non-standard Portage and distfiles locations (requested
+by Caleb Cushing)
+
+Add support to targets so they can detect when another metro process
+may be building something identical, so metro doesn't try to kill off
+the other build.
+
 Grab patch from Benedikt DONE
 
 Clean up fslayout to make it more manageable -- move some stuff into
@@ -17,11 +62,14 @@ ISO support
 
 add kernel build support (genkernel or raw)
 
-add a way to unmerge things you don't want, and maybe for Metro 1.4:
+add a way to unmerge things you don't want DONE
+(emerge/packages/clean)
+
+, and maybe for Metro 1.4:
 
 add a way to extend steps, so you can have a target-specific "Clean"
 as well as a global clean. This should be part of the data model and
-may use some kind of OOP or list concept?
+may use some kind of OOP or list concept? not quite DONE
 
 allow multi-line references to be expanded into single-line references
 with newlines/extra whitespace removed. This way we can have package
@@ -33,6 +81,6 @@ packages: [
 	oni
 ]
 
-A lot easier to maintain and read. Request from Caleb Cushing.
+A lot easier to maintain and read. Request from Caleb Cushing. DONE
 
 do lastdate with snapshots to avoid creating identical snapshot files

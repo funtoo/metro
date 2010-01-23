@@ -4,13 +4,16 @@
 [section source]
 
 : stage1
-version: $[target/version]
-subarch: $[target/subarch]
-build: $[target/build]
+
+# The collect annotation below will allow us to grab a remote stage1
+# for our build if $[strategy/build] is "remote" and $[strategy/seed]
+# is "stage1". In all other cases, we use a local stage1 as a seed
+# for our stage2:
+
+[collect ./stage2/strategy/$[strategy/build]/$[strategy/seed]]
 
 [section target]
 
-type: binary-image
 name: $[target]-$[target/subarch]-$[target/version]
 
 [section path/mirror]
@@ -39,11 +42,40 @@ python /tmp/bootstrap.py --check || exit 1
 USE="-* build bootstrap" emerge portage || exit 1
 
 export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
-emerge $eopts `python /tmp/bootstrap.py --pkglist` || exit 1
+# adding oneshot below so "libtool" doesn't get added to the world file... 
+# libtool should be in the system profile, but is not currently there it seems.
+emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
 emerge --clean || exit 1
 emerge --prune sys-devel/gcc || exit 1
 
 gcc-config $(gcc-config --get-current-profile)
+
+# now, we need to do some house-cleaning... we may have just changed
+# CHOSTS, which means we have some cruft lying around that needs cleaning
+# up...
+
+for prof in /etc/env.d/05gcc*
+do
+	TESTPATH=$(unset PATH; source $prof; echo $PATH)
+	if [ ! -e $TESTPATH ]
+	then
+		echo 
+		echo ">>>"
+		echo ">>> Found old CHOST stuff... cleaning up..."
+		echo ">>>"
+		# this is an old gcc profile, so we'll do some cleaning:
+		TESTCHOST=`basename $prof`
+		TESTCHOST="${TESTCHOST/05gcc-/}"
+		# ok, now TESTCHOST refers to our bogus CHOST, so we can do this:
+		# remove bogus /usr/bin entries:
+		rm -f /usr/bin/$TESTCHOST*
+		rm -rf /usr/$TESTCHOST
+		rm -f $prof
+		rm -rf /etc/env.d/gcc/config-$TESTCHOST
+	fi
+done
+# remove any remaining cruft in cached files...
+env-update
 ]
 
 [section files]
@@ -73,6 +105,13 @@ for dep in portage.settings.packages:
 
 pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib" ]
 
+#, "perl", "python", "libtool" ]
+
+# perl needs an interim remerge so it references the new CHOST in Config.pm, although this has been fixed in funtoo.
+# python needs  a remerge so it references the new CHOST in its installed Makefile in /usr/lib/pythonx.y.
+# libtool refernces the old CHOST so it seems like a good idea to remerge as well. This is all good stuff
+# when we are using a non-native stage1. Not necessary when using a native stage1.
+
 if "nls" not in use or "gettext" not in pkgdict.keys():
 	pkglist.remove("gettext")
 
@@ -85,11 +124,13 @@ if sys.argv[1] == "--check":
 	else:
 		sys.exit(0)
 elif sys.argv[1] == "--use":
-	" ".join(myuse)
+	# TESTING NLS... not for production
+	print "nls "+" ".join(myuse)
 	sys.exit(0)
 elif sys.argv[1] == "--pkglist":
 	for x in pkglist:
-		print pkgdict[x],
+		if pkgdict.has_key(x):
+			print pkgdict[x],
 	print
 	sys.exit(0)
 else:

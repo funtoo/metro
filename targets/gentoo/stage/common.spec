@@ -1,5 +1,6 @@
 [collect ./files.spec]
 [collect ./steps.spec]
+[collect ../snapshot/global.spec]
 
 [section portage]
 
@@ -12,6 +13,7 @@ class: stage
 [section target]
 
 [collect ../../../subarch/$[target/subarch].spec]
+type: image
 
 [section path]
 

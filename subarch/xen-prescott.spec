@@ -6,4 +6,4 @@ arch: x86
 
 CFLAGS: -O2 -march=prescott -mno-tls-direct-seg-refs -pipe
 CHOST: i686-pc-linux-gnu
-HOSTUSE: mmx sse sse2 sse3
+HOSTUSE: mmx sse sse2 ssse3

@@ -366,8 +366,10 @@ class stage(chroot):
 		self.kill_chroot_pids()
 		self.checkMounts()
 		self.cleanPath()
-		# Now, we want to clean up our build-related caches:
-		if self.settings.has_key("path/cache/build"):
-			self.cleanPath(self.settings["path/cache/build"])
+		# Now, we want to clean up our build-related caches, if configured to do so:
+		if self.settings.has_key("metro/options"):
+			if "clean/auto" in self.settings["metro/options"].split():
+				if self.settings.has_key("path/cache/build"):
+					self.cleanPath(self.settings["path/cache/build"])
 
 #vim: ts=4 sw=4 sta et sts=4 ai

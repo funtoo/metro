@@ -1,10 +1,29 @@
 [collect ./stage/common.spec]
 [collect ./stage/capture/tar.spec]
-[collect ./stage/stage3-derivative.spec]
+
+# A stage1 is no longer considered a stage3 derivative, because it may use
+# a "remote" (ie. not in the current build/subarch directory) stage3 as a seed.
+# True stage3-derivatives use a stage3 that has the same build, subarch and
+# version as the target.
+
+[section source]
+
+: stage3
+name: $[]-$[:subarch]-$[:version]
+
+# When building a stage1, we're always going to use a stage3 as a seed. If
+# $[strategy/build] is "local", we'll grab a local stage3. If it's "remote",
+# we're going to use a remote stage3. This collect annotation makes this
+# happen: 
+
+[collect ./stage1/strategy/$[strategy/build]]
+
+[section path/mirror]
+
+source: $[:source/subpath]/$[source/name].tar.bz2
 
 [section target]
 
-type: binary-image
 name: $[target]-$[target/subarch]-$[target/version]
 
 [section portage]
@@ -63,7 +82,7 @@ EOF
 
 export buildpkgs="$(python /tmp/build.py)"
 export STAGE1_USE="$(portageq envvar STAGE1_USE)"
-export USE="-* bindist build ${STAGE1_USE}"
+export USE="-* bindist build xml ${STAGE1_USE}"
 export FEATURES="$FEATURES nodoc noman noinfo"
 ## Sanity check profile
 if [ -z "${buildpkgs}" ]
@@ -80,5 +99,20 @@ export ROOT="$[portage/ROOT]"
 install -d ${ROOT}
 # It's important to merge baselayout first so it can set perms on key dirs
 emerge $eopts --nodeps baselayout || exit 1
+emerge $eopts -p -v --noreplace --oneshot ${buildpkgs} || exit 3
 emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
+]
+
+[section trigger]
+
+ok/run: [
+#!/bin/bash
+
+# Since we've completed a successful stage1 build, we will update our
+# .control/version/stage1 file. This file records the version of the 
+# last successful stage1 build.
+
+install -d $[path/mirror/control]/version || exit 1
+echo "$[target/version]" > $[path/mirror/control]/version/stage1 || exit 1
+
 ]

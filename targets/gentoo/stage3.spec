@@ -14,10 +14,6 @@ version: $[target/version]
 subarch: $[target/subarch]
 build: $[target/build]
 
-[section target]
-
-type: binary-image
-
 [section steps]
 
 chroot/run: [
@@ -32,7 +28,7 @@ if [ "$[emerge/packages?]" = "yes" ]
 then
 	emerge $eopts $[emerge/packages:lax] || exit 1
 fi
-if [ "$[metro/build]" = "funtoo" ]
+if [ "$[metro/build]" = "funtoo" ] || [ "$[metro/build]" = "~funtoo" ]
 then
 	eselect vi set busybox
 fi

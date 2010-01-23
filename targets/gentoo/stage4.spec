@@ -9,7 +9,6 @@ target: $[:source/subpath]/$[target/name].tar.bz2
 [section target]
 
 name: stage4-$[target/subarch]-$[target/version]
-type: binary-image
 
 [section steps]
 

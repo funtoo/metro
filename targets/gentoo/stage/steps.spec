@@ -18,10 +18,13 @@ export EMERGE_WARNING_DELAY=0
 export CLEAN_DELAY=0
 export EBEEP_IGNORE=0
 export EPAUSE_IGNORE=0
-export CONFIG_PROTECT="-* /etc/locale.gen"
+export CONFIG_PROTECT="-*"
 if [ -d /var/tmp/cache/compiler ]
 then
-	! [ -e /usr/bin/ccache ] && emerge --oneshot --nodeps ccache || exit 2
+	if ! [ -e /usr/bin/ccache ] 
+	then
+		emerge --oneshot --nodeps ccache || exit 2
+	fi
 	export CCACHE_DIR=/var/tmp/cache/compiler
 	export FEATURES="ccache"
 	/usr/bin/ccache -M 1G
@@ -67,6 +70,8 @@ then
 else
 	eopts="$[emerge/options]"
 fi
+# work around glibc sandbox issues:
+FEATURES="$FEATURES -sandbox"
 # the quotes below prevent variable expansion of anything inside make.conf
 cat > /etc/make.conf << "EOF"
 $[[files/make.conf]]
@@ -139,6 +144,7 @@ fi
 # won't work. This is normally okay.
 
 rm -rf $ROOT/var/tmp/* $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
+rm -rf $ROOT/car/cache/edb/dep/*
 rm -f $ROOT/etc/{passwd,group,shadow}- $ROOT/etc/.pwd.lock
 rm -f $ROOT/etc/portage/bashrc
 install -d $ROOT/etc/portage
@@ -159,7 +165,11 @@ chroot/postrun: [
 #!/bin/bash
 if [ "$[target]" != "stage1" ] && [ -e /usr/bin/ccache ]
 then
-	emerge -C dev-util/ccache
+	emerge -C dev-util/ccache || exit 1
+fi
+if [ "$[emerge/packages/clean?]" == "yes" ]
+then
+	emerge -C $[emerge/packages/clean:lax] || exit 2
 fi
 ]
 

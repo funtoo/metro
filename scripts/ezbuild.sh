@@ -24,7 +24,12 @@ do_help() {
 EOF
 }
 
-if [ ! -e /usr/bin/metro ]
+if [ "$METRO" = "" ]
+then
+	METRO=/usr/bin/metro
+fi
+
+if [ ! -e $METRO ]
 then
 	die "Metro is required for build.sh to run"
 fi
@@ -52,4 +57,4 @@ else
 	VERS=`date +%Y.%m.%d`
 fi
 
-exec /usr/bin/metro multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE
+exec $METRO multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE

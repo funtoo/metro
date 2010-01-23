@@ -1,0 +1,4 @@
+# If $[strategy/seed] is stage3, we build a stage1/2/3,
+# otherwise we build a stage2/3:
+
+[collect ./strategy/seed/$[strategy/seed]]

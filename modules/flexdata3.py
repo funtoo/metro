@@ -39,64 +39,18 @@ class ParseError(Exception):
 			out += "\n"
 		print out
 
-class conditionAtom:
-	def __init__(self,condition=None):
-
-		global filename
-		global lineno
-		global cgNone
-
-		self.filename = filename
-		self.lineno = lineno
-		self.parent = None
-		self.parentNegated = False
-		self.condition = condition
-
-	def refine(self,condition):
-		newatom = conditionAtom(condition)
-		newatom.sibling = self
-		return newatom
-
-	def negateAndRefine(self,condition):
-		if self == cgNone:
-			raise ParseError("Attempt to negate the ANY condition (which would always be false)")
-		newatom = conditionAtom(condition)
-		newatom.parent = self
-		newatom.parentNegated = True
-		return newatom
-
-	def negate(self):
-		if self == cgNone:
-			raise ParseError("Attempt to negate the ANY condition (which should always be false)")
-		newatom = conditionAtom()
-		newatom.parent = self
-		newatom.parentNegated = True
-		return newatom
-
-	def __repr__(self):
-		if self.condition == None:
-			return "ANY"
-		out=repr(self.condition)
-		if self.parent:
-			if self.parent.negated:
-				out += "AND NOT ( "+repr(self.parent)+" ) "
-			else:
-				out += "AND ( "+repr(self.parent)+" ) "
-		return out
-
-	def isTrue(self):
-		# TODO: fix
-		return True
-
 class collection:
 	def __init__(self):
 		self.filelist=[]
-		self.namespace = metroNameSpace()
+		self.namespace = nameSpace()
 		self.cq=[]
 	def collect(self,filename):
 		self.filelist.append(metroParsedFile(filename,self))
 	def queue(self,filename):
 		self.cq.append(filename)
+	def debugDump(self):
+		self.namespace.debugDump()
+		print self.cq
 
 class nameSpace:
 	def __init__(self):
@@ -105,7 +59,8 @@ class nameSpace:
 		# {"varname" : [ element-object, element-object ]
 	def __getitem__(self,val):
 		return self.elements[val]
-	def add(self,element,cg):
+
+	def add(self,element):
 		elname = element.name()
 		if not self.elements.has_key(elname):
 			self.elements[elname]=[]
@@ -123,13 +78,14 @@ class nameSpace:
 		# we will check for dupes on evaluation, where the above values will throw an exception due to having
 		# multiple definitions.
 		self.elements[elname].append(element)
+
 	def debugDump(self):
 		keys=self.elements.keys()
 		keys.sort()
 		for key in keys:
 			print key+":"
 			for el in self.elements[key]:
-				print "\t"+repr(el)+": "+repr(el.condition)
+				print "\t"+repr(el)
 
 	def find(self,name,strict=False):
 		# STEP 1: FIND LITERAL DATA TO EXPAND
@@ -151,8 +107,6 @@ class nameSpace:
 		else:
 			raise ExpandError("multiple true definitions of '%s':" % name,els=[x[0] for x in ectrue])
 
-
-cgNone = conditionAtom()
 
 class metroParsedFile:
 	def __init__(self,filename,collection):
@@ -178,9 +132,6 @@ class metroParsedFile:
 		filename = self.filename
 		lineno = 0
 		prevlineno = 0
-
-		global cgNone
-		self.cg = cgNone
 
 		# This function parses the high-level structure of the document, identifying data elements
 		# and annotations, and creates appropriate internal objects and then adds them to the namespace.
@@ -233,8 +184,7 @@ class metroParsedFile:
 						lineno += 1
 						mysplit = curline[:-1].strip().split(" ")
 						if len(mysplit) == 1 and mysplit[0] == "]":
-							# Add condition:multi-line element pair to namespace
-							self.namespace.add(multiLineElement(self.section,varname,mylines),self.cg)
+							self.namespace.add(multiLineElement(self.section,varname,self.namespace,mylines))
 							break
 						else:
 							mylines.append(curline)
@@ -254,37 +204,16 @@ class metroParsedFile:
 
 				# We have found an annotation. We will perform appropriate processing to handle the annotation correctly.
 
-				if insidesplit[0] == "when":
-					# Conditional annotation - create new live object, don't modify the old one!
-					self.cg = conditionAtom(insides)
-				elif insidesplit[0] in [ "+when", "-when" ]:
-					# Compound conditional annotation - create a new live object to modify, in case the old cg was used
-					self.cg = self.cg.extend(insides)
-				elif insidesplit[0] == "else":
-					self.cg = self.cg.negate()
-				elif insidesplit[0] == "collect":
+				if insidesplit[0] == "collect":
 					# Collect annotation
 					if len(insidesplit)==2:
 						self.collection.queue(insidesplit[1])
-					elif len(insidesplit)>3 and insidesplit[2] == "when":
-						# special case: Conditional collect annotation
-						if self.cg != cgNone:
-							raise ParseError("not permitted to use conditional collect annotation from within a conditional block")
-						loccg = conditionAtom(" ".join(insidesplit[2:]))
-						# TODO: add collect atom to collection list to get to later
 					else:
 						raise ParseError("invalid collect annotation")
 				elif insidesplit[0] == "section":
 					# Section annotation
-					# Conditions are always reset when we enter a new section, so reference our immutable empty
-					# condition group.
-					self.cg = cgNone
 					if len(insidesplit)==2:
 						self.section=insidesplit[1]
-					elif len(insidesplit)>3 and insidesplit[2] == "when":
-						# Special case: conditional section annotation
-						self.section=insidesplit[1]
-						self.cg = self.cg.extend(" ".join(insidesplit[2:]))
 					else:
 						raise ParseError("invalid section annotation")
 				else:
@@ -294,7 +223,7 @@ class metroParsedFile:
 				# We have found a single-line element. We will create a corresponding singleLineElement object and add it
 				# to the namespace.
 				varname=mysplit[0][0:-1]
-				self.namespace.add(singleLineElement(self.section,varname," ".join(mysplit[1:])),self.cg)
+				self.namespace.add(singleLineElement(self.section,varname,self.namespace," ".join(mysplit[1:])))
 			else:
 				raise ParseError("invalid line")
 
@@ -340,7 +269,7 @@ class stringLiteral():
 			else:
 				# $[foo/bar/oni]
 				if parent.section:
-					expandme = parent.section + "/" substr[2:-1]
+					expandme = parent.section + "/" + substr[2:-1]
 				else:
 					expandme = substr[2:-1]
 
@@ -387,7 +316,7 @@ class stringLiteral():
 		return newstr
 
 class element:
-	def __init__(self,section,varname,namespace,condition):
+	def __init__(self,section,varname,namespace):
 		global filename
 		global lineno
 		self.filename = filename
@@ -395,7 +324,6 @@ class element:
 		self.section = section
 		self.varname = varname
 		self.namespace = namespace
-		self.condition = condition
 
 	def name(self):
 		if self.section != "":
@@ -403,40 +331,31 @@ class element:
 		else:
 			return self.varname
 
-	def __repr__(self):
-		return repr(self.rawvalue)
-
-
 class singleLineElement(element):
 
-	def __init__(self,section,varname,namespace,condition,rawvalue):
-		self.literal=stringLiteral(rawvalue,self)
-		element.__init__(self,section,varname,namespace,condition)
+	def __init__(self,section,varname,namespace,rawvalue):
+		self.rawvalue=rawvalue
+		self.literal=stringLiteral(self.rawvalue,self)
+		element.__init__(self,section,varname,namespace)
 
 	def expand(self):
 		return self.literal.expand()
 
+	def __repr__(self):
+		return repr(self.rawvalue)
+
+
 class multiLineElement(element):
-	def __init__(self,section,varname,rawvalue):
+	def __init__(self,section,varname,namespace,mylines):
 
 		global prevlineno
-
+		self.lines=mylines
 		self.endline = prevlineno
-		element.__init__(self,section,varname,rawvalue)
+		element.__init__(self,section,varname,namespace)
+	def __repr__(self):
+		return repr(self.lines)
 
 if __name__ == "__main__":
-	coll = metroCollection()
-	try:
-		for arg in sys.argv[1:]:
-			coll.collect(arg)
-		coll.namespace.debugDump()
-	except ParseError:
-		sys.exit(1)
-
-el, cond = coll.namespace["path/cache/foo"][0]
-print el
-print cond
-exp = el.getExpansion()
-for myex in exp:
-	print "*:'%s'" % myex
-print "output: '%s'" % coll.namespace.expand("path/cache/foo")
+	coll = collection()
+	coll.collect(sys.argv[1])
+	coll.debugDump()
