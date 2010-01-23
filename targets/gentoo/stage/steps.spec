@@ -13,7 +13,7 @@ setup: [
 /usr/sbin/env-update
 gcc-config 1
 source /etc/profile
-export MAKEOPTS="$[portage/MAKEOPTS]"
+export MAKEOPTS="$[portage/MAKEOPTS:zap]"
 export EMERGE_WARNING_DELAY=0
 export CLEAN_DELAY=0
 export EBEEP_IGNORE=0
