@@ -88,7 +88,7 @@ chroot/run: [
 	rm /etc/shadow.new || exit 7
 
 	# set proper permissions on /etc/shadow!
-	chmod 0600 /etc/shadow || exit 7
+	chmod 0640 /etc/shadow || exit 7
 
 	# device nodes
 
