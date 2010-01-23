@@ -1,8 +1,8 @@
 # This file defines common settings for all stage3 derivatives.  Stage3
 # derivatives are those targets that are generated directly from a stage3, and
-# include stage3-freshen, stage3-quick, stage4, openvz and vserver. A target
-# can be both a stage3 generator and a stage3 derivative -- stage3-freshen and
-# stage3-quick are two examples.
+# include stage3-freshen, stage3-quick, stage4 and openvz. A target can be both
+# a stage3 generator and a stage3 derivative -- stage3-freshen and stage3-quick
+# are two examples.
 
 [section path/mirror]
 
