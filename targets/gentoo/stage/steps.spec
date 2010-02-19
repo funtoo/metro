@@ -13,7 +13,7 @@ setup: [
 /usr/sbin/env-update
 gcc-config 1
 source /etc/profile
-export MAKEOPTS="$[portage/MAKEOPTS]"
+export MAKEOPTS="$[portage/MAKEOPTS:zap]"
 export EMERGE_WARNING_DELAY=0
 export CLEAN_DELAY=0
 export EBEEP_IGNORE=0
@@ -183,8 +183,10 @@ root="$[portage/ROOT]"
 etcSecretFiles = [
 	"/etc/default/useradd",
 	"/etc/securetty",
-	"/etc/shadow",
 	"/etc/ssh/sshd_config" ]
+
+etcSecretGroupFiles = [
+	"/etc/shadow" ]
 
 etcSecretDirs = [
 	"/etc/skel/.ssh",
@@ -228,6 +230,7 @@ def fileCheck(files,perms,uid=0,gid=0):
 
 
 fileCheck(etcSecretFiles,"100600")
+fileCheck(etcSecretGroupFiles,"100640")
 fileCheck(etcSecretDirs,"40700")
 fileCheck(etcROFiles,"100644")
 fileCheck(goGlob("/etc/pam.d/*"),"100644")
@@ -262,7 +265,7 @@ fi
 # support for "live" git snapshot tarballs:
 if [ -e $[path/chroot]/usr/portage/.git ]
 then
-	( cd $[path/chroot]/usr/portage; git checkout $[git/branch] || exit 50 )
+	( cd $[path/chroot]/usr/portage; git checkout $[snapshot/source/branch] || exit 50 )
 fi
 cat << "EOF" > $[path/chroot]/etc/make.conf || exit 5
 $[[files/make.conf]]
