@@ -3,7 +3,7 @@
 create: [
 if [ "$[snapshot/source/type]" = "git" ]
 then
-	cp -a $[path/cache/git]/$[git/name] $[path/work]/portage
+	cp -a $[path/cache/git]/$[snapshot/source/name] $[path/work]/portage
 	tar -c -C $[path/work] portage > $tarout || die "Couldn't create tar archive"
 else
 	die "snapshot/type: live is only supported for snapshot/source/type: git"

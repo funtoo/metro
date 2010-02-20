@@ -177,6 +177,7 @@ chroot/test: [
 #!/usr/bin/python
 import os,sys,glob
 from stat import *
+from types import *
 
 root="$[portage/ROOT]"
 
@@ -208,6 +209,8 @@ def goGlob(myglob):
 
 def fileCheck(files,perms,uid=0,gid=0):
 	global abort
+	if type(perms) == StringType:
+		perms = [ perms ]
 	# If a secret file exists, then ensure it has proper perms, otherwise abort
 	for file in files:
 		myfile = os.path.normpath(root+"/"+file)
@@ -216,8 +219,8 @@ def fileCheck(files,perms,uid=0,gid=0):
 			myperms = "%o" % mystat[ST_MODE]
 			myuid = mystat[ST_UID]
 			mygid = mystat[ST_GID]
-			if myperms != perms:
-				print "ERROR: file %s does not have proper perms: %s (should be %s)" % ( myfile, myperms, perms )
+			if myperms not in perms:
+				print "ERROR: file %s does not have proper perms: %s (should be one of %s)" % ( myfile, myperms, perms )
 				abort = True
 			else:
 				print "TEST: file %s OK" % myfile
@@ -230,7 +233,7 @@ def fileCheck(files,perms,uid=0,gid=0):
 
 
 fileCheck(etcSecretFiles,"100600")
-fileCheck(etcSecretGroupFiles,"100640")
+fileCheck(etcSecretGroupFiles,["100640","100600"])
 fileCheck(etcSecretDirs,"40700")
 fileCheck(etcROFiles,"100644")
 fileCheck(goGlob("/etc/pam.d/*"),"100644")
