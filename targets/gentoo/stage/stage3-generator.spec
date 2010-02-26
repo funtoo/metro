@@ -2,13 +2,11 @@
 # generators are targets that produce a literal stage3 -- currently these
 # targets are stage3, stage3-quick, and stage3-freshen.
 
+[collect ./symlink.spec]
+
 [section path/mirror]
 
 target: $[:target/subpath]/$[target/name].tar.bz2
-
-# "current" symlink:
-link: $[]/$[target/build]/$[target/subarch]/$[target/name/current].tar.bz2
-link/dest: $[target/build]-$[target/subarch]-$[target/version]/$[target/name].tar.bz2
 
 [section target]
 
@@ -27,8 +25,5 @@ ok/run: [
 install -d $[path/mirror/control]/version || exit 1
 echo "$[target/version]" > $[path/mirror/control]/version/stage3 || exit 1
 
-# CREATE current symlink for the stage3
-rm -f $[path/mirror/link]
-ln -s $[path/mirror/link/dest] $[path/mirror/link] || exit 3
+$[[trigger/ok/symlink]]
 ]
-
