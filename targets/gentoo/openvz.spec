@@ -115,6 +115,10 @@ chroot/run: [
 	echo "Adding sshd to default runlevel..."
 	rc-update add sshd default
 
+	echo "Removing unnecessary udev stuff from default runlevel..."
+	rc-update del udev-mount sysinit
+	rc-update del udevd sysinit
+
 	#hostname - change periods from target/name into dashes
 	echo "Setting hostname..."
 	myhost=`echo $[target/name] | tr . -`
@@ -154,14 +158,9 @@ motd: [
  >>> Send suggestions, improvements, bug reports relating to...
 
  >>> This OpenVZ template:          $[local/author]
+ >>> Funtoo Linux (general):        Funtoo Linux (http://www.funtoo.org)
  >>> Gentoo Linux (general):        Gentoo Linux (http://www.gentoo.org)
  >>> OpenVZ (general):              OpenVZ (http://www.openvz.org)
-
- Initial setup steps:
- 1. nano /etc/resolv.conf, to set up nameservers
- 2. set root password
- 3. 'vzsplit'/'vzctl' to get/set resource usage (basic config bad for gentoo)
- 4. 'emerge --sync' to retrieve a portage tree
 
  NOTE: This message can be removed by deleting /etc/motd.
 
