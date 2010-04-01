@@ -48,6 +48,12 @@ emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
 emerge --clean || exit 1
 emerge --prune sys-devel/gcc || exit 1
 
+# Currently, a minimal, barely functional Python is installed. Upgrade to
+# a full-featured Python installation to avoid problems during the stage3
+# build:
+
+emerge python || exit 1
+
 gcc-config $(gcc-config --get-current-profile)
 
 # now, we need to do some house-cleaning... we may have just changed
