@@ -52,6 +52,7 @@ emerge --prune sys-devel/gcc || exit 1
 # a full-featured Python installation to avoid problems during the stage3
 # build:
 
+unset USE
 emerge python || exit 1
 
 gcc-config $(gcc-config --get-current-profile)
