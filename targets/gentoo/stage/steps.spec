@@ -180,7 +180,7 @@ fi
 ]
 
 chroot/test: [
-#!/usr/bin/python
+#!/usr/bin/python2
 import os,sys,glob
 from stat import *
 from types import *

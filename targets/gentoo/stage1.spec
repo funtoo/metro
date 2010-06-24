@@ -37,7 +37,7 @@ target: $[:target/subpath]/$[target/name].tar.bz2
 [section files]
 
 pythonjunk: [
-#!/usr/bin/python
+#!/usr/bin/python2
 
 import os,portage
 
@@ -80,7 +80,7 @@ cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]
 EOF
 
-export buildpkgs="$(python /tmp/build.py)"
+export buildpkgs="$(python2 /tmp/build.py)"
 export STAGE1_USE="$(portageq envvar STAGE1_USE)"
 export USE="-* bindist build xml ${STAGE1_USE}"
 export FEATURES="$FEATURES nodoc noman noinfo"

@@ -37,14 +37,14 @@ export FEATURES="$FEATURES -collision-protect"
 cat > /tmp/bootstrap.py << "EOF"
 $[[files/bootstrap.py]]
 EOF
-python /tmp/bootstrap.py --check || exit 1
+python2 /tmp/bootstrap.py --check || exit 1
 
 USE="-* build bootstrap" emerge portage || exit 1
 
-export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
+export USE="-* bootstrap `python2 /tmp/bootstrap.py --use`"
 # adding oneshot below so "libtool" doesn't get added to the world file... 
 # libtool should be in the system profile, but is not currently there it seems.
-emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
+emerge $eopts --oneshot `python2 /tmp/bootstrap.py --pkglist` || exit 1
 emerge --clean || exit 1
 emerge --prune sys-devel/gcc || exit 1
 
@@ -53,7 +53,7 @@ emerge --prune sys-devel/gcc || exit 1
 # build:
 
 unset USE
-emerge python || exit 1
+emerge =dev-lang/python-2* || exit 1
 
 gcc-config $(gcc-config --get-current-profile)
 
@@ -88,7 +88,7 @@ env-update
 [section files]
 
 bootstrap.py: [
-#!/usr/bin/python
+#!/usr/bin/python2
 import portage,sys
 pkgdict={}
 alloweduse=["nls", "bindist", "nptl", "nptlonly", "multilib", "userlocales" ]
