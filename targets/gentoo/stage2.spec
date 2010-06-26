@@ -37,14 +37,14 @@ export FEATURES="$FEATURES -collision-protect"
 cat > /tmp/bootstrap.py << "EOF"
 $[[files/bootstrap.py]]
 EOF
-python2 /tmp/bootstrap.py --check || exit 1
+python /tmp/bootstrap.py --check || exit 1
 
 USE="-* build bootstrap" emerge portage || exit 1
 
-export USE="-* bootstrap `python2 /tmp/bootstrap.py --use`"
+export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
 # adding oneshot below so "libtool" doesn't get added to the world file... 
 # libtool should be in the system profile, but is not currently there it seems.
-emerge $eopts --oneshot `python2 /tmp/bootstrap.py --pkglist` || exit 1
+emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
 emerge --clean || exit 1
 emerge --prune sys-devel/gcc || exit 1
 
@@ -53,7 +53,7 @@ emerge --prune sys-devel/gcc || exit 1
 # build:
 
 unset USE
-emerge =dev-lang/python-2* || exit 1
+emerge dev-lang/python || exit 1
 
 gcc-config $(gcc-config --get-current-profile)
 
@@ -88,7 +88,7 @@ env-update
 [section files]
 
 bootstrap.py: [
-#!/usr/bin/python2
+#!/usr/bin/python
 import portage,sys
 pkgdict={}
 alloweduse=["nls", "bindist", "nptl", "nptlonly", "multilib", "userlocales" ]
@@ -122,25 +122,25 @@ pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib
 if "nls" not in use or "gettext" not in pkgdict.keys():
 	pkglist.remove("gettext")
 
-if not pkgdict.has_key("linux-headers"):
+if not "linux-headers" in pkgdict:
 	pkgdict["linux-headers"]="virtual/os-headers"
 if sys.argv[1] == "--check":
 	if "build" in use or "bootstrap" in use:
-		print "Error: please do not specify \"build\" or \"bootstrap\" in USE. Exiting."
+		print("Error: please do not specify \"build\" or \"bootstrap\" in USE. Exiting.")
 		sys.exit(1)
 	else:
 		sys.exit(0)
 elif sys.argv[1] == "--use":
 	# TESTING NLS... not for production
-	print "nls "+" ".join(myuse)
+	print("nls "+" ".join(myuse))
 	sys.exit(0)
 elif sys.argv[1] == "--pkglist":
 	for x in pkglist:
-		if pkgdict.has_key(x):
-			print pkgdict[x],
-	print
+		if x in pkgdict:
+			sys.stdout.write(pkgdict[x]+" ")
+	sys.stdout.write("\n")
 	sys.exit(0)
 else:
-	print sys.argv[0]+": invalid arguments: "+" ".join(sys.argv[1:])
+	print(sys.argv[0]+": invalid arguments: "+" ".join(sys.argv[1:]))
 	sys.exit(1)
 ]

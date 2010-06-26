@@ -37,7 +37,7 @@ target: $[:target/subpath]/$[target/name].tar.bz2
 [section files]
 
 pythonjunk: [
-#!/usr/bin/python2
+#!/usr/bin/python
 
 import os,portage
 
@@ -60,14 +60,15 @@ buildpkgs = scan_profile("packages.build")
 
 for idx in range(0, len(pkgs)):
 	try:
-		bidx = buildpkgs.index(portage.dep_getkey(pkgs[idx]))
+		bidx = buildpkgs.index(portage.dep.Atom.getkey(pkgs[idx]))
 		buildpkgs[bidx] = pkgs[idx]
 		if buildpkgs[bidx][0:1] == "*":
 			buildpkgs[bidx] = buildpkgs[bidx][1:]
 	except: pass
 
-for b in buildpkgs: print b
-print
+for b in buildpkgs: print(b)
+
+
 ]
 
 [section steps]
@@ -80,7 +81,7 @@ cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]
 EOF
 
-export buildpkgs="$(python2 /tmp/build.py)"
+export buildpkgs="$(python /tmp/build.py)"
 export STAGE1_USE="$(portageq envvar STAGE1_USE)"
 export USE="-* bindist build xml ${STAGE1_USE}"
 export FEATURES="$FEATURES nodoc noman noinfo"
