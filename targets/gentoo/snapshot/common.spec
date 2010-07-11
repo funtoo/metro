@@ -17,8 +17,8 @@ type: repository
 [section path/mirror]
 
 # "current" symlink:
-link: $[:snapshot/subpath]/$[portage/name]-current.tar.bz2
-link/dest: $[portage/name/full].tar.bz2
+link: $[:snapshot/subpath]/$[portage/name]-current.tar.$[target/compression]
+link/dest: $[portage/name/full].tar.$[target/compression]
 
 [section trigger]
 

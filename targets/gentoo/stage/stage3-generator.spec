@@ -4,11 +4,11 @@
 
 [section path/mirror]
 
-target: $[:target/subpath]/$[target/name].tar.bz2
+target: $[:target/subpath]/$[target/name].tar.$[target/compression]
 
 # "current" symlink:
-link: $[]/$[target/build]/$[target/subarch]/$[target/name/current].tar.bz2
-link/dest: $[target/build]-$[target/subarch]-$[target/version]/$[target/name].tar.bz2
+link: $[]/$[target/build]/$[target/subarch]/$[target/name/current].tar.$[target/compression]
+link/dest: $[target/build]-$[target/subarch]-$[target/version]/$[target/name].tar.$[target/compression]
 
 [section target]
 

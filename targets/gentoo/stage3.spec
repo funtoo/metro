@@ -4,7 +4,7 @@
 
 [section path/mirror]
 
-source: $[:source/subpath]/$[source/name].tar.bz2
+source: $[:source/subpath]/$[source/name].tar.*
 
 [section source]
 
