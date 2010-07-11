@@ -14,6 +14,7 @@ setup: [
 gcc-config 1
 source /etc/profile
 export MAKEOPTS="$[portage/MAKEOPTS:zap]"
+export FEATURES="$[portage/FEATURES]"
 export EMERGE_WARNING_DELAY=0
 export CLEAN_DELAY=0
 export EBEEP_IGNORE=0

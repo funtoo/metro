@@ -4,6 +4,17 @@ create: [
 if [ "$[snapshot/source/type]" = "git" ]
 then
 	cp -a $[path/cache/git]/$[snapshot/source/name] $[path/work]/portage
+
+	# This rebuilds the git repo with built-in git gzip compression turned off.
+	# This allows our *external* compression (bzip2, xz, etc.) to do a better
+	# job, resulting in a much smaller snapshot archive file.
+	
+	# Users can re-enable compression by setting core.compression to 1
+	# and re-running git gc --aggressive on their local machines.
+
+	( cd $[path/work]/portage; git config core.compression 0 )
+	( cd $[path/work]/portage; git gc --aggressive )
+	
 	tar -c -C $[path/work] portage > $tarout || die "Couldn't create tar archive"
 else
 	die "snapshot/type: live is only supported for snapshot/source/type: git"
