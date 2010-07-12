@@ -270,8 +270,7 @@ case "$comp" in
 			tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
 		fi
 		;;
-	gz)
-	xz)
+	gz|xz)
 		tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
 		;;		
 	*)
@@ -280,7 +279,10 @@ case "$comp" in
 		;;
 esac
 
-snap="$[path/mirror/snapshot]"
+snap="$(ls $[path/mirror/snapshot] )"
+
+[ ! -e "$snap" ] && echo "Required file $snap not found. Exiting" && exit 3
+
 scomp="${snap/##*.}"
 
 [ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
@@ -291,14 +293,13 @@ case "$scomp" in
 	bz2)
 		if [ -e /usr/bin/pbzip2 ]
 		then
-			pbzip2 -dc $[path/mirror/snapshot] | tar xpf - -C $[path/chroot]/usr || exit 4
+			pbzip2 -dc "$snap" | tar xpf - -C $[path/chroot]/usr || exit 4
 		else
-			tar xpf  $[path/mirror/snapshot] -C $[path/chroot]/usr || exit 4
+			tar xpf  "$snap" -C $[path/chroot]/usr || exit 4
 		fi
 		;;
-	gz)
-	xz)
-		tar xpf $[path/mirror/snapshot] -C $[path/chroot]/usr || exit 4
+	gz|xz)
+		tar xpf "$snap" -C $[path/chroot]/usr || exit 4
 		;;
 	*)
 		echo "Unrecognized source compression for $snap"

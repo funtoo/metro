@@ -2,6 +2,7 @@ import os,string,imp,types,shutil
 from catalyst_support import *
 from stat import *
 import os
+from glob import glob
 
 bin={
 	"linux32": "/usr/bin/linux32",
@@ -327,8 +328,11 @@ class stage(chroot):
 
 		# look for required files
 		for loc in [ "path/mirror/source", "path/mirror/snapshot" ]:
-			if not os.path.exists(self.settings[loc]):
+			matches = glob(self.settings[loc])
+			if len(matches) == 0:
 				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
+			elif len(matches) > 1:
+				raise MetroError,"Multiple matches found for required file pattern '%s'; Aborting." % loc
 
 		# BEFORE WE CLEAN UP - MAKE SURE WE ARE UNMOUNTED
 		self.kill_chroot_pids()
