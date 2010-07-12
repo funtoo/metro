@@ -55,8 +55,8 @@ $[[steps/pack]]
 ]
 
 pack: [
-case "$[snapshot/compression]" in
 echo "Compressing $tarout..."
+case "$[snapshot/compression]" in
 bz2)
 	if [ -e /usr/bin/pbzip2 ]
 	then
