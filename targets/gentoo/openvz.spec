@@ -24,14 +24,30 @@ unpack: [
 #!/bin/bash
 [ ! -d $[path/chroot] ] && install -d $[path/chroot]
 [ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777 || exit 2
-if [ -e /usr/bin/pbzip2 ]
-then
-	echo "Extracting source stage $[path/mirror/source] using pbzip2..."
-	pbzip2 -dc $[path/mirror/source] | tar xpf - -C $[path/chroot] || exit 3
-else
-	echo "Extracting source stage $[path/mirror/source]..."
-	tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
-fi
+src="$(ls $[path/mirror/source])"
+comp="${src##*.}"
+
+[ ! -e "$src" ] && echo "Source file $src not found, exiting." && exit 1
+echo "Extracting source stage $src..."
+
+case "$comp" in
+	bz2)
+		if [ -e /usr/bin/pbzip2 ]
+		then
+			# Use pbzip2 for multi-core acceleration
+			pbzip2 -dc "$src" | tar xjpf - -C $[path/chroot] || exit 3
+		else
+			tar xjpf "$src" -C $[path/chroot] || exit 3
+		fi
+		;;
+	gz|xz)
+		tar xpf "$src" -C $[path/chroot] || exit 3
+		;;		
+	*)
+		echo "Unrecognized source compression for $src"
+		exit 1
+		;;
+esac
 ]
 
 capture: [

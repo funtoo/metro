@@ -25,10 +25,10 @@ case "$[target/compression]" in
 		fi
 		;;
 	xz)
-		xz tarout
+		xz $tarout
 		;;
 	gz)
-		gzip tarout
+		gzip $tarout
 		;;
 esac
 if [ $? -ne 0 ]

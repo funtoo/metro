@@ -258,6 +258,8 @@ unpack: [
 [ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777 || exit 2
 src="$(ls $[path/mirror/source])"
 comp="${src##*.}"
+
+[ ! -e "$src" ] && echo "Source file $src not found, exiting." && exit 1
 echo "Extracting source stage $src..."
 
 case "$comp" in
@@ -271,7 +273,7 @@ case "$comp" in
 		fi
 		;;
 	gz|xz)
-		tar xjpf "$src" -C $[path/chroot] || exit 3
+		tar xpf "$src" -C $[path/chroot] || exit 3
 		;;		
 	*)
 		echo "Unrecognized source compression for $src"

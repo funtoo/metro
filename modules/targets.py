@@ -251,8 +251,11 @@ class chroot(target):
 
 		# look for required files
 		for loc in [ "path/mirror/source" ]:
-			if not os.path.exists(self.settings[loc]):
+			matches = glob(self.settings[loc])
+			if len(matches) ==0:
 				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
+			elif len(matches) > 1:
+				raise MetroError,"Multiple matches found for required file pattern defined in '%s'; Aborting." % loc
 
 		# BEFORE WE CLEAN UP - MAKE SURE WE ARE UNMOUNTED
 		self.kill_chroot_pids()
@@ -332,7 +335,7 @@ class stage(chroot):
 			if len(matches) == 0:
 				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
 			elif len(matches) > 1:
-				raise MetroError,"Multiple matches found for required file pattern '%s'; Aborting." % loc
+				raise MetroError,"Multiple matches found for required file pattern defined in '%s'; Aborting." % loc
 
 		# BEFORE WE CLEAN UP - MAKE SURE WE ARE UNMOUNTED
 		self.kill_chroot_pids()
