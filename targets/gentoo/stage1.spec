@@ -98,8 +98,28 @@ fi
 
 export ROOT="$[portage/ROOT]"
 install -d ${ROOT}
+#DEBUG:
+
+echo "/etc/make.conf contains:"
+cat /etc/make.conf
+echo
+echo "FEATURES is set to:"
+echo "$FEATURES"
+echo
+
 # It's important to merge baselayout first so it can set perms on key dirs
 emerge $eopts --nodeps baselayout || exit 1
+
+echo "/etc/make.conf contains:"
+cat /etc/make.conf
+echo
+echo "FEATURES is set to:"
+echo "$FEATURES"
+echo
+echo "Portage version"
+emerge --version
+echo
+
 emerge $eopts -p -v --noreplace --oneshot ${buildpkgs} || exit 3
 emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
 ]

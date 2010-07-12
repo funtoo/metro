@@ -27,7 +27,7 @@ then
 		emerge --oneshot --nodeps ccache || exit 2
 	fi
 	export CCACHE_DIR=/var/tmp/cache/compiler
-	export FEATURES="ccache"
+	export FEATURES="$FEATURES ccache"
 	/usr/bin/ccache -M 1G
 	# The ccache ebuild has a bug where it will install links in /usr/lib/ccache/bin to reflect the current setting of CHOST.
 	# But the current setting of CHOST may not reflect the current compiler available (remember, CHOST can be overridden in /etc/make.conf)
@@ -59,7 +59,7 @@ then
 		else
 			echo "There was an error using gcc-config. Ccache not enabled."
 			unset CCACHE_DIR
-			export FEATURES=""
+			export FEATURES="$FEATURES -ccache"
 		fi
 	fi
 fi
@@ -256,22 +256,22 @@ unpack: [
 #!/bin/bash
 [ ! -d $[path/chroot] ] && install -d $[path/chroot]
 [ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777 || exit 2
-echo "Extracting source stage $[path/mirror/source]..."
-src="$[path/mirror/source]"
-comp="${src/##*.}"
+src="$(ls $[path/mirror/source])"
+comp="${src##*.}"
+echo "Extracting source stage $src..."
 
 case "$comp" in
 	bz2)
 		if [ -e /usr/bin/pbzip2 ]
 		then
 			# Use pbzip2 for multi-core acceleration
-			pbzip2 -dc $[path/mirror/source] | tar xpf - -C $[path/chroot] || exit 3
+			pbzip2 -dc "$src" | tar xjpf - -C $[path/chroot] || exit 3
 		else
-			tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
+			tar xjpf "$src" -C $[path/chroot] || exit 3
 		fi
 		;;
 	gz|xz)
-		tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
+		tar xjpf "$src" -C $[path/chroot] || exit 3
 		;;		
 	*)
 		echo "Unrecognized source compression for $src"
@@ -283,11 +283,11 @@ snap="$(ls $[path/mirror/snapshot] )"
 
 [ ! -e "$snap" ] && echo "Required file $snap not found. Exiting" && exit 3
 
-scomp="${snap/##*.}"
+scomp="${snap##*.}"
 
 [ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
 			
-echo "Extracting portage snapshot $[path/mirror/snapshot]..."
+echo "Extracting portage snapshot $snap..."
 
 case "$scomp" in
 	bz2)
