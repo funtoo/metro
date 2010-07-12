@@ -71,7 +71,7 @@ gz)
 xz)
 	xz $tarout || die "Snapshot xz failure"
 	;;
-*
+*)
 	echo "Unrecognized compression format $[snapshot/compression] specified for snapshot."
 	exit 1
 	;;
