@@ -20,13 +20,13 @@ done
 
 for x in `ls -d */* | grep -v snapshots`
 do
-	numstage3s=`find $x -iname stage3*.tar.* | grep -v "current.tar.*" | wc -l`
+	numstage3s=`find $x -iname stage3*.tar.* | grep -v "current.tar." | wc -l`
 	numtozap=$(( $numstage3s - 3 ))
 	if [ $numtozap -le 0 ]
 	then
 		continue
 	fi
-	for y in `find $x -iname stage3*.tar.* | grep -v "current.tar.*" | sort -r | tail -n $numtozap`
+	for y in `find $x -iname stage3*.tar.* | grep -v "current.tar." | sort -r | tail -n $numtozap`
 	do
 		dirtozap=`dirname $y`
 		zapme="$zapme $dirtozap"
@@ -52,13 +52,13 @@ done
 for build in gentoo funtoo ~funtoo
 do
 	[ -d $build ] || continue
-	numsnaps=`ls -d $build/snapshots/* | grep -v "current.tar.*" | wc -l`
+	numsnaps=`ls -d $build/snapshots/* | grep -v "current.tar." | wc -l`
 	numtozap=$(( $numsnaps - 7 ))
 	if [ $numtozap -le 0 ]
 	then
 		continue
 	fi
-	for x in `ls -d $build/snapshots/* | grep -v "current.tar.*" | sort -r | tail -n $numtozap`
+	for x in `ls -d $build/snapshots/* | grep -v "current.tar." | sort -r | tail -n $numtozap`
 	do
 		zapme="$zapme $x"
 	done
