@@ -47,13 +47,13 @@ do
 	done
 done
 
-# keep only the last 7 portage snapshots - any older than that are added to our wipe list
+# keep only the last 4 portage snapshots - any older than that are added to our wipe list
 
 for build in gentoo funtoo ~funtoo
 do
 	[ -d $build ] || continue
 	numsnaps=`ls -d $build/snapshots/* | grep -v "current.tar." | wc -l`
-	numtozap=$(( $numsnaps - 7 ))
+	numtozap=$(( $numsnaps - 4 ))
 	if [ $numtozap -le 0 ]
 	then
 		continue
@@ -70,10 +70,10 @@ mbs=0
 
 for x in $zapme
 do
-	dirmb=`du -m --max-depth=0 $x | cut -f1`
+	dirmb=`du -m --max-depth=0 $mirrpath/$x | cut -f1`
 	mbs=$(( $mbs + $dirmb ))
 	echo $x
-	rm -rf $x
+	rm -rf $mirrpath/$x
 done
 if [ "$zapme" != "" ]
 then
