@@ -68,7 +68,23 @@ then
 	install -d $outdir || "Output path $outdir does not exist"
 fi
 echo "Creating $[path/mirror/target]..."
-tar czpf $[path/mirror/target] -C $[path/chroot] .
+case "$[target/compression]" in
+	bz2)
+		comp=j
+		;;
+	gz)
+		comp=z
+		;;
+	xz)
+		comp=J
+		;;
+	*)
+		echo "Unrecognized compression $[target/compression]"
+		exit 1
+esac
+
+
+tar c${comp}pf $[path/mirror/target] -C $[path/chroot] .
 if [ $? -ge 2 ]
 then
 	die "Error creating tarball"
