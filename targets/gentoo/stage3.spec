@@ -4,7 +4,7 @@
 
 [section path/mirror]
 
-source: $[:source/subpath]/$[source/name].tar.bz2
+source: $[:source/subpath]/$[source/name].tar.*
 
 [section source]
 
@@ -19,6 +19,14 @@ build: $[target/build]
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
+
+# use python2 if available - if not available, assume we are OK with python3
+a=$(eselect python list | sed -n -e '1d' -e 's/^.* \(python[23]\..\).*$/\1/g' -e '/python2/p')
+# if python2 is available, "$a" should be set to something like "python2.6":
+if [ "$a" != "" ]
+then
+	eselect python set $a
+fi
 
 USE="build" emerge --oneshot --nodeps portage || exit 1
 export USE="$[portage/USE] bindist"

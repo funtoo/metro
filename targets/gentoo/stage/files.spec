@@ -5,6 +5,7 @@ make.conf: [
 # Please consult /etc/make.conf.example for a more detailed example.
 
 ACCEPT_KEYWORDS="$[portage/ACCEPT_KEYWORDS:zap]"
+FEATURES="$[portage/FEATURES:zap]"
 CHOST="$[portage/CHOST:zap]"
 CFLAGS="$[portage/CFLAGS:zap]"
 CXXFLAGS="$[portage/CXXFLAGS:zap]"

@@ -14,6 +14,7 @@ setup: [
 gcc-config 1
 source /etc/profile
 export MAKEOPTS="$[portage/MAKEOPTS:zap]"
+export FEATURES="$[portage/FEATURES]"
 export EMERGE_WARNING_DELAY=0
 export CLEAN_DELAY=0
 export EBEEP_IGNORE=0
@@ -26,7 +27,7 @@ then
 		emerge --oneshot --nodeps ccache || exit 2
 	fi
 	export CCACHE_DIR=/var/tmp/cache/compiler
-	export FEATURES="ccache"
+	export FEATURES="$FEATURES ccache"
 	/usr/bin/ccache -M 1G
 	# The ccache ebuild has a bug where it will install links in /usr/lib/ccache/bin to reflect the current setting of CHOST.
 	# But the current setting of CHOST may not reflect the current compiler available (remember, CHOST can be overridden in /etc/make.conf)
@@ -58,7 +59,7 @@ then
 		else
 			echo "There was an error using gcc-config. Ccache not enabled."
 			unset CCACHE_DIR
-			export FEATURES=""
+			export FEATURES="$FEATURES -ccache"
 		fi
 	fi
 fi
@@ -215,26 +216,27 @@ def goGlob(myglob):
 
 def fileCheck(files,perms,uid=0,gid=0):
 	global abort
-	if type(perms) == StringType:
+	if type(perms) == type("foo"):
 		perms = [ perms ]
 	# If a secret file exists, then ensure it has proper perms, otherwise abort
 	for file in files:
 		myfile = os.path.normpath(root+"/"+file)
+		print(myfile)
 		if os.path.exists(myfile):
 			mystat = os.stat(myfile)
 			myperms = "%o" % mystat[ST_MODE]
 			myuid = mystat[ST_UID]
 			mygid = mystat[ST_GID]
 			if myperms not in perms:
-				print "ERROR: file %s does not have proper perms: %s (should be one of %s)" % ( myfile, myperms, perms )
+				print("ERROR: file %s does not have proper perms: %s (should be one of %s)" % ( myfile, myperms, perms ))
 				abort = True
 			else:
-				print "TEST: file %s OK" % myfile
+				print("TEST: file %s OK" % myfile)
 			if myuid != uid:
-				print "ERROR: file %s does not have uid of %i" % ( myfile, uid )
+				print("ERROR: file %s does not have uid of %i" % ( myfile, uid ))
 				abort = True
 			if mygid != gid:
-				print "ERROR: file %s does not have gid of %i" % ( myfile, gid )
+				print("ERROR: file %s does not have gid of %i" % ( myfile, gid ))
 				abort = True
 
 
@@ -248,29 +250,65 @@ if abort:
 	sys.exit(1)
 else:
 	sys.exit(0)
-
 ]
 
 unpack: [
 #!/bin/bash
 [ ! -d $[path/chroot] ] && install -d $[path/chroot]
 [ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777 || exit 2
-echo -n "Extracting source stage $[path/mirror/source]"
-if [ -e /usr/bin/pbzip2 ]
-then
-	echo " using pbzip2..."
-	# Use pbzip2 for multi-core acceleration
-	pbzip2 -dc $[path/mirror/source] | tar xpf - -C $[path/chroot] || exit 3
-	[ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
-	echo "Extracting portage snapshot $[path/mirror/snapshot] using pbzip2..."
-	pbzip2 -dc $[path/mirror/snapshot] | tar xpf - -C $[path/chroot]/usr || exit 4
-else
-	echo "..."
-	tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
-	[ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
-	echo "Extracting portage snapshot $[path/mirror/snapshot]..."
-	tar xjpf $[path/mirror/snapshot] -C $[path/chroot]/usr || exit 4
-fi
+src="$(ls $[path/mirror/source])"
+comp="${src##*.}"
+
+[ ! -e "$src" ] && echo "Source file $src not found, exiting." && exit 1
+echo "Extracting source stage $src..."
+
+case "$comp" in
+	bz2)
+		if [ -e /usr/bin/pbzip2 ]
+		then
+			# Use pbzip2 for multi-core acceleration
+			pbzip2 -dc "$src" | tar xjpf - -C $[path/chroot] || exit 3
+		else
+			tar xjpf "$src" -C $[path/chroot] || exit 3
+		fi
+		;;
+	gz|xz)
+		tar xpf "$src" -C $[path/chroot] || exit 3
+		;;		
+	*)
+		echo "Unrecognized source compression for $src"
+		exit 1
+		;;
+esac
+
+snap="$(ls $[path/mirror/snapshot] )"
+
+[ ! -e "$snap" ] && echo "Required file $snap not found. Exiting" && exit 3
+
+scomp="${snap##*.}"
+
+[ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
+			
+echo "Extracting portage snapshot $snap..."
+
+case "$scomp" in
+	bz2)
+		if [ -e /usr/bin/pbzip2 ]
+		then
+			pbzip2 -dc "$snap" | tar xpf - -C $[path/chroot]/usr || exit 4
+		else
+			tar xpf  "$snap" -C $[path/chroot]/usr || exit 4
+		fi
+		;;
+	gz|xz)
+		tar xpf "$snap" -C $[path/chroot]/usr || exit 4
+		;;
+	*)
+		echo "Unrecognized source compression for $snap"
+		exit 1
+		;;
+esac
+
 # support for "live" git snapshot tarballs:
 if [ -e $[path/chroot]/usr/portage/.git ]
 then

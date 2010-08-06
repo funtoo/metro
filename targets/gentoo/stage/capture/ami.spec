@@ -10,13 +10,13 @@ fi
 
 ec2-bundle-vol \
 	-u $[ec2/owner-id] \
-	-k $[ec2/x509/key] \
-	-c $[ec2/x509/crt] \
-	--no-inherit \
+    	-k $[path/ec2/key] \
+	-c $[path/ec2/crt] \
+    	--no-inherit \
 	-r $ARCH \
 	--kernel $[ec2/kernel] \
 	-d `dirname $[path/mirror/target]` \
-	-v $[path/chroot/stage] \
+    	-v $[path/chroot/stage] \
 	--fstab $[path/chroot/stage]/etc/fstab
 
 export BUNDLE=gentoo-$(\
@@ -26,22 +26,22 @@ echo $BUNDLE
 
 # NOW: Create an S3 bucket w/ $BUNDLE as the name
 ec2-upload-bundle \
-	-a $[ec2/access-key/id] \
-	-s $[ec2/access-key/secret] \
-	--retry \
+    	-a $[ec2/access-key] \
+	-s $[ec2/private-access-key] \
+    	--retry \
 	--batch \
 	-b $BUNDLE \ 
 	-m /mnt/image.manifest.xml
 
 ec2-register \
-	-K $[ec2/x509/key] \
-	-C $[ec2/x509/crt] \
-	$BUNDLE/image.manifest.xml
+    	-K $[path/ec2/key] \
+	-C $[path/ec2/crt] \
+    	$BUNDLE/image.manifest.xml
 
 ec2-modify-image-attribute \
-	-K /etc/ssl/ec2/key.pem \
+  	-K /etc/ssl/ec2/key.pem \
 	-C /etc/ssl/ec2/crt.pem \
-	-l \
+  	-l \
 	-a all \
-	<ami-id>
+  	<ami-id>
 ]

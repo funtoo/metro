@@ -1,8 +1,8 @@
 [section path/mirror]
 
 # "current" symlink:
-link: $[]/$[target/build]/$[target/subarch]/$[target/name/current].tar.bz2
-link/dest: $[target/build]-$[target/subarch]-$[target/version]/$[target/name].tar.bz2
+link: $[]/$[target/build]/$[target/subarch]/$[target/name/current].tar.$[target/compression]
+link/dest: $[target/build]-$[target/subarch]-$[target/version]/$[target/name].tar.$[target/compression]
 
 [section trigger]
 

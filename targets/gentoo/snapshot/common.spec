@@ -17,8 +17,8 @@ type: repository
 [section path/mirror]
 
 # "current" symlink:
-link: $[:snapshot/subpath]/$[portage/name]-current.tar.bz2
-link/dest: $[portage/name/full].tar.bz2
+link: $[:snapshot/subpath]/$[portage/name]-current.tar.$[target/compression]
+link/dest: $[portage/name/full].tar.$[target/compression]
 
 [section trigger]
 
@@ -55,14 +55,26 @@ $[[steps/pack]]
 ]
 
 pack: [
-if [ -e /usr/bin/pbzip2 ]
-then
-	echo "Compressing $tarout using pbzip2..."
-	pbzip2 -p4 $tarout || die "Snapshot pbzip2 failure"
-else
-	echo "Compressing $tarout using bzip2..."
-	bzip2 $tarout || die "Snapshot bzip2 failure"
-fi
+echo "Compressing $tarout..."
+case "$[snapshot/compression]" in
+bz2)
+	if [ -e /usr/bin/pbzip2 ]
+	then
+		pbzip2 -p4 $tarout || die "Snapshot pbzip2 failure"
+	else
+		bzip2 $tarout || die "Snapshot bzip2 failure"
+	fi
+	;;
+gz)
+	gzip -9 $tarout || die "Snapshot gzip failure"
+	;;
+xz)
+	xz $tarout || die "Snapshot xz failure"
+	;;
+*)
+	echo "Unrecognized compression format $[snapshot/compression] specified for snapshot."
+	exit 1
+	;;
+esac
 echo "Snapshot $[path/mirror/snapshot] created."
-
 ]

@@ -18,8 +18,8 @@ name: $[target]-$[target/subarch]-$[target/version]
 
 [section path/mirror]
 
-source: $[:source/subpath]/stage1-$[source/subarch]-$[source/version].tar.bz2
-target: $[:target/subpath]/$[target/name].tar.bz2
+source: $[:source/subpath]/stage1-$[source/subarch]-$[source/version].tar.*
+target: $[:target/subpath]/$[target/name].tar.$[target/compression]
 
 [section portage]
 
@@ -47,6 +47,13 @@ export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
 emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
 emerge --clean || exit 1
 emerge --prune sys-devel/gcc || exit 1
+
+# Currently, a minimal, barely functional Python is installed. Upgrade to
+# a full-featured Python installation to avoid problems during the stage3
+# build:
+
+unset USE
+emerge dev-lang/python || exit 1
 
 gcc-config $(gcc-config --get-current-profile)
 
@@ -115,25 +122,25 @@ pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib
 if "nls" not in use or "gettext" not in pkgdict.keys():
 	pkglist.remove("gettext")
 
-if not pkgdict.has_key("linux-headers"):
+if not "linux-headers" in pkgdict:
 	pkgdict["linux-headers"]="virtual/os-headers"
 if sys.argv[1] == "--check":
 	if "build" in use or "bootstrap" in use:
-		print "Error: please do not specify \"build\" or \"bootstrap\" in USE. Exiting."
+		print("Error: please do not specify \"build\" or \"bootstrap\" in USE. Exiting.")
 		sys.exit(1)
 	else:
 		sys.exit(0)
 elif sys.argv[1] == "--use":
 	# TESTING NLS... not for production
-	print "nls "+" ".join(myuse)
+	print("nls "+" ".join(myuse))
 	sys.exit(0)
 elif sys.argv[1] == "--pkglist":
 	for x in pkglist:
-		if pkgdict.has_key(x):
-			print pkgdict[x],
-	print
+		if x in pkgdict:
+			sys.stdout.write(pkgdict[x]+" ")
+	sys.stdout.write("\n")
 	sys.exit(0)
 else:
-	print sys.argv[0]+": invalid arguments: "+" ".join(sys.argv[1:])
+	print(sys.argv[0]+": invalid arguments: "+" ".join(sys.argv[1:]))
 	sys.exit(1)
 ]

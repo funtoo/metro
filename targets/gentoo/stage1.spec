@@ -20,7 +20,7 @@ name: $[]-$[:subarch]-$[:version]
 
 [section path/mirror]
 
-source: $[:source/subpath]/$[source/name].tar.bz2
+source: $[:source/subpath]/$[source/name].tar.*
 
 [section target]
 
@@ -32,7 +32,7 @@ ROOT: /tmp/stage1root
 
 [section path/mirror]
 
-target: $[:target/subpath]/$[target/name].tar.bz2
+target: $[:target/subpath]/$[target/name].tar.$[target/compression]
 
 [section files]
 
@@ -60,14 +60,15 @@ buildpkgs = scan_profile("packages.build")
 
 for idx in range(0, len(pkgs)):
 	try:
-		bidx = buildpkgs.index(portage.dep_getkey(pkgs[idx]))
+		bidx = buildpkgs.index(portage.dep.Atom.getkey(pkgs[idx]))
 		buildpkgs[bidx] = pkgs[idx]
 		if buildpkgs[bidx][0:1] == "*":
 			buildpkgs[bidx] = buildpkgs[bidx][1:]
 	except: pass
 
-for b in buildpkgs: print b
-print
+for b in buildpkgs: print(b)
+
+
 ]
 
 [section steps]
@@ -97,8 +98,28 @@ fi
 
 export ROOT="$[portage/ROOT]"
 install -d ${ROOT}
+#DEBUG:
+
+echo "/etc/make.conf contains:"
+cat /etc/make.conf
+echo
+echo "FEATURES is set to:"
+echo "$FEATURES"
+echo
+
 # It's important to merge baselayout first so it can set perms on key dirs
 emerge $eopts --nodeps baselayout || exit 1
+
+echo "/etc/make.conf contains:"
+cat /etc/make.conf
+echo
+echo "FEATURES is set to:"
+echo "$FEATURES"
+echo
+echo "Portage version"
+emerge --version
+echo
+
 emerge $eopts -p -v --noreplace --oneshot ${buildpkgs} || exit 3
 emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
 ]

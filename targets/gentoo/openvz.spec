@@ -24,14 +24,30 @@ unpack: [
 #!/bin/bash
 [ ! -d $[path/chroot] ] && install -d $[path/chroot]
 [ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777 || exit 2
-if [ -e /usr/bin/pbzip2 ]
-then
-	echo "Extracting source stage $[path/mirror/source] using pbzip2..."
-	pbzip2 -dc $[path/mirror/source] | tar xpf - -C $[path/chroot] || exit 3
-else
-	echo "Extracting source stage $[path/mirror/source]..."
-	tar xjpf $[path/mirror/source] -C $[path/chroot] || exit 3
-fi
+src="$(ls $[path/mirror/source])"
+comp="${src##*.}"
+
+[ ! -e "$src" ] && echo "Source file $src not found, exiting." && exit 1
+echo "Extracting source stage $src..."
+
+case "$comp" in
+	bz2)
+		if [ -e /usr/bin/pbzip2 ]
+		then
+			# Use pbzip2 for multi-core acceleration
+			pbzip2 -dc "$src" | tar xjpf - -C $[path/chroot] || exit 3
+		else
+			tar xjpf "$src" -C $[path/chroot] || exit 3
+		fi
+		;;
+	gz|xz)
+		tar xpf "$src" -C $[path/chroot] || exit 3
+		;;		
+	*)
+		echo "Unrecognized source compression for $src"
+		exit 1
+		;;
+esac
 ]
 
 capture: [
@@ -52,7 +68,23 @@ then
 	install -d $outdir || "Output path $outdir does not exist"
 fi
 echo "Creating $[path/mirror/target]..."
-tar czpf $[path/mirror/target] -C $[path/chroot] .
+case "$[target/compression]" in
+	bz2)
+		comp=j
+		;;
+	gz)
+		comp=z
+		;;
+	xz)
+		comp=J
+		;;
+	*)
+		echo "Unrecognized compression $[target/compression]"
+		exit 1
+esac
+
+
+tar c${comp}pf $[path/mirror/target] -C $[path/chroot] .
 if [ $? -ge 2 ]
 then
 	die "Error creating tarball"
@@ -115,6 +147,10 @@ chroot/run: [
 	echo "Adding sshd to default runlevel..."
 	rc-update add sshd default
 
+	echo "Removing unnecessary udev stuff from default runlevel..."
+	rc-update del udev-mount sysinit
+	rc-update del udevd sysinit
+
 	#hostname - change periods from target/name into dashes
 	echo "Setting hostname..."
 	myhost=`echo $[target/name] | tr . -`
@@ -154,14 +190,9 @@ motd: [
  >>> Send suggestions, improvements, bug reports relating to...
 
  >>> This OpenVZ template:          $[local/author]
+ >>> Funtoo Linux (general):        Funtoo Linux (http://www.funtoo.org)
  >>> Gentoo Linux (general):        Gentoo Linux (http://www.gentoo.org)
  >>> OpenVZ (general):              OpenVZ (http://www.openvz.org)
-
- Initial setup steps:
- 1. nano /etc/resolv.conf, to set up nameservers
- 2. set root password
- 3. 'vzsplit'/'vzctl' to get/set resource usage (basic config bad for gentoo)
- 4. 'emerge --sync' to retrieve a portage tree
 
  NOTE: This message can be removed by deleting /etc/motd.
 
