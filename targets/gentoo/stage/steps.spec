@@ -101,12 +101,13 @@ cat > /etc/portage/package.mask << "EOF"
 $[[portage/files/package.mask:lax]]
 EOF
 fi
-if [ "$[portage/devices?]" = "yes" ]
-then
-	emerge --oneshot --nodeps sys-apps/makedev || exit 2
-	MAKEDEV -d "$[portage/ROOT]/dev/" "$[portage/devices:lax]"
-	emerge -C sys-apps/makedev
-fi
+# create minimal set of device nodes
+mkdir -p /proc /sys /dev/{pts,shm}
+tmpdir=$(mktemp -d)
+wget -O- http://www.funtoo.org/archive/realdev/realdev-1.0.tar.bz2 | \
+tar xj -C $tmpdir
+$tmpdir/realdev-1.0/realdev /dev
+rm -rf $tmpdir
 if [ -d /var/tmp/cache/probe ]
 then
 $[[probe/setup:lax]]
