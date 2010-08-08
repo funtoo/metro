@@ -122,6 +122,14 @@ echo
 
 emerge $eopts -p -v --noreplace --oneshot ${buildpkgs} || exit 3
 emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
+
+# create minimal set of device nodes
+install -d ${ROOT}/{proc,sys,dev/pts,dev/shm}
+tmpdir=$(mktemp -d)
+wget -O- http://www.funtoo.org/archive/realdev/realdev-1.0.tar.bz2 | \
+tar xj -C $tmpdir
+$tmpdir/realdev-1.0/realdev ${ROOT}/dev
+rm -rf $tmpdir
 ]
 
 [section trigger]
