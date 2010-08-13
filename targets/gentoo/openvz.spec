@@ -12,7 +12,7 @@ name: gentoo-openvz-$[target/subarch]-$[target/version]
 
 [section path/mirror]
 
-target: $[:target/subpath]/openvz/$[target/name].tar.gz
+target: $[:target/subpath]/openvz/$[target/name].tar.$[target/compression]
 
 [section path]
 
