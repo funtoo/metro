@@ -164,6 +164,9 @@ then
 		ln -s ../usr/share/portage/config/make.conf.example $ROOT/etc/make.conf.example || exit 6
 	fi
 fi
+# locale-archive can be ~81 MB; this should shrink it to 2MB.
+rm -f /usr/lib*/locale/locale-archive
+locale-gen
 ]
 
 # do any cleanup that you need with things bind mounted here:
