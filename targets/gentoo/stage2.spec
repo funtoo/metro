@@ -53,7 +53,7 @@ emerge --prune sys-devel/gcc || exit 1
 # build:
 
 unset USE
-emerge dev-lang/python || exit 1
+emerge $eopts --oneshot dev-lang/python || exit 1
 
 gcc-config $(gcc-config --get-current-profile)
 
