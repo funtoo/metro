@@ -8,7 +8,7 @@ class: chroot
 [section target]
 
 type: image
-name: gentoo-openvz-$[target/subarch]-$[target/version]
+name: funtoo-openvz-$[target/subarch]-$[target/version]
 
 [section path/mirror]
 
