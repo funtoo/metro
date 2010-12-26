@@ -6,6 +6,7 @@ make.conf: [
 
 ACCEPT_KEYWORDS="$[portage/ACCEPT_KEYWORDS:zap]"
 FEATURES="$[portage/FEATURES:zap]"
+SYNC="$[portage/SYNC:zap]"
 CHOST="$[portage/CHOST:zap]"
 CFLAGS="$[portage/CFLAGS:zap]"
 CXXFLAGS="$[portage/CXXFLAGS:zap]"
