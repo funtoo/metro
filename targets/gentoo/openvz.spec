@@ -169,6 +169,10 @@ $[[files/motd]]
 EOF
 	rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/resolv.conf
 
+
+	echo "Setting system type to OpenVZ..."
+	echo 'rc_sys="openvz"' >> /etc/rc.conf
+
 	# TESTS
 	echo "Performing QA checks..."
 	# root password blank
