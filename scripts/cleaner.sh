@@ -10,7 +10,7 @@ zapme=""
 
 for x in `find -mtime +0 -iname stage1*.tar.*`
 do
-	if ! [ -e `dirname $x`/stage3*.tar.* ]
+	if ! [ -e "$(dirname $x)/stage3*.tar.*" ]
 	then
 		zapme="$zapme `dirname $x`"
 	fi
