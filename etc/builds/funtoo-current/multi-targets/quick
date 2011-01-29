@@ -5,4 +5,4 @@
 
 [section multi]
 
-targets: $[:snapshot] stage3-quick $[:extras]
+targets: $[:snapshot] stage3-quick $[:extras:lax]

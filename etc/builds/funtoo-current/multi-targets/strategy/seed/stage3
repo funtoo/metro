@@ -1,4 +1,4 @@
 [section multi]
 
-targets: $[:snapshot] stage1 stage2 stage3 $[:extras]
+targets: $[:snapshot] stage1 stage2 stage3 $[:extras:lax]
 

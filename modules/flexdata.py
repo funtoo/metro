@@ -31,7 +31,6 @@ class collection:
 		# lax means: if a key isn't found, pretend it exists but return the empty string.
 		self.lax=False
 		self.laxvars={}
-		self.laxstring="[BLANK var=%s %s]"
 		self.blanks={}
 		# self.collected holds the names of files we've collected (parsed)
 		self.collected=[]
@@ -88,7 +87,7 @@ class collection:
 			if boolean:
 				return "no"
 			else:
-				return self.laxstring % ( myvar, "foo" )
+				return ""
 		else:
 			if boolean:
 				return "no"
@@ -125,7 +124,7 @@ class collection:
 					if boolean:
 						mystring = "no"
 					elif len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]:
-						mystring = self.laxstring % ( myvar, "" )
+						mystring = ""
 					else:
 						raise KeyError, "Variable "+repr(myvar)+" not found."
 				elif boolean:
@@ -254,7 +253,7 @@ class collection:
 						ex += "no"
 					else:
 						self.blanks[varname] = True
-						ex += self.laxstring % ( varname, "bar" )
+						ex += ""
 				else:
 					if not boolean:
 						raise KeyError, "Cannot find variable %s (in %s)" % (varname,myvar)
@@ -300,7 +299,7 @@ class collection:
 			if multi == None:
 				if ("lax" in newoptions.keys()) or (len(stack) and self.laxvars.has_key(stack[-1]) and self.laxvars[stack[-1]]):
 					self.blanks[myvar] = True
-					return [self.laxstring % ( myvar, "oni" ) ]
+					return ""
 				else:
 					raise FlexDataError("referenced variable \""+myvar+"\" not found")
 		newlines=[]

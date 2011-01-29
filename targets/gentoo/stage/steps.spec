@@ -171,10 +171,7 @@ if [ "$[target]" != "stage1" ] && [ -e /usr/bin/ccache ]
 then
 	emerge -C dev-util/ccache || exit 1
 fi
-if [ "$[emerge/packages/clean?]" == "yes" ]
-then
-	emerge -C $[emerge/packages/clean:lax] || exit 2
-fi
+emerge -C $[emerge/packages/clean:zap] || exit 2
 ]
 
 chroot/test: [
