@@ -1,0 +1,8 @@
+# Use this target when you just want to build a stage1. This is handy if you
+# are on the "x86" or "amd64" subarch, and you are using an "optimized"
+# $[strategy/stage1], which means that you are not creating a stage1 by
+# default. Use this target to generate one manually.
+
+[section multi]
+
+targets: $[:snapshot] stage1
