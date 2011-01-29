@@ -9,7 +9,7 @@ source: $[:source/subpath]/$[source/name].tar.*
 [section source]
 
 : stage2
-name: $[]-$[:subarch]-$[:version]
+name: $[]-$[:subarch]-$[:target]-$[:version]
 version: $[target/version]
 subarch: $[target/subarch]
 build: $[target/build]

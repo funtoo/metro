@@ -11,7 +11,7 @@ source: $[:source/subpath]/$[source/name].tar.*
 [section source]
 
 : stage3
-name: $[]-$[:subarch]-$[:version]
+name: $[]-$[:subarch]-$[:build]-$[:version]
 
 # When building from a stage3, we now simply use the stage3 with matching
 # build, subarch and version:

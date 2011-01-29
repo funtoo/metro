@@ -9,7 +9,7 @@
 [section source]
 
 : stage3
-name: $[]-$[:subarch]-$[:version]
+name: $[]-$[:subarch]-$[:build]-$[:version]
 
 # When building a stage1, we're always going to use a stage3 as a seed. If
 # $[strategy/build] is "local", we'll grab a local stage3. If it's "remote",
@@ -24,7 +24,7 @@ source: $[:source/subpath]/$[source/name].tar.*
 
 [section target]
 
-name: $[target]-$[target/subarch]-$[target/version]
+name: $[]-$[:subarch]-$[:build]-$[:version]
 
 [section portage]
 

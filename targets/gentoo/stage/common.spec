@@ -12,7 +12,6 @@ class: stage
 
 [section target]
 
-[collect ../../../subarch/$[target/subarch].spec]
 type: image
 
 [section path]

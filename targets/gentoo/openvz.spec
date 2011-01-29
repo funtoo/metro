@@ -1,4 +1,3 @@
-[collect ../../subarch/$[target/subarch].spec]
 [collect ./stage/stage3-derivative.spec]
 
 [section metro]
@@ -8,7 +7,7 @@ class: chroot
 [section target]
 
 type: image
-name: funtoo-openvz-$[target/subarch]-$[target/version]
+name: funtoo-openvz-$[:subarch]-$[:build]-$[:version]
 
 [section path/mirror]
 

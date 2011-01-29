@@ -1,6 +1,7 @@
 [section target]
 
 arch: x86
+arch_desc: x86-32bit
 
 [section portage]
 

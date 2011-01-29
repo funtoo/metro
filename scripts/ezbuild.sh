@@ -54,7 +54,7 @@ if [ "$#" -ge "4" ]
 then
 	VERS=$4
 else
-	VERS=`date +%Y.%m.%d`
+	VERS=`date +%Y-%m-%d`
 fi
 
 exec $METRO multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE

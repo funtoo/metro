@@ -73,7 +73,7 @@ do
 	dirmb=`du -m --max-depth=0 $mirrpath/$x | cut -f1`
 	mbs=$(( $mbs + $dirmb ))
 	echo $x
-	rm -rf $mirrpath/$x
+	echo rm -rf $mirrpath/$x
 done
 if [ "$zapme" != "" ]
 then

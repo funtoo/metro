@@ -14,11 +14,11 @@
 
 [section target]
 
-name: $[target]-$[target/subarch]-$[target/version]
+name: $[target]-$[target/subarch]-$[target/build]-$[target/version]
 
 [section path/mirror]
 
-source: $[:source/subpath]/stage1-$[source/subarch]-$[source/version].tar.*
+source: $[:source/subpath]/stage1-$[source/subarch]-$[source/build]-$[source/version].tar.*
 target: $[:target/subpath]/$[target/name].tar.$[target/compression]
 
 [section portage]

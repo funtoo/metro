@@ -91,6 +91,7 @@ def initSettings(configfile,args,extraargs={}):
 
 
 def main():
+	global debug
 	if os.getuid() != 0:
 		print __app__ + ": This script requires root privileges to operate."
 		sys.exit(2)
@@ -145,6 +146,7 @@ def main():
 	global MetroError
 
 	import flexdata
+	flexdata.debug = debug
 	import targets
 	# for MetroError:
 	from catalyst_support import MetroError
