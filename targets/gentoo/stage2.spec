@@ -110,7 +110,7 @@ for dep in portage.settings.packages:
 	else:
 		pkgdict[catpkg.split("/")[1]]=dep
 
-pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib" ]
+pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib", "shadow" ]
 
 #, "perl", "python", "libtool" ]
 
