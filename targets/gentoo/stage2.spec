@@ -14,7 +14,7 @@
 
 [section target]
 
-name: $[target]-$[target/subarch]-$[target/build]-$[target/version]
+name: $[]-$[:subarch]-$[:build]-$[:version]
 
 [section path/mirror]
 
