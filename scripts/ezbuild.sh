@@ -56,5 +56,5 @@ then
 else
 	VERS=`date +%Y-%m-%d`
 fi
-
-exec $METRO multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE
+echo Running $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE
+exec $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE

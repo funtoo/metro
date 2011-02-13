@@ -331,9 +331,10 @@ class stage(chroot):
 
 		# look for required files
 		for loc in [ "path/mirror/source", "path/mirror/snapshot" ]:
-			if loc == None:
-				raise MetroError,"Setting %s is not defined; aborting." % loc
-			matches = glob(self.settings[loc])
+			try:
+				matches = glob(self.settings[loc])
+			except:
+				raise MetroError,"Setting %s is set to %s; glob failed." % ( loc, repr(self.settings[loc]) )
 			if len(matches) == 0:
 				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
 			elif len(matches) > 1:
