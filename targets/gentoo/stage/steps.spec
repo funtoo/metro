@@ -146,8 +146,22 @@ fi
 
 rm -rf $ROOT/var/tmp/* $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
 rm -rf $ROOT/var/cache/edb/dep/*
-rm -f $ROOT/etc/{passwd,group,shadow}- $ROOT/etc/.pwd.lock
+rm -f $ROOT/etc/.pwd.lock
+for x in passwd group shadow
+do
+	# install a backup, but make sure it is the same as the current file, so we
+	# don't archive up any stale and potentially bad (personal password) info.
+	rm -f $ROOT/etc/${x}-
+	cp -a $ROOT/etc/${x} $ROOT/etc/${x}-
+	chmod go-rwx $ROOT/etc/${x}-
+done
+
 rm -f $ROOT/etc/portage/bashrc
+
+# for now, this takes care of glibc trying to overwrite locale.gen - clean up so
+# users don't have etc-update bugging them:
+find $ROOT/etc -iname '.cfg????_*' -exec rm -f {} \;
+
 install -d $ROOT/etc/portage
 
 # ensure that make.conf.example is set up OK...
