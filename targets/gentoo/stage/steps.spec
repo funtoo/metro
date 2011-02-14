@@ -160,7 +160,7 @@ rm -f $ROOT/etc/portage/bashrc
 
 # for now, this takes care of glibc trying to overwrite locale.gen - clean up so
 # users don't have etc-update bugging them:
-find $ROOT/etc -iname '.cfg????_*' -exec rm -f {} \;
+find $ROOT/etc -iname '._cfg????_*' -exec rm -f {} \;
 
 install -d $ROOT/etc/portage
 
