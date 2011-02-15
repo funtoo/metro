@@ -18,8 +18,8 @@ do_help() {
 
   Usage: $0 build arch [ full|freshen|quick [date] ]
   Examples:
-  	# $0 funtoo amd64
-	# $0 ~funtoo core2 freshen
+  	# $0 funtoo-stable generic_64
+	# $0 funtoo-current core2_32 freshen
 	# $0 gentoo pentium4 full 2009.01.03
 EOF
 }
