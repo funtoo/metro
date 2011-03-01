@@ -11,7 +11,7 @@ name: funtoo-openvz-$[:subarch]-$[:build]-$[:version]
 
 [section path/mirror]
 
-target: $[:target/subpath]/openvz/$[target/name].tar.$[target/compression]
+target: $[:target/openvz/subpath]/$[target/name].tar.$[target/compression]
 
 [section path]
 
