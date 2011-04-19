@@ -74,6 +74,7 @@ case "$[snapshot/compression]" in
 			pxz $tarout || die "Snapshot pxz failure"
 		else
 			xz $tarout || die "Snapshot xz failure"
+		fi
 		;;
 	*)
 		echo "Unrecognized compression format $[snapshot/compression] specified for snapshot."
