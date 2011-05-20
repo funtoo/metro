@@ -9,7 +9,7 @@ FEATURES="$[portage/FEATURES:zap]"
 SYNC="$[portage/SYNC:zap]"
 CHOST="$[portage/CHOST:zap]"
 CFLAGS="$[portage/CFLAGS:zap]"
-CXXFLAGS="$[portage/CXXFLAGS:zap]"
+CXXFLAGS="$[portage/CFLAGS:zap]"
 LDFLAGS="$[portage/LDFLAGS:zap]"
 USE="$[portage/USE:zap]"
 ]
