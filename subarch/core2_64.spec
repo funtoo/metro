@@ -7,4 +7,4 @@ arch_desc: x86-64bit
 
 CFLAGS: -march=core2 -O2 -pipe
 CHOST: x86_64-pc-linux-gnu
-HOSTUSE: mmx sse sse2
+HOSTUSE: mmx sse sse2 sse3 ssse3
