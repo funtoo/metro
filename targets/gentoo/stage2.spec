@@ -92,6 +92,7 @@ bootstrap.py: [
 import portage,sys
 pkgdict={}
 alloweduse=["nls", "bindist", "nptl", "nptlonly", "multilib", "userlocales" ]
+alloweduse_startswith = ["userland_"]
 
 use=portage.settings["USE"].split()
 
@@ -100,6 +101,11 @@ myuse=portage.settings["STAGE1_USE"].split()
 for x in use:
 	if x in alloweduse:
 		myuse.append(x)
+	for y in alloweduse_startswith:
+		if x.startswith(y):
+			myuse.append(x)
+			break
+
 for dep in portage.settings.packages:
 	if dep[0] == "*":
 		dep = dep[1:]
