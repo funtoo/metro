@@ -81,6 +81,9 @@ cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]
 EOF
 
+# upgrade portage on stage3 if necessary, before we begin:
+emerge -u sys-apps/portage || die
+
 export buildpkgs="$(python /tmp/build.py)"
 export STAGE1_USE="$(portageq envvar STAGE1_USE)"
 export USE="-* bindist build xml ${STAGE1_USE}"

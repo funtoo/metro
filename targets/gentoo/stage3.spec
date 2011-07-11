@@ -45,7 +45,7 @@ do
 	rc-update add $service default
 done
 
-if [ "$[metro/build]" = "funtoo" ] || [ "$[metro/build]" = "~funtoo" ]
+if [ -e /usr/share/eselect/modules/vi.eselect ] && [ -e /bin/busybox ]
 then
 	eselect vi set busybox
 fi
