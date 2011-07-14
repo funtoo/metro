@@ -77,6 +77,12 @@ chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
 
+# update python if it is available
+emerge -u python || die 
+# switch to new python
+eselect python update || die 
+python-updater || die
+
 cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]
 EOF
