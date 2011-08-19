@@ -34,6 +34,7 @@ emerge $eopts -e system || exit 1
 
 # zap the world file and emerge packages
 rm -f /var/lib/portage/world || exit 2
+emerge $eopts $[emerge/packages/first:zap] || exit 1
 emerge $eopts $[emerge/packages:zap] || exit 1
 
 # add default runlevel services
