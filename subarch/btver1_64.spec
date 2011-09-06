@@ -1,6 +1,6 @@
 [section target]
 
-arch: x86
+arch: amd64
 arch_desc: x86-64bit
 
 [section portage]
