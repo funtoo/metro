@@ -34,6 +34,7 @@ emerge $eopts -e system || exit 1
 
 # zap the world file and emerge packages
 rm -f /var/lib/portage/world || exit 2
+emerge $eopts $[emerge/packages/first:zap] || exit 1
 emerge $eopts $[emerge/packages:zap] || exit 1
 
 # add default runlevel services
@@ -42,7 +43,9 @@ services="$[baselayout/services:zap]"
 
 for service in $services
 do
-	rc-update add $service default
+	s=${service/:*}
+	l=${service#*:}
+	rc-update add $s ${l:-default}
 done
 
 if [ -e /usr/share/eselect/modules/vi.eselect ] && [ -e /bin/busybox ]
