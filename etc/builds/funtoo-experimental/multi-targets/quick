@@ -1,0 +1,8 @@
+# WARNING: This multi-target is EXPERIMENTAL and will definitely not work
+# with the gentoo.org tree, and may not even work with the funtoo.org tree.
+# The quick target rebuilds a stage3 using a seed stage3, with ROOT!=/.
+# So it builds a complete new stage3 into its own isolated directory.
+
+[section multi]
+
+targets: $[:snapshot] stage3-quick $[:extras:lax]

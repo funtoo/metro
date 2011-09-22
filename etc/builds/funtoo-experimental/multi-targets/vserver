@@ -1,0 +1,9 @@
+# This is the stage3-freshen target, which does an in-place upgrade of a stage3
+# (using a deep "emerge" update) rather than re-generating the whole thing.
+# Notice that we also build extras (virtual templates).  Remove "$[:extras:lax]" if
+# this is not desired.
+
+[section multi]
+
+targets: vserver
+
