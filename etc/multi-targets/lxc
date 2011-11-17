@@ -5,5 +5,5 @@
 
 [section multi]
 
-targets: $[:snapshot] stage3-freshen $[:extras:lax]
+targets: lxc
 
