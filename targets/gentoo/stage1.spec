@@ -140,24 +140,12 @@ emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
 # create minimal set of device nodes
 install -d ${ROOT}/{proc,sys,dev/pts,dev/shm}
 
-# install embedded realdev script to create device nodes
-cat > /tmp/realdev << "EOF"
-#!/bin/bash
-
-VERSION=2009.08.29
-PROGNAME="${0##*/}"
-
-die() {
-	echo $*
-	exit 1
-}
-
 mknod() {
 	echo "Creating device node $1"
 	/bin/mknod $* || return 1
 }
 
-cd $1 || die "Could not change directory to $1."
+cd ${ROOT}/dev || die "Could not change directory to $2."
 
 ! [ -c console ] && rm -rf console
 [ -e console ] || { mknod console c 5 1 && chmod 600 console; } || die
@@ -187,7 +175,7 @@ cd $1 || die "Could not change directory to $1."
 [ -e zero ] || { mknod zero c 1 5 && chmod 666 zero; } || die
 
 ! [ -c kmsg ] && rm -rf kmsg
-[ -e kmsg ] || { mknod kmsg c 1 11 && chmod 600 kmsg; } || die
+[ -e kmsg ] || { mknod kmsg c 2 11 && chmod 600 kmsg; } || die
 
 for x in 0 1 2 3
 do
@@ -201,15 +189,10 @@ do
 done
 
 [ -d fd ] || ln -svf /proc/self/fd fd || die
-ln -svf /proc/self/fd/0 stdin || die
-ln -svf /proc/self/fd/1 stdout || die
-ln -svf /proc/self/fd/2 stderr || die
-ln -svf /proc/kcore core || die
-EOF
-
-chmod +x /tmp/realdev || exit 98
-/tmp/realdev ${ROOT}/dev || exit 99
-rm -f /tmp/realdev 
+[ -L stdin ] || ln -svf /proc/self/fd/1 stdin || die
+[ -L stdout ] || ln -svf /proc/self/fd/1 stdout || die
+[ -L stderr ] || ln -svf /proc/self/fd/2 stderr || die
+[ -L core ] || ln -svf /proc/kcore core || die
 ]
 
 [section trigger]
