@@ -91,8 +91,8 @@ EOF
 emerge -u sys-apps/portage || die
 
 export buildpkgs="$(python /tmp/build.py)"
-export STAGE1_USE="$(portageq envvar STAGE1_USE)"
-export USE="-* bindist build xml ${STAGE1_USE}"
+export BOOTSTRAP_USE="$(portageq envvar BOOTSTRAP_USE)"
+export USE="-* bindist build xml ${BOOTSTRAP_USE}"
 export FEATURES="$FEATURES nodoc noman noinfo"
 
 # In some cases permissions of the root directory are false, force them to 755

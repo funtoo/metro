@@ -96,7 +96,7 @@ alloweduse_startswith = ["userland_"]
 
 use=portage.settings["USE"].split()
 
-myuse=portage.settings["STAGE1_USE"].split()
+myuse=portage.settings["BOOTSTRAP_USE"].split()
 
 for x in use:
 	if x in alloweduse:
