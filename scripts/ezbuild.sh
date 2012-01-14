@@ -28,7 +28,10 @@ if [ "$METRO" = "" ]
 then
 	METRO=/usr/bin/metro
 fi
-
+if ! [ -e "$METRO" ] && [ -x "$(pwd)/metro" ]
+then
+	METRO="$(pwd)/metro"
+fi
 if [ ! -e $METRO ]
 then
 	die "Metro is required for build.sh to run"

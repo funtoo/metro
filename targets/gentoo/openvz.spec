@@ -2,7 +2,7 @@
 
 [section target]
 
-name: funtoo-openvz-$[:subarch]-$[:build]-$[:version]
+name: $[:build]-$[:subarch]-$[:version]
 sys: openvz
 realname: OpenVZ
 url: http://www.openvz.org
