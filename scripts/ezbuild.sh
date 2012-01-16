@@ -45,10 +45,15 @@ fi
 
 BUILD="$1"
 SUBARCH="$2"
-
+extras=""
 if [ "$#" -ge "3" ]
 then
 	MODE=$3
+	modesp="${3##*+}"
+	if [ "$modesp" != "" ]; then
+		extras=$modesp
+		MODE="${3%%+*}"
+	fi
 else
 	MODE=full
 fi
@@ -59,5 +64,8 @@ then
 else
 	VERS=`date +%Y-%m-%d`
 fi
-echo Running $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE
-exec $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE
+if [ -n "$extras" ]; then
+	extras="multi/extras: $extras"
+fi
+echo Running $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE $extras
+exec $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE $extras
