@@ -50,7 +50,7 @@ if [ "$#" -ge "3" ]
 then
 	MODE=$3
 	modesp="${3##*+}"
-	if [ "$modesp" != "" ]; then
+	if [ "$modesp" != "$MODE" ]; then
 		extras=$modesp
 		MODE="${3%%+*}"
 	fi
