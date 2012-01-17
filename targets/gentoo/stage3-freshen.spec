@@ -10,10 +10,8 @@ chroot/run: [
 $[[steps/setup]]
 USE="build" emerge --oneshot --nodeps $eopts portage || exit 1
 export USE="$[portage/USE] bindist"
-emerge $eopts --deep --newuse -u system || exit 1
+emerge $eopts --deep --newuse -u @world || exit 1
 emerge --deep --newuse -u $eopts $[emerge/packages/force:zap] || exit 2
-# now, zap the world file....
-rm -f /var/lib/portage/world || exit 4
 emerge --deep --newuse -u $eopts $[emerge/packages:zap] || exit 1
 if [ "`emerge --list-sets | grep preserved-rebuild`" = "preserved-rebuild" ]
 then
