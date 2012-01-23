@@ -11,6 +11,7 @@ CFLAGS="$[portage/CFLAGS:zap]"
 CXXFLAGS="$[portage/CFLAGS:zap]"
 LDFLAGS="$[portage/LDFLAGS:zap]"
 USE="$[portage/USE:zap]"
+SYNC="$[snapshot/source/remote]"
 ]
 
 locale.gen: [
