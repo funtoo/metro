@@ -10,6 +10,12 @@ die() {
 	exit 1
 }
 
+run() {
+	echo Running $*
+	$*
+	return $?
+}
+
 do_help() {
 	cat << EOF
 
@@ -44,28 +50,28 @@ then
 fi
 
 BUILD="$1"
-SUBARCH="$2"
-extras=""
-if [ "$#" -ge "3" ]
+if [ "$2" == "snapshot" ]
 then
-	MODE=$3
-	modesp="${3##*+}"
-	if [ "$modesp" != "$MODE" ]; then
-		extras=$modesp
-		MODE="${3%%+*}"
-	fi
+	[ "$#" -ge "3" ] && VERS=$3 || VERS=`date +%Y-%m-%d`
+	run $METRO metro/build: $BUILD target: snapshot target/version: $VERS || die "snapshot failure"
 else
-	MODE=full
+	SUBARCH="$2"
+	extras=""
+	if [ "$#" -ge "3" ]
+	then
+		MODE=$3
+		modesp="${3##*+}"
+		if [ "$modesp" != "$MODE" ]; then
+			extras=$modesp
+			MODE="${3%%+*}"
+		fi
+	else
+		MODE=full
+	fi
+	[ "$#" -ge "4" ] && VERS=$4 || VERS=`date +%Y-%m-%d`
+	if [ -n "$extras" ]; then
+		extras="multi/extras: $extras"
+	fi
+	run $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE $extras || die "build failure"
 fi
 
-if [ "$#" -ge "4" ]
-then
-	VERS=$4
-else
-	VERS=`date +%Y-%m-%d`
-fi
-if [ -n "$extras" ]; then
-	extras="multi/extras: $extras"
-fi
-echo Running $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE $extras
-exec $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE $extras
