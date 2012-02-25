@@ -5,7 +5,7 @@ if [ "$[snapshot/source/type]" = "git" ]
 then
 	git archive --prefix=portage/ "$[snapshot/source/branch:lax]" > $tarout || die "Couldn't create tar archive"
 else
-	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ "$[snapshot/source/path:lax]/" "$[path/work]/portage/" || die "Couldn't sync portage tree"
+	rsync -a --delete --exclude /packages/ --exclude /distfiles/ --exclude /local/ --exclude CVS/ --exclude /.git/ "$[snapshot/source/remote:lax]/" "$[path/work]/portage/" || die "Couldn't sync portage tree"
 	tar -c -C $[path/work] portage > $tarout || die "Couldn't create tar archive"
 fi
 ]
