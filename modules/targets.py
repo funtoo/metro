@@ -15,18 +15,22 @@ bin={
 }
 
 class target:
-
 	def run(self):
+		self.cleanPath(recreate=True)
+
 		self.runScript("steps/run")
 		if self.settings.has_key("trigger/ok/run"):
 			self.runScript("trigger/ok/run")
-		return
+
+		self.cleanPath()
 
 	def runScript(self,key,chroot=None):
 		if not self.settings.has_key(key):
 			raise MetroError, "runScript: key \""+key+"\" not found."
+
 		if type(self.settings[key]) != types.ListType:
 			raise MetroError, "runScript: key \""+key+"\" is not a multi-line element."
+
 		print
 		print "runScript: running %s..." % key
 		print
@@ -49,7 +53,6 @@ class target:
 			outfd.write(x+"\n")
 
 		outfd.close()
-		# make executable:
 		os.chmod(outfile, 0755)
 
 		cmds = []
@@ -69,7 +72,6 @@ class target:
 		# it could have been cleaned by our outscript, so if it exists:
 		if os.path.exists(outfile):
 			os.unlink(outfile)
-
 
 	def targetExists(self,key):
 		if self.settings.has_key("metro/options") and "replace" in self.settings["metro/options"].split():
@@ -102,6 +104,7 @@ class target:
 			# The 0700 perms prevent Metro-generated /tmp directories from being abused by others -
 			# because they are world-writeable, they could be used by malicious local users to
 			# inject arbitrary data/executables into a Metro build.
+
 	def cmd(self,mycmd,myexc="",badval=None):
 		print "Executing \""+mycmd+"\"..."
 		#print "Executing \""+mycmd.split(" ")[0]+"\"..."
@@ -243,94 +246,14 @@ class chroot(target):
 		else:
 			self.unbind()
 
-	def run(self):
+	def run(self, required_files=[]):
 		if self.targetExists("path/mirror/target"):
 			if self.settings.has_key("trigger/ok/run"):
 				self.runScript("trigger/ok/run")
 			return
 
 		# look for required files
-		for loc in [ "path/mirror/source" ]:
-			matches = glob(self.settings[loc])
-			if len(matches) ==0:
-				raise MetroError,"Required file "+self.settings[loc]+" not found. Aborting."
-			elif len(matches) > 1:
-				raise MetroError,"Multiple matches found for required file pattern defined in '%s'; Aborting." % loc
-
-		# BEFORE WE CLEAN UP - MAKE SURE WE ARE UNMOUNTED
-		self.kill_chroot_pids()
-		self.checkMounts()
-
-		# BEFORE WE START - CLEAN UP ANY MESSES
-		self.cleanPath(recreate=True)
-		try:
-			self.checkMounts()
-			self.runScript("steps/unpack")
-
-			self.bind()
-
-			if self.settings.has_key("steps/chroot/prerun"):
-				self.runScriptInChroot("steps/chroot/prerun")
-			self.runScriptInChroot("steps/chroot/run")
-			if self.settings.has_key("steps/chroot/postrun"):
-				self.runScriptInChroot("steps/chroot/postrun")
-
-			self.unbind()
-		except:
-			self.kill_chroot_pids()
-			self.checkMounts()
-			raise
-
-		self.runScript("steps/capture")
-		if self.settings.has_key("trigger/ok/run"):
-			self.runScript("trigger/ok/run")
-		self.cleanPath()
-
-
-class snapshot(target):
-	def __init__(self,settings):
-		target.__init__(self,settings)
-
-	def run(self):
-		if self.targetExists("path/mirror/snapshot"):
-			if self.settings.has_key("trigger/ok/run"):
-				self.runScript("trigger/ok/run")
-			return
-
-		self.cleanPath(recreate=True)
-		if not self.settings.has_key("steps/run"):
-			raise MetroError, "Required steps in steps/run not found."
-		self.runScript("steps/run")
-		if self.settings.has_key("trigger/ok/run"):
-			self.runScript("trigger/ok/run")
-		self.cleanPath()
-
-class stage(chroot):
-
-	def __init__(self,settings):
-		chroot.__init__(self,settings)
-
-		# DEFINE GENTOO MOUNTS
-		if self.settings.has_key("path/distfiles"):
-			self.mounts.append("/usr/portage/distfiles")
-			self.mountmap["/usr/portage/distfiles"]=self.settings["path/distfiles"]
-
-		# let's bind-mount our main system's device nodes in place
-		if self.settings["portage/ROOT"] != "/":
-			# this seems to be needed for libperl to build (x2p) during stage1 - so we'll mount it....
-			self.mounts.append("/dev")
-			self.mounts.append("/dev/pts")
-			self.mountmap["/dev"] = "/dev"
-			self.mountmap["/dev/pts"] = "/dev/pts"
-
-	def run(self):
-		if self.targetExists("path/mirror/target"):
-			if self.settings.has_key("trigger/ok/run"):
-				self.runScript("trigger/ok/run")
-			return
-
-		# look for required files
-		for loc in [ "path/mirror/source", "path/mirror/snapshot" ]:
+		for loc in [ "path/mirror/source" ] + required_files:
 			try:
 				matches = glob(self.settings[loc])
 			except:
@@ -351,14 +274,19 @@ class stage(chroot):
 			self.runScript("steps/unpack")
 			if self.settings.has_key("steps/unpack/post"):
 				self.runScript("steps/unpack/post")
+
 			self.bind()
 
 			if self.settings.has_key("steps/chroot/prerun"):
 				self.runScriptInChroot("steps/chroot/prerun")
 			self.runScriptInChroot("steps/chroot/run")
-			self.runScriptInChroot("steps/chroot/postrun")
+			if self.settings.has_key("steps/chroot/postrun"):
+				self.runScriptInChroot("steps/chroot/postrun")
+
 			self.unbind()
-			self.runScriptInChroot("steps/chroot/clean")
+
+			if self.settings.has_key("steps/chroot/clean"):
+				self.runScriptInChroot("steps/chroot/clean")
 			if self.settings.has_key("steps/chroot/test"):
 				self.runScriptInChroot("steps/chroot/test")
 			if self.settings.has_key("steps/chroot/postclean"):
@@ -367,19 +295,53 @@ class stage(chroot):
 			self.kill_chroot_pids()
 			self.checkMounts()
 			raise
-		# The build completed successfully.
-		# Capture the results of our efforts:
+
 		self.runScript("steps/capture")
+
 		if self.settings.has_key("trigger/ok/run"):
 			self.runScript("trigger/ok/run")
-		# Now, we want to delete our build directory...
+
 		self.kill_chroot_pids()
 		self.checkMounts()
 		self.cleanPath()
+
+class snapshot(target):
+	def __init__(self,settings):
+		target.__init__(self,settings)
+
+	def run(self):
+		if self.targetExists("path/mirror/snapshot"):
+			if self.settings.has_key("trigger/ok/run"):
+				self.runScript("trigger/ok/run")
+			return
+
+		target.run(self)
+
+class stage(chroot):
+
+	def __init__(self,settings):
+		chroot.__init__(self,settings)
+
+		# DEFINE GENTOO MOUNTS
+		if self.settings.has_key("path/distfiles"):
+			self.mounts.append("/usr/portage/distfiles")
+			self.mountmap["/usr/portage/distfiles"]=self.settings["path/distfiles"]
+
+		# let's bind-mount our main system's device nodes in place
+		if self.settings["portage/ROOT"] != "/":
+			# this seems to be needed for libperl to build (x2p) during stage1 - so we'll mount it....
+			self.mounts.append("/dev")
+			self.mounts.append("/dev/pts")
+			self.mountmap["/dev"] = "/dev"
+			self.mountmap["/dev/pts"] = "/dev/pts"
+
+	def run(self):
+		chroot.run(self, ["path/mirror/snapshot"])
+
 		# Now, we want to clean up our build-related caches, if configured to do so:
 		if self.settings.has_key("metro/options"):
 			if "clean/auto" in self.settings["metro/options"].split():
 				if self.settings.has_key("path/cache/build"):
 					self.cleanPath(self.settings["path/cache/build"])
 
-#vim: ts=4 sw=4 sta et sts=4 ai
+#vim: ts=4 sw=4 sta noet sts=4 ai
