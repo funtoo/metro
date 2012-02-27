@@ -72,6 +72,6 @@ else
 	if [ -n "$extras" ]; then
 		extras="multi/extras: $extras"
 	fi
-	run $METRO -d multi: yes metro/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE $extras || die "build failure"
+	run $METRO -d multi: yes target/build: $BUILD target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE $extras || die "build failure"
 fi
 
