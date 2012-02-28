@@ -1,22 +1,29 @@
 [collect ./stage/common.spec]
 [collect ./stage/stage3-derivative.spec]
 [collect ./steps/capture/tar.spec]
+[collect ./steps/symlink.spec]
 
 [section path/mirror]
 
-target: $[:source/subpath]/$[target/name].tar.$[target/compression]
+target: $[:target/subpath]/$[target/name].tar.$[target/compression]
 
 [section target]
 
-name: stage4-$[:subarch]-$[:build]-$[:version]
+name: $[stage4/name]-$[:subarch]-$[:version]
+name/current: $[stage4/name]-$[:subarch]-current
 
 [section steps]
 
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
-export USE="$[portage/USE] bindist"
-emerge $eopts $[emerge/packages] || exit 1
+$[[steps/stage4/run]]
+]
+
+[section trigger]
+
+ok/run: [
+$[[trigger/ok/symlink]]
 ]
 
 [section portage]
