@@ -16,7 +16,7 @@ name: $[]-$[:subarch]-$[:build]-$[:version]
 # When building from a stage3, we now simply use the stage3 with matching
 # build, subarch and version:
 
-build: $[target/build] 
+build: $[target/build]
 subarch: $[target/subarch]
 
 # For a regular full build, the source/version and target/version will be
@@ -24,5 +24,3 @@ subarch: $[target/subarch]
 # stage3 as a seed:
 
 version: << $[path/mirror/control]/version/stage3
-
-

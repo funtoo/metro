@@ -1,5 +1,7 @@
 [collect ./files.spec]
-[collect ./steps.spec]
+[collect ../steps/chroot.spec]
+[collect ../steps/setup.spec]
+[collect ../steps/unpack.spec]
 [collect ../snapshot/global.spec]
 
 [section portage]
@@ -18,3 +20,12 @@ type: image
 
 chroot: $[path/work]
 chroot/stage: $[path/work]$[portage/ROOT]
+
+[section steps]
+
+unpack: [
+#!/bin/bash
+$[[steps/unpack/source]]
+$[[steps/unpack/snapshot]]
+$[[steps/unpack/env]]
+]

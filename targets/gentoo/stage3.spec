@@ -1,6 +1,6 @@
 [collect ./stage/common.spec]
-[collect ./stage/capture/tar.spec]
 [collect ./stage/stage3-generator.spec]
+[collect ./steps/capture/tar.spec]
 
 [section path/mirror]
 

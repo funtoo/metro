@@ -2,7 +2,7 @@
 # generators are targets that produce a literal stage3 -- currently these
 # targets are stage3, stage3-quick, and stage3-freshen.
 
-[collect ./symlink.spec]
+[collect ../steps/symlink.spec]
 
 [section path/mirror]
 

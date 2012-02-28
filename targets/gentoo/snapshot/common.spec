@@ -51,10 +51,7 @@ tarout="$[path/mirror/snapshot]"
 tarout=${tarout%.*}
 
 $[[steps/create]]
-$[[steps/pack]]
-]
 
-pack: [
 echo "Compressing $tarout..."
 case "$[snapshot/compression]" in
 bz2)
