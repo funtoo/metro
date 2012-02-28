@@ -1,5 +1,5 @@
 [collect ./stage/common.spec]
-[collect ./stage/capture/tar.spec]
+[collect ./steps/capture/tar.spec]
 
 # A stage1 is no longer considered a stage3 derivative, because it may use
 # a "remote" (ie. not in the current build/subarch directory) stage3 as a seed.
@@ -14,7 +14,7 @@ name: $[]-$[:subarch]-$[:build]-$[:version]
 # When building a stage1, we're always going to use a stage3 as a seed. If
 # $[strategy/build] is "local", we'll grab a local stage3. If it's "remote",
 # we're going to use a remote stage3. This collect annotation makes this
-# happen: 
+# happen:
 
 [collect ./stage1/strategy/$[strategy/build]]
 

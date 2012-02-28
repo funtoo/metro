@@ -38,5 +38,3 @@ then
 	exit 99
 fi
 ]
-
-

@@ -45,4 +45,3 @@ for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
 		print "# "+x+" is not set"
 ?>
 ]
-

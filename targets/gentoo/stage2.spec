@@ -1,5 +1,5 @@
 [collect ./stage/common.spec]
-[collect ./stage/capture/tar.spec]
+[collect ./steps/capture/tar.spec]
 
 [section source]
 
