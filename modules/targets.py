@@ -23,12 +23,11 @@ class target:
 
         self.clean_path()
 
-    def run_script(self, key, chroot=None, optional=True):
+    def run_script(self, key, chroot=None, optional=False):
         if not self.settings.has_key(key):
             if optional:
-                raise MetroError, "run_script: key '%s' not found." % (key,)
-            else:
                 return
+            raise MetroError, "run_script: key '%s' not found." % (key,)
 
         if type(self.settings[key]) != types.ListType:
             raise MetroError, "run_script: key '%s' is not a multi-line element." % (key, )
