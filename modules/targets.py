@@ -18,8 +18,7 @@ class target:
         self.clean_path(recreate=True)
 
         self.run_script("steps/run")
-        if self.settings.has_key("trigger/ok/run"):
-            self.run_script("trigger/ok/run")
+        self.run_script("trigger/ok/run", optional=True)
 
         self.clean_path()
 
@@ -249,7 +248,7 @@ class chroot(target):
 
     def run(self, required_files=None):
         if self.target_exists("path/mirror/target"):
-            self.run_script("trigger/ok/run", optional=False)
+            self.run_script("trigger/ok/run", optional=True)
             return
 
         # look for required files
