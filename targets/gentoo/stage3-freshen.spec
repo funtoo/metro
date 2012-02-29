@@ -1,7 +1,5 @@
-[collect ./stage/common.spec]
 [collect ./stage/stage3-generator.spec]
 [collect ./stage/stage3-derivative.spec]
-[collect ./steps/capture/tar.spec]
 
 [section steps]
 
