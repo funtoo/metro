@@ -7,10 +7,6 @@ sys: lxc
 realname: Linux Containers
 url: http://lxc.sourceforge.net
 
-[section path/mirror]
-
-target: $[:target/lxc/subpath]/$[target/name].tar.$[target/compression]
-
 [section steps]
 
 chroot/run: [

@@ -7,10 +7,6 @@ sys: vserver
 realname: Linux-VServer
 url: http://linux-vserver.org
 
-[section path/mirror]
-
-target: $[:target/vserver/subpath]/$[target/name].tar.$[target/compression]
-
 [section steps]
 
 chroot/run: [

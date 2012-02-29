@@ -19,7 +19,6 @@ name: $[]-$[:subarch]-$[:build]-$[:version]
 [section path/mirror]
 
 source: $[:source/subpath]/stage1-$[source/subarch]-$[source/build]-$[source/version].tar.*
-target: $[:target/subpath]/$[target/name].tar.$[target/compression]
 
 [section portage]
 

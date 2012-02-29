@@ -3,10 +3,6 @@
 [collect ./steps/capture/tar.spec]
 [collect ./steps/symlink.spec]
 
-[section path/mirror]
-
-target: $[:target/subpath]/$[target/name].tar.$[target/compression]
-
 [section target]
 
 name: $[stage4/name]-$[:subarch]-$[:version]

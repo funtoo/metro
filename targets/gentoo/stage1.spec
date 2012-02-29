@@ -30,10 +30,6 @@ name: $[]-$[:subarch]-$[:build]-$[:version]
 
 ROOT: /tmp/stage1root
 
-[section path/mirror]
-
-target: $[:target/subpath]/$[target/name].tar.$[target/compression]
-
 [section files]
 
 pythonjunk: [

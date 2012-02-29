@@ -4,10 +4,6 @@
 
 [collect ../steps/symlink.spec]
 
-[section path/mirror]
-
-target: $[:target/subpath]/$[target/name].tar.$[target/compression]
-
 [section target]
 
 name: stage3-$[:subarch]-$[:build]-$[:version]

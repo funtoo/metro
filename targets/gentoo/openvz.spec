@@ -7,10 +7,6 @@ sys: openvz
 realname: OpenVZ
 url: http://www.openvz.org
 
-[section path/mirror]
-
-target: $[:target/openvz/subpath]/$[target/name].tar.$[target/compression]
-
 [section steps]
 
 chroot/run: [
