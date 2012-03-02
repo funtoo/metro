@@ -1,30 +1,6 @@
-[collect ./stage/common.spec]
+[collect ./source/seed.spec]
+[collect ./target/stage1.spec]
 [collect ./steps/capture/tar.spec]
-
-# A stage1 is no longer considered a stage3 derivative, because it may use
-# a "remote" (ie. not in the current build/subarch directory) stage3 as a seed.
-# True stage3-derivatives use a stage3 that has the same build, subarch and
-# version as the target.
-
-[section source]
-
-: stage3
-name: $[]-$[:subarch]-$[:build]-$[:version]
-
-# When building a stage1, we're always going to use a stage3 as a seed. If
-# $[strategy/build] is "local", we'll grab a local stage3. If it's "remote",
-# we're going to use a remote stage3. This collect annotation makes this
-# happen:
-
-[collect ./stage1/strategy/$[strategy/build]]
-
-[section path/mirror]
-
-source: $[:source/subpath]/$[source/name].tar.*
-
-[section target]
-
-name: $[]-$[:subarch]-$[:build]-$[:version]
 
 [section portage]
 
@@ -72,7 +48,6 @@ for b in buildpkgs: print(b)
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
-
 # update python if it is available
 emerge -u python || die 
 # switch to correct python
@@ -189,18 +164,4 @@ done
 [ -L stdout ] || ln -svf /proc/self/fd/1 stdout || die
 [ -L stderr ] || ln -svf /proc/self/fd/2 stderr || die
 [ -L core ] || ln -svf /proc/kcore core || die
-]
-
-[section trigger]
-
-ok/run: [
-#!/bin/bash
-
-# Since we've completed a successful stage1 build, we will update our
-# .control/version/stage1 file. This file records the version of the 
-# last successful stage1 build.
-
-install -d $[path/mirror/control]/version || exit 1
-echo "$[target/version]" > $[path/mirror/control]/version/stage1 || exit 1
-
 ]

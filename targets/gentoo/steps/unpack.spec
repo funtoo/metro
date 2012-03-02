@@ -1,3 +1,5 @@
+[collect ../snapshot/global.spec]
+
 [section steps/unpack]
 
 source: [

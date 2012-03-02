@@ -1,4 +1,6 @@
-[collect ./stage/container.spec]
+[collect ./source/stage3.spec]
+[collect ./target/container.spec]
+[collect ./steps/capture/tar.spec]
 
 [section target]
 

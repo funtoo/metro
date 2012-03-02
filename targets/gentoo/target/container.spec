@@ -1,17 +1,20 @@
-[collect stage3-derivative.spec]
+[collect ../steps/unpack.spec]
 [collect ../steps/container.spec]
-
-[section metro]
-
-class: chroot
 
 [section target]
 
-type: image
+class: chroot
 
 [section path]
 
 chroot: $[path/work]
+
+[section steps]
+
+unpack: [
+#!/bin/bash
+$[[steps/unpack/source]]
+]
 
 [section files]
 

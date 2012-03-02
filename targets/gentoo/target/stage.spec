@@ -1,25 +1,19 @@
-[collect ./files.spec]
-[collect ../steps/chroot.spec]
-[collect ../steps/setup.spec]
 [collect ../steps/unpack.spec]
-[collect ../snapshot/global.spec]
-
-[section portage]
-
-ACCEPT_KEYWORDS: $[portage/stable]$[target/arch]
-
-[section metro]
-
-class: stage
+[collect ../steps/stage.spec]
+[collect ./files.spec]
 
 [section target]
 
-type: image
+class: stage
 
 [section path]
 
 chroot: $[path/work]
 chroot/stage: $[path/work]$[portage/ROOT]
+
+[section portage]
+
+ACCEPT_KEYWORDS: $[portage/stable]$[target/arch]
 
 [section steps]
 

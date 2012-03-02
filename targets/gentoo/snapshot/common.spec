@@ -5,14 +5,8 @@
 
 name: $[portage/name/full]
 
-[section metro]
-
 # This defines what internal Metro class is used to build this target
 class: snapshot
-
-[section target]
-
-type: repository
 
 [section path/mirror]
 

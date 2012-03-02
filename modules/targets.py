@@ -160,10 +160,10 @@ class chroot(target):
 
         # CCACHE SUPPORT FOR CHROOTS
 
-        if not self.settings.has_key("metro/class"):
+        if not self.settings.has_key("target/class"):
             return
 
-        skey = "metro/options/"+self.settings["metro/class"]
+        skey = "metro/options/"+self.settings["target/class"]
 
         # enable ccache and pkgcache support - all we do in python is bind-mount the right directory to the right place.
 

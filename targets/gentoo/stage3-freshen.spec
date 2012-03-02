@@ -1,5 +1,6 @@
-[collect ./stage/stage3-generator.spec]
-[collect ./stage/stage3-derivative.spec]
+[collect ./source/stage3.spec]
+[collect ./target/stage3.spec]
+[collect ./steps/capture/tar.spec]
 
 [section steps]
 
@@ -15,11 +16,8 @@ if [ "`emerge --list-sets | grep preserved-rebuild`" = "preserved-rebuild" ]
 then
 	emerge $eopts @preserved-rebuild || exit 3
 fi
-# to handle lib upgrades, etc.
 ]
-#make sure the parser detects stray data out here....
+
 [section portage]
 
 ROOT: /
-
-
