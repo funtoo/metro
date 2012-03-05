@@ -31,9 +31,7 @@ class target:
         if type(self.settings[key]) != types.ListType:
             raise MetroError, "run_script: key '%s' is not a multi-line element." % (key, )
 
-        print
         print "run_script: running %s..." % key
-        print
 
         os.environ["PATH"] = self.env["PATH"]
 

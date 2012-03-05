@@ -531,7 +531,6 @@ class collection:
 		return mysplit
 
 	def collect(self,filename,origfile):
-		global debug
 		if not os.path.isabs(filename):
 			# relative path - use origfile (the file the collect annotation appeared in) to figure out what we are relative to
 			filename=os.path.normpath(os.path.dirname(origfile)+"/"+filename)
@@ -548,7 +547,7 @@ class collection:
 				break
 		openfile.close()
 		# add to our list of parsed files
-		if debug:
+		if self.debug:
 			sys.stdout.write("Debug: collected: %s\n" % os.path.normpath(filename))
 		self.collected.append(os.path.normpath(filename))
 

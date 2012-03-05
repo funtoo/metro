@@ -1,6 +1,7 @@
 #!/usr/bin/python2 -OO
 
-import os, sys, string, getopt, types
+import os, sys, getopt, types
+from importlib import import_module
 
 __app__ = os.path.basename(sys.argv[0])
 
@@ -18,19 +19,19 @@ def usage():
     version()
     print """ metro [OPTION]... [FILE]...
 
- -h, --help         Print this message
- -V, --version          Display version information
+ -h, --help                 Print this message
+ -V, --version              Display version information
 
- -d, --debug            Enable debug mode
- -v, --verbose          Verbose mode
+ -d, --debug                Enable debug mode
+ -v, --verbose              Verbose mode
  -l [dir], --libdir [dir]   Use alternate library dir (default /usr/lib/metro)
 
- -N, --notrigger        Disable build triggers
+ -N, --notrigger            Disable build triggers
 
  -k [key], --key [key]      Print value of [key], ie. "distfiles"
 
- [FILE]             File(s) to parse and evaluate
-"""
+ [FILE]                     File(s) to parse and evaluate
+    """
 
 def version():
     print " " + __app__, "version", __version__
@@ -39,182 +40,171 @@ def version():
     print " Maintainer:", __maintainer__
     print
     print " Web: http://www.funtoo.org"
-    print " Project: http://github.com/funtoo/metro/wikis"
+    print " Documentation: http://www.funtoo.org/wiki/Metro"
+    print " Project: https://github.com/funtoo/metro"
     print
     print __license__
 
-def find_target(settings):
-    """
+class Metro:
+    def __init__(self):
+        self.debug = False
+        self.verbose = False
+        self.configfile = None
+        self.optdict = {}
+        self.flexdata = None
+        self.targets = None
 
-    Use the "target/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
+    def run(self):
+        # Step 0: parse out the command line arguments
+        if len(sys.argv) < 2:
+            usage()
+            sys.exit(1)
 
-    The targets.__dict__ dictionary contains all the objects in the targets module. We look inside it to see if the class
-    defined in "target/class" exists in there and is a class. If not, we raise an exception.
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], "dhvxVk:l:", ["debug", "help", "verbose", "version", "key=", "libdir="])
+        except getopt.GetoptError:
+            usage()
+            sys.exit(1)
 
-    """
-    if not targets.__dict__.has_key(settings["target/class"]):
-        raise MetroError, "Metro class "+settings["target/class"]+" not defined in modules/targets.py."
-    if type(targets.__dict__[settings["target/class"]]) != types.ClassType:
-        raise MetroError, "Metro class "+settings["target/class"]+" does not appear to be a class."
-    return targets.__dict__[settings["target/class"]](settings)
+        self.optdict = dict(opts)
 
-debug = False
+        self.debug = self.has_opts(["-d", "--debug"])
+        self.verbose = self.has_opts(["-v", "--verbose"])
 
-def initSettings(configfile, args, extraargs={}):
-    settings = flexdata.collection()
+        # Step 1: check preconditions
+        if os.getuid() != 0:
+            raise RuntimeError("this script requires root privileges to operate")
 
-    if os.path.exists(configfile):
-        settings.collect(configfile, None)
-    else:
-        print "Error: config file %s not found." % configfile
-        sys.exit(1)
+        # Step 2: infer binpath and libdir and load modules
+        self.setup_paths()
 
-    # parse command-line supplied configuration files and spec files in the order they were specified
+        # Step 3: check for "special" help/version options, handle them and exit:
+        if self.has_opts(["-h", "--help"]):
+            usage()
+            sys.exit(0)
+        elif self.has_opts(["-V", "--version"]):
+            version()
+            sys.exit(0)
 
-    apos = 0
+        # Step 5: Initialize Metro data
+        settings = self.init_settings(args)
 
-    while apos < len(args):
-        if args[apos][-1] == ":":
-        # args such as: target/version: 2008.10.12 - parse both of these args
-            if apos+1 >= len(args):
-                raise MetroError, "Missing value argument for %s" % args[apos]
-            settings[args[apos][:-1]] = args[apos+1]
-            apos += 2
+        if self.has_opts(["-k", "--key"]):
+            print settings[self.get_opts(["-k", "--key"])]
+            sys.exit(0)
+
+        # Step 6: Create list of targets to run, checking whether "multi" mode is enabled
+        if settings.has_key("multi") and settings["multi"] == "yes":
+            targetlist = settings["multi/targets"].split()
+        elif settings.has_key("target"):
+            targetlist = [settings["target"]]
         else:
-            raise MetroError, "cmdline argument '%s' invalid - does not end in a colon" % args[apos]
-    for arg in extraargs.keys():
-        settings[arg] = extraargs[arg]
-    settings.runCollector()
-    return settings
+            raise RuntimeError("please specify a target or enable multi mode")
 
+        self.run_targets(targetlist, args)
 
-def main():
-    global debug
-    if os.getuid() != 0:
-        print __app__ + ": This script requires root privileges to operate."
-        sys.exit(2)
+    def has_opts(self, opts, fnc=any):
+        return fnc(self.optdict.has_key(key) for key in opts)
 
-    # we need some options in order to work correctly
-    if len(sys.argv) < 2:
-        usage()
-        sys.exit(2)
+    def get_opts(self, opts):
+        result = None
+        for key, value in self.optdict.items():
+            if key in opts:
+                result = value
+        return result
 
-    # parse out the command line arguments
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "dhvxVk:l:", ["debug", "help", "verbose", "version", "key=", "libdir="])
-    except getopt.GetoptError:
-        usage()
-        sys.exit(2)
+    def init_settings(self, args, extraargs=None):
+        settings = self.flexdata.collection(self.debug)
 
-    # defaults for commandline opts
-    verbose = False
-    myopts = []
-    strict = True
-
-    # check preconditions
-
-    valueme = None
-    optdict = {}
-    for opt, optarg in opts:
-        optdict[opt] = optarg
-
-    # Step 1: parse optional arguments that affect behavior of the program
-
-    if optdict.has_key("-d") or optdict.has_key("--debug"):
-        debug = True
-    if optdict.has_key("-v") or optdict.has_key("--verbose"):
-        verbose = True
-
-    binpath = os.path.abspath(sys.argv[0])
-    if os.path.islink(binpath):
-        binpath = os.readlink(binpath)
-
-    libdir = os.path.dirname(binpath)
-    if optdict.has_key("-l") or optdict.has_key("--libdir"):
-        if optdict.has_key("-l"):
-            libdir = optdict["-l"]
+        # collect main configuration file
+        if os.path.exists(self.configfile):
+            settings.collect(self.configfile, None)
         else:
-            libdir = optdict["--libdir"]
+            raise RuntimeError("config file '%s' not found" % self.configfile)
 
-    sys.stderr.write("Metro: Using library directory of %s.\n" % libdir)
-    sys.path.append(libdir+"/modules")
-    configfile = libdir+"/etc/metro.conf"
-    sys.stderr.write("Metro: Using main configuration file %s.\n" % configfile)
+        # parse command-line supplied values
+        # such as: target/version: 2008.10.12
+        args = dict(zip(args[::2], args[1::2]))
 
-    global flexdata
-    global targets
-    global MetroError
+        for key, value in args.items():
+            if key[-1] == ":":
+                settings[key[:-1]] = value
+            else:
+                raise RuntimeError("cmdline argument '%s' invalid - does not end in a colon" % key)
 
-    import flexdata
-    flexdata.debug = debug
-    import targets
-    # for MetroError:
-    from catalyst_support import MetroError
+        # add extra values
+        if extraargs:
+            for arg in extraargs.keys():
+                settings[arg] = extraargs[arg]
 
-    # Step 2: check for "special" help/version options, handle them and exit:
+        settings.runCollector()
 
-    if optdict.has_key("-h") or optdict.has_key("--help"):
-        usage()
-        sys.exit(1)
-    elif optdict.has_key("-V") or optdict.has_key("--version"):
-        version()
-        sys.exit(1)
+        # dump all settings
+        if self.debug:
+            Metro.dump_settings(settings)
 
+        return settings
 
-    # Step 3: check for duplicate main options, which is an error
+    @staticmethod
+    def dump_settings(settings):
+        keys = settings.keys()
+        keys.sort()
+        for key in keys:
+            value = settings[key]
+            if type(value) is list:
+                print key+": [...]"
+            else:
+                print key+": "+str(settings[key])
 
-    mainargs = 0
-    for x in [ "-k", "--key" ]:
-        if optdict.has_key(x):
-            mainargs += 1
-    if mainargs > 1:
-        print "Please specify only one -k or --key option at a time."
-        sys.exit(1)
+    def setup_paths(self):
+        binpath = os.path.abspath(sys.argv[0])
+        if os.path.islink(binpath):
+            binpath = os.readlink(binpath)
 
-    # Step 4: parse main options
+        libdir = os.path.dirname(binpath)
+        if self.has_opts(["-l", "--libdir"]):
+            libdir = self.get_opts(["-l", "--libdir"])
 
-    if optdict.has_key("-k") or optdict.has_key("--key"):
-        if optdict.has_key("-k"):
-            valueme = optdict["-k"]
-        else:
-            valueme = optdict["--key"]
+        if self.verbose:
+            print "Using library directory of %s.\n" % libdir
+        sys.path.append(libdir+"/modules")
 
-    # Step 5: Initialize Metro data:
+        self.configfile = libdir+"/etc/metro.conf"
+        if self.verbose:
+            print "Using main configuration file %s.\n" % self.configfile
 
-    settings = initSettings(configfile, args)
+        self.flexdata = import_module("flexdata")
+        self.targets = import_module("targets")
 
-    # Step 6: Create list of targets to run, checking whether "multi" mode is enabled
+    def run_targets(self, targetlist, args):
+        for targetname in targetlist:
+            settings = self.init_settings(args, {"target": targetname})
+            target = self.find_target(settings)
+            print "Running target %s with class %s" % (targetname, settings["target/class"])
+            target.run()
+            print "Target run complete"
+            print
 
-    if valueme:
-        print settings[valueme]
-        sys.exit(1)
-    if settings.has_key("multi") and settings["multi"] == "yes":
-        targetlist = string.split(settings["multi/targets"])
-        # build automation mode
-    elif settings.has_key("target"):
-        targetlist = [settings["target"]]
-    else:
-        raise MetroError("Please specify a target or enable multi mode.")
-    for targetname in targetlist:
-        # Step 7a,b: Reinitialize settings, initialize target element to proper value:
+    def find_target(self, settings):
+        """
 
-        print "Multi-mode: running target %s" % targetname
-        settings = initSettings(configfile, args, {"target":targetname})
+        Use the "target/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
 
-        # Step 7c: find and run target
+        The targets.__dict__ dictionary contains all the objects in the targets module. We look inside it to see if the class
+        defined in "target/class" exists in there and is a class. If not, we raise an exception.
 
-        target = find_target(settings)
-        print __app__+": running target \""+settings["target"]+"\"."
-        target.run()
-        print __app__+": complete."
+        """
+        if not self.targets.__dict__.has_key(settings["target/class"]):
+            raise NameError("target class "+settings["target/class"]+" not defined in modules/targets.py.")
+        if type(self.targets.__dict__[settings["target/class"]]) != types.ClassType:
+            raise NameError("target class "+settings["target/class"]+" does not appear to be a class.")
+        return self.targets.__dict__[settings["target/class"]](settings)
+
 
 try:
-    main()
+    Metro().run()
 except KeyboardInterrupt:
-    print "\n" + __app__ +" build aborted due to user interrupt (ctrl-C)"
-    print
-    print __app__, "aborting..."
-    raise
-    sys.exit(2)
+    print "\n Build aborted due to user interrupt (ctrl-C)"
+    sys.exit(1)
 
 # vim: ts=4 sw=4 et
