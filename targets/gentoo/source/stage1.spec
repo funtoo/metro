@@ -9,4 +9,4 @@ name: $[]-$[:subarch]-$[:build]-$[:version]
 # for our build if $[strategy/build] is "remote" and $[strategy/seed]
 # is "stage1". In all other cases, we use a local stage1 as source.
 
-[collect ./stage2/strategy/$[strategy/build]/$[strategy/seed]]
+[collect ./stage1/strategy/$[strategy/build]/$[strategy/seed]]
