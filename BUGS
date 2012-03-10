@@ -8,3 +8,22 @@ foo [
 # missing colon!
 
 ]
+
+
+Fix this:
+DEBUG: ['/var/tmp/metro']
+Traceback (most recent call last):
+ File "/usr/bin/metro", line 208, in <module>
+   main()
+ File "/usr/bin/metro", line 204, in main
+   target.run()
+ File "/usr/lib/metro/modules/targets.py", line 293, in run
+   self.runScript("trigger/ok/run")
+ File "/usr/lib/metro/modules/targets.py", line 44, in runScript
+   os.makedirs(outdir)
+ File "/usr/lib64/python2.6/os.py", line 157, in makedirs
+   mkdir(name, mode)
+OSError: [Errno 17] File exists: '/var/tmp/metro/pid'
+Job /usr/lib/metro/scripts/ezbuild.sh funtoo amd64 terminated (exit status: 1) (mailing output)
+This is a race condition in os.makedirs: http://bugs.python.org/issue1675
+

@@ -1,25 +1,6 @@
-[collect ./stage/common.spec]
+[collect ./source/stage1.spec]
+[collect ./target/stage2.spec]
 [collect ./steps/capture/tar.spec]
-
-[section source]
-
-: stage1
-
-# The collect annotation below will allow us to grab a remote stage1
-# for our build if $[strategy/build] is "remote" and $[strategy/seed]
-# is "stage1". In all other cases, we use a local stage1 as a seed
-# for our stage2:
-
-[collect ./stage2/strategy/$[strategy/build]/$[strategy/seed]]
-
-[section target]
-
-name: $[]-$[:subarch]-$[:build]-$[:version]
-
-[section path/mirror]
-
-source: $[:source/subpath]/stage1-$[source/subarch]-$[source/build]-$[source/version].tar.*
-target: $[:target/subpath]/$[target/name].tar.$[target/compression]
 
 [section portage]
 

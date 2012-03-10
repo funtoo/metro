@@ -1,3 +1,7 @@
+[section path/mirror]
+
+target: $[:target/subpath]/$[target/name].tar.$[target/compression]
+
 [section steps]
 
 capture: [

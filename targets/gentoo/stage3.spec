@@ -1,18 +1,6 @@
-[collect ./stage/common.spec]
-[collect ./stage/stage3-generator.spec]
+[collect ./source/stage2.spec]
+[collect ./target/stage3.spec]
 [collect ./steps/capture/tar.spec]
-
-[section path/mirror]
-
-source: $[:source/subpath]/$[source/name].tar.*
-
-[section source]
-
-: stage2
-name: $[]-$[:subarch]-$[:build]-$[:version]
-version: $[target/version]
-subarch: $[target/subarch]
-build: $[target/build]
 
 [section steps]
 

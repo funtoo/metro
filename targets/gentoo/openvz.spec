@@ -1,20 +1,16 @@
-[collect ./stage/container.spec]
+[collect ./source/stage3.spec]
+[collect ./target/container.spec]
+[collect ./steps/capture/tar.spec]
 
 [section target]
 
-name: $[:build]-$[:subarch]-$[:version]
+name: openvz-$[:build]-$[:subarch]-$[:version]
 sys: openvz
 realname: OpenVZ
 url: http://www.openvz.org
-
-[section path/mirror]
-
-target: $[:target/openvz/subpath]/$[target/name].tar.$[target/compression]
 
 [section steps]
 
 chroot/run: [
 $[[steps/chroot/run/container/base]]
 ]
-
-

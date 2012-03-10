@@ -1,4 +1,6 @@
-[collect ./stage/container.spec]
+[collect ./source/stage3.spec]
+[collect ./target/container.spec]
+[collect ./steps/capture/tar.spec]
 
 [section target]
 
@@ -6,10 +8,6 @@ name: vserver-$[:subarch]-$[:build]-$[:version]
 sys: vserver
 realname: Linux-VServer
 url: http://linux-vserver.org
-
-[section path/mirror]
-
-target: $[:target/vserver/subpath]/$[target/name].tar.$[target/compression]
 
 [section steps]
 
