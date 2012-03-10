@@ -92,7 +92,7 @@ emerge -u sys-apps/portage || die
 
 export buildpkgs="$(python /tmp/build.py)"
 export BOOTSTRAP_USE="$(portageq envvar BOOTSTRAP_USE)"
-export USE="-* bindist build xml ${BOOTSTRAP_USE} ssl"
+export USE="-* bindist build xml ${BOOTSTRAP_USE} ssl threads"
 export FEATURES="$FEATURES nodoc noman noinfo"
 
 # In some cases permissions of the root directory are false, force them to 755
