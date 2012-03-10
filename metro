@@ -23,6 +23,7 @@ def usage():
  -V, --version              Display version information
 
  -d, --debug                Enable debug mode
+ -f, --debug-flexdata       Resolve and print flexdata tree
  -v, --verbose              Verbose mode
  -l [dir], --libdir [dir]   Use alternate library dir (default /usr/lib/metro)
 
@@ -48,6 +49,7 @@ def version():
 class Metro:
     def __init__(self):
         self.debug = False
+        self.debug_flexdata = False
         self.verbose = False
         self.configfile = None
         self.optdict = {}
@@ -61,7 +63,7 @@ class Metro:
             sys.exit(1)
 
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "dhvxVk:l:", ["debug", "help", "verbose", "version", "key=", "libdir="])
+            opts, args = getopt.getopt(sys.argv[1:], "dfhvxVk:l:", ["debug", "debug-flexdata", "help", "verbose", "version", "key=", "libdir="])
         except getopt.GetoptError:
             usage()
             sys.exit(1)
@@ -69,6 +71,7 @@ class Metro:
         self.optdict = dict(opts)
 
         self.debug = self.has_opts(["-d", "--debug"])
+        self.debug_flexdata = self.has_opts(["-f", "--debug-flexdata"])
         self.verbose = self.has_opts(["-v", "--verbose"])
 
         # Step 1: check preconditions
@@ -139,10 +142,6 @@ class Metro:
 
         settings.runCollector()
 
-        # dump all settings
-        if self.debug:
-            Metro.dump_settings(settings)
-
         return settings
 
     @staticmethod
@@ -150,11 +149,15 @@ class Metro:
         keys = settings.keys()
         keys.sort()
         for key in keys:
-            value = settings[key]
-            if type(value) is list:
-                print key+": [...]"
+            try:
+                value = settings[key]
+            except:
+                print key+" cannot be resolved with this target!"
             else:
-                print key+": "+str(settings[key])
+                if type(value) is list:
+                    print key+": [...]"
+                else:
+                    print key+": "+str(settings[key])
 
     def setup_paths(self):
         binpath = os.path.abspath(sys.argv[0])
@@ -180,7 +183,13 @@ class Metro:
         for targetname in targetlist:
             settings = self.init_settings(args, {"target": targetname})
             target = self.find_target(settings)
+
             print "Running target %s with class %s" % (targetname, settings["target/class"])
+
+            # dump all settings
+            if self.debug_flexdata:
+                Metro.dump_settings(settings)
+
             target.run()
             print "Target run complete"
             print
