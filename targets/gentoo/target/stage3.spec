@@ -11,11 +11,6 @@ name/current: stage3-current
 ok/run: [
 #!/bin/bash
 
-# Since we've completed a successful stage3 build, we will update our
-# .control/version/stage3 file. This file records the version of the last
-# successful stage3 build.
-
-
 install -d $[path/mirror/control]/version || exit 1
 echo "$[target/version]" > $[path/mirror/control]/version/stage3 || exit 1
 
