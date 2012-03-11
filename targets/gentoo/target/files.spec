@@ -49,12 +49,12 @@ for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
 [section files]
 
 motd: [
-$[files/motd/extra:zap]
+$[[files/motd/extra:lax]]
 
  >>> Release:                       $[target/name]
  >>> Version:                       $[target/version]
  >>> Created by:                    $[release/author]
-$[files/motd/trailer:zap]
+$[[files/motd/trailer:lax]]
 
  NOTE: This message can be removed by deleting /etc/motd.
 

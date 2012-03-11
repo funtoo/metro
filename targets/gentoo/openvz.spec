@@ -1,13 +1,15 @@
 [collect ./source/stage3.spec]
-[collect ./target/container.spec]
+[collect ./target/stage4.spec]
+[collect ./steps/container.spec]
 [collect ./steps/capture/tar.spec]
+
+[section stage4]
+
+target/name: openvz
 
 [section target]
 
-name: openvz-$[:build]-$[:subarch]-$[:version]
 sys: openvz
-realname: OpenVZ
-url: http://www.openvz.org
 
 [section steps]
 

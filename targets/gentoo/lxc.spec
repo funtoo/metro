@@ -1,13 +1,15 @@
 [collect ./source/stage3.spec]
-[collect ./target/container.spec]
+[collect ./target/stage4.spec]
+[collect ./steps/container.spec]
 [collect ./steps/capture/tar.spec]
+
+[section stage4]
+
+target/name: lxc
 
 [section target]
 
-name: lxc-$[:subarch]-$[:build]-$[:version]
 sys: lxc
-realname: Linux Containers
-url: http://lxc.sourceforge.net
 
 [section steps]
 

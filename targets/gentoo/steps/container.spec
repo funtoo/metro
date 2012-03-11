@@ -74,5 +74,4 @@ echo "Root password check: PASSED"
 # tty must exist
 [ ! -e /dev/tty ] && exit 16
 echo "/dev/tty check: PASSED"
-echo "$[target/realname] script complete."
 ]
