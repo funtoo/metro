@@ -6,4 +6,4 @@
 name: $[]-$[:subarch]-$[:build]-$[:version]
 build: $[target/build]
 subarch: $[target/subarch]
-version: << $[path/mirror/control]/version/stage3
+version: << $[path/mirror/target/control]/version/stage3

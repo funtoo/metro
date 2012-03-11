@@ -11,8 +11,8 @@ name/current: stage3-current
 ok/run: [
 #!/bin/bash
 
-install -d $[path/mirror/control]/version || exit 1
-echo "$[target/version]" > $[path/mirror/control]/version/stage3 || exit 1
+install -d $[path/mirror/target/control]/version || exit 1
+echo "$[target/version]" > $[path/mirror/target/control]/version/stage3 || exit 1
 
 $[[trigger/ok/symlink]]
 ]

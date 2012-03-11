@@ -9,6 +9,6 @@ name: stage1-$[:subarch]-$[:build]-$[:version]
 ok/run: [
 #!/bin/bash
 
-install -d $[path/mirror/control]/version || exit 1
-echo "$[target/version]" > $[path/mirror/control]/version/stage1 || exit 1
+install -d $[path/mirror/target/control]/version || exit 1
+echo "$[target/version]" > $[path/mirror/target/control]/version/stage1 || exit 1
 ]
