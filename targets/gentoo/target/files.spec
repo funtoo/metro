@@ -45,3 +45,17 @@ for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
 		print "# "+x+" is not set"
 ?>
 ]
+
+[section files]
+
+motd: [
+$[files/motd/extra:zap]
+
+ >>> Release:                       $[target/name]
+ >>> Version:                       $[target/version]
+ >>> Created by:                    $[release/author]
+$[files/motd/trailer:zap]
+
+ NOTE: This message can be removed by deleting /etc/motd.
+
+]

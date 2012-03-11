@@ -119,7 +119,10 @@ if [ "$[target]" != "stage1" ] && [ -e /usr/bin/ccache ]
 then
 	emerge -C dev-util/ccache || exit 1
 fi
+
 emerge -C $[emerge/packages/clean:zap] || exit 2
+
+# systemd compatible os-release file
 cat <<EOF > /etc/os-release
 ID=$[release/name/id:zap]
 NAME="$[release/name:zap]"
@@ -128,6 +131,12 @@ CPE_NAME="$[release/name/cpe:zap]"
 VERSION="$[release/version:zap]"
 VERSION_ID=$[release/version/id:zap]
 ANSI_COLOR="$[release/color:zap]"
+EOF
+
+# motd
+echo "Creating motd..."
+cat > /etc/motd << "EOF"
+$[[files/motd]]
 EOF
 ]
 
