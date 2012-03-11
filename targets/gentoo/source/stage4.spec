@@ -6,6 +6,7 @@
 
 [section source]
 
+: $[stage4/source/name]
 name: $[]-$[:subarch]-$[:build]-$[:version]
 
 # When building from a stage4, we simply use the stage4 with matching
@@ -13,4 +14,4 @@ name: $[]-$[:subarch]-$[:build]-$[:version]
 
 build: $[target/build]
 subarch: $[target/subarch]
-version: $[target/version]
+version: << $[path/mirror/control]/version/stage4/$[stage4/source/name]
