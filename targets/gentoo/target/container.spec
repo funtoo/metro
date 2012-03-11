@@ -23,11 +23,11 @@ motd: [
  >>> Template:                      $[target/name]
  >>> Technology:                    $[target/realname]
  >>> Version:                       $[target/version]
- >>> Created by:                    $[local/author]
+ >>> Created by:                    $[release/author]
 
  >>> Send suggestions, improvements, bug reports relating to...
 
- >>> This template:                 $[local/author]
+ >>> This template:                 $[release/author]
  >>> Funtoo Linux (general):        Funtoo Linux (http://www.funtoo.org)
  >>> Gentoo Linux (general):        Gentoo Linux (http://www.gentoo.org)
  >>> Container technology:          $[target/url]
