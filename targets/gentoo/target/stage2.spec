@@ -2,4 +2,4 @@
 
 [section target]
 
-name: $[]-$[:subarch]-$[:build]-$[:version]
+name: stage2-$[:subarch]-$[:build]-$[:version]

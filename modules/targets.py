@@ -168,6 +168,7 @@ class chroot(target):
         for key, name, dest in [
                 [ "path/cache/compiler", "cache/compiler", "/var/tmp/cache/compiler" ] ,
                 [ "path/cache/package", "cache/package", "/var/tmp/cache/package" ] ,
+                [ "path/cache/kernel", "cache/kernel", "/var/tmp/cache/kernel" ] ,
                 [ "path/cache/probe", "probe", "/var/tmp/cache/probe" ] ]:
             if self.settings.has_key(skey) and name in self.settings[skey].split():
                 if not self.settings.has_key(key):

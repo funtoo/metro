@@ -1,5 +1,5 @@
 [section source]
 
-subarch: $[target/subarch]
 build: $[target/build]
-version: << $[path/mirror/control]/version/stage3
+subarch: $[target/subarch]
+version: << $[path/mirror/target/control]/version/stage3

@@ -1,13 +1,15 @@
 [collect ./source/stage3.spec]
-[collect ./target/container.spec]
+[collect ./target/stage4.spec]
+[collect ./steps/container.spec]
 [collect ./steps/capture/tar.spec]
+
+[section stage4]
+
+target/name: vserver
 
 [section target]
 
-name: vserver-$[:subarch]-$[:build]-$[:version]
 sys: vserver
-realname: Linux-VServer
-url: http://linux-vserver.org
 
 [section steps]
 
