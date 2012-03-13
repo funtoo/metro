@@ -203,11 +203,12 @@ class Metro:
         defined in "target/class" exists in there and is a class. If not, we raise an exception.
 
         """
-        if not self.targets.__dict__.has_key(settings["target/class"]):
-            raise NameError("target class "+settings["target/class"]+" not defined in modules/targets.py.")
-        if type(self.targets.__dict__[settings["target/class"]]) != types.ClassType:
-            raise NameError("target class "+settings["target/class"]+" does not appear to be a class.")
-        return self.targets.__dict__[settings["target/class"]](settings)
+        cls = settings["target/class"].capitalize()+"Target"
+        if not self.targets.__dict__.has_key(cls):
+            raise NameError("target class "+cls+" not defined in modules/targets.py.")
+        if type(self.targets.__dict__[cls]) != types.ClassType:
+            raise NameError("target class "+cls+" does not appear to be a class.")
+        return self.targets.__dict__[cls](settings)
 
 
 try:
