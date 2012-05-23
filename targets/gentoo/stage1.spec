@@ -48,6 +48,9 @@ for b in buildpkgs: print(b)
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
+# upgrade portage on stage3 if necessary, before we begin:
+emerge -u sys-apps/portage || die
+
 # update python if it is available
 emerge -u python || die 
 # switch to correct python
@@ -57,9 +60,6 @@ python-updater || die
 cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]
 EOF
-
-# upgrade portage on stage3 if necessary, before we begin:
-emerge -u sys-apps/portage || die
 
 export buildpkgs="$(python /tmp/build.py)"
 export BOOTSTRAP_USE="$(portageq envvar BOOTSTRAP_USE)"
