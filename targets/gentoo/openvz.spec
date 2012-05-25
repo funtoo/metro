@@ -5,7 +5,7 @@
 
 [section stage4]
 
-target/name: openvz
+target/name: funtoo-openvz
 
 [section target]
 
