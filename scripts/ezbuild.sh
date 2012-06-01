@@ -53,7 +53,7 @@ BUILD="$1"
 if [ "$2" == "snapshot" ]
 then
 	[ "$#" -ge "3" ] && VERS=$3 || VERS=`date +%Y-%m-%d`
-	run $METRO metro/build: $BUILD target: snapshot target/version: $VERS || die "snapshot failure"
+	run $METRO target/build: $BUILD target: snapshot target/version: $VERS || die "snapshot failure"
 else
 	SUBARCH="$2"
 	extras=""
