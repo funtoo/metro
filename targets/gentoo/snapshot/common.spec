@@ -19,8 +19,7 @@ link/dest: $[portage/name/full].tar.$[target/compression]
 ok/run: [
 #!/bin/bash
 # CREATE current symlink for the snapshot
-rm -f $[path/mirror/link]
-ln -s $[path/mirror/link/dest] $[path/mirror/link] || exit 3
+ln -sf $[path/mirror/link/dest] $[path/mirror/link] || exit 3
 ]
 
 [section steps]
