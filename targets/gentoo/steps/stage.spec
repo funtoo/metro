@@ -123,7 +123,7 @@ EOF
 else
 	# classic profiles
 	ln -sf ../usr/portage/profiles/$[portage/profile:zap] /etc/make.profile || exit 1
-	echo "Set Portage profile to $[portage/profile:zap]."
+	echo "Set Portage profile to $[portage/profile?]."
 fi
 ]
 
