@@ -107,17 +107,14 @@ fi
 prerun: [
 #!/bin/bash
 rm -f /etc/make.profile 
-if [ "$[profile/format?]" = "new" ]; then
+if [ "$[profile/format]" = "new" ]; then
 	# new-style profiles
 	install -d /etc/portage/make.profile
 	cat > /etc/portage/make.profile/parent << EOF
-$[profile/arch?]
-$[profile/build?]
-$[profile/flavor?]
+$[profile/arch]
+$[profile/build]
+$[profile/flavor]
 EOF
-	for mixin in $[profile/mixins?]; do
-		echo $mixin >> /etc/portage/make.profile/parent
-	done
 	echo "New-style profile settings:"
 	cat /etc/portage/make.profile/parent
 else
