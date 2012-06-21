@@ -177,8 +177,15 @@ then
 	done
 else
 	# stage1 - make sure we include our make.conf and profile link...
-	rm -f $ROOT/etc/make.conf $ROOT/etc/make.profile || exit 3
-	cp -a /etc/make.conf /etc/make.profile $ROOT/etc || exit 4
+	if [ "$[profile/format]" = "new" ]; then
+		rm -f $ROOT/etc/make.conf $ROOT/etc/portage/make.profile/parent || exit 3
+		install -d $ROOT/etc/portage/make.profile
+		cp -a /etc/portage/make.profile/parent $ROOT/etc/portage/make.profile/parent || exit 4
+		cp -a /etc/make.conf $ROOT/etc/make.conf || exit 4
+	else
+		rm -f $ROOT/etc/make.conf $ROOT/etc/make.profile || exit 3
+		cp -a /etc/make.conf /etc/make.profile $ROOT/etc || exit 4
+	fi
 fi
 # clean up temporary locations. Note that this also ends up removing our scripts, which
 # exist in /tmp inside the chroot. So after this cleanup, any execution inside the chroot
