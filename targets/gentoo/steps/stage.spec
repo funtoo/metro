@@ -122,8 +122,8 @@ EOF
 	cat /etc/portage/make.profile/parent
 else
 	# classic profiles
-	ln -sf ../usr/portage/profiles/$[portage/profile] /etc/make.profile || exit 1
-	echo "Set Portage profile to $[portage/profile]."
+	ln -sf ../usr/portage/profiles/$[portage/profile:zap] /etc/make.profile || exit 1
+	echo "Set Portage profile to $[portage/profile:zap]."
 fi
 ]
 
