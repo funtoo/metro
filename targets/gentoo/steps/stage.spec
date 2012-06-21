@@ -106,9 +106,25 @@ fi
 
 prerun: [
 #!/bin/bash
-rm -f /etc/make.profile
-ln -sf ../usr/portage/profiles/$[portage/profile] /etc/make.profile || exit 1
-echo "Set Portage profile to $[portage/profile]."
+rm -f /etc/make.profile 
+if [ "$[profile/format?]" = "new" ]; then
+	# new-style profiles
+	install -d /etc/portage/make.profile
+	cat > /etc/portage/make.profile/parent << EOF
+$[profile/arch]
+$[profile/build]
+$[profile/flavor]
+EOF
+	for mixin in $[profile/mixins?]; do
+		echo $mixin >> /etc/portage/make.profile/parent
+	done
+	echo "New-style profile settings:"
+	cat /etc/portage/make.profile/parent
+else
+	# classic profiles
+	ln -sf ../usr/portage/profiles/$[portage/profile] /etc/make.profile || exit 1
+	echo "Set Portage profile to $[portage/profile]."
+fi
 ]
 
 # do any cleanup that you need with things bind mounted here:
