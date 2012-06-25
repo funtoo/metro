@@ -24,7 +24,7 @@ USE="-* build bootstrap" emerge portage || exit 1
 
 export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
 # adding oneshot below so "libtool" doesn't get added to the world file... 
-# libtool should be in the system profile, but is not latestly there it seems.
+# libtool should be in the system profile, but is not currently there it seems.
 emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
 emerge --clean 
 emerge --prune sys-devel/gcc || exit 1
@@ -36,7 +36,7 @@ emerge --prune sys-devel/gcc || exit 1
 unset USE
 emerge $eopts --oneshot dev-lang/python || exit 1
 
-gcc-config $(gcc-config --get-latest-profile)
+gcc-config $(gcc-config --get-current-profile)
 
 # now, we need to do some house-cleaning... we may have just changed
 # CHOSTS, which means we have some cruft lying around that needs cleaning

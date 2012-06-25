@@ -22,8 +22,8 @@ then
 	export CCACHE_DIR=/var/tmp/cache/compiler
 	export FEATURES="$FEATURES ccache"
 	/usr/bin/ccache -M 1G
-	# The ccache ebuild has a bug where it will install links in /usr/lib/ccache/bin to reflect the latest setting of CHOST.
-	# But the latest setting of CHOST may not reflect the latest compiler available (remember, CHOST can be overridden in /etc/make.conf)
+	# The ccache ebuild has a bug where it will install links in /usr/lib/ccache/bin to reflect the current setting of CHOST.
+	# But the current setting of CHOST may not reflect the current compiler available (remember, CHOST can be overridden in /etc/make.conf)
 
 	# This causes problems with ebuilds (such as ncurses) who may find an "i686-pc-linux-gnu-gcc" symlink in /usr/lib/ccache/bin and
 	# assume that an "i686-pc-linux-gnu-gcc" compiler is actually installed, when we really have an i486-pc-linux-gnu-gcc compiler
