@@ -1,3 +1,3 @@
 [section path/mirror]
 
-source: $[:source/subpath]/$[source/name].tar.*
+source: $[]/$[:source/subpath]/$[source/name].tar.*

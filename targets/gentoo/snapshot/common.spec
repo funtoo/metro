@@ -10,15 +10,15 @@ class: snapshot
 
 [section path/mirror]
 
-# "current" symlink:
-link: $[:snapshot/subpath]/$[portage/name]-current.tar.$[target/compression]
+# "latest" symlink:
+link: $[]/$[:snapshot/subpath]/$[portage/name]-latest.tar.$[target/compression]
 link/dest: $[portage/name/full].tar.$[target/compression]
 
 [section trigger]
 
 ok/run: [
 #!/bin/bash
-# CREATE current symlink for the snapshot
+# CREATE latest symlink for the snapshot
 ln -sf $[path/mirror/link/dest] $[path/mirror/link] || exit 3
 ]
 

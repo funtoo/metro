@@ -1,7 +1,8 @@
 [section path/mirror]
 
 target/basename: $[target/name].iso
-target/current: $[target/name/current].iso
+target/latest: $[target/name/latest].iso
+target/full_latest: $[target/name/full_latest].iso
 
 [section steps]
 

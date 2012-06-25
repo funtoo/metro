@@ -1,7 +1,8 @@
 [section path/mirror]
 
 target/basename: $[target/name].tar.$[target/compression]
-target/current: $[target/name/current].tar.$[target/compression]
+target/latest: $[target/name/latest].tar.$[target/compression]
+target/full_latest: $[target/name/full_latest].tar.$[target/compression]
 
 [section steps]
 
