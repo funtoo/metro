@@ -36,6 +36,7 @@ cp -T $[path/chroot/stage]/boot/System.map* $cdroot/isolinux/System.map || exit 
 
 cat > $cdroot/isolinux/isolinux.cfg << "EOF"
 prompt 1
+timeout 30
 default $[target/build]
 
 label $[target/build]
