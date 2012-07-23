@@ -34,7 +34,10 @@ emerge --prune sys-devel/gcc || exit 1
 # build:
 
 unset USE
-emerge $eopts --oneshot dev-lang/python || exit 1
+for atom in `portageq match / dev-lang/python`
+do
+	emerge $eopts --oneshot =$atom || exit 1
+done
 
 gcc-config $(gcc-config --get-current-profile)
 
