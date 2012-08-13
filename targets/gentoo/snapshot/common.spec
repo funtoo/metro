@@ -11,7 +11,7 @@ class: snapshot
 [section path/mirror]
 
 # "latest" symlink:
-link: $[]/$[:snapshot/subpath]/$[portage/name]-latest.tar.$[target/compression]
+link: $[]/$[:snapshot/subpath]/$[portage/name]-$[:link/suffix].tar.$[target/compression]
 link/dest: $[portage/name/full].tar.$[target/compression]
 
 [section trigger]
