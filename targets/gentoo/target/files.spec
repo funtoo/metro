@@ -32,7 +32,6 @@ locale.gen: [
 # rebuilt for you.  After updating this file, you can simply run `locale-gen`
 # yourself instead of re-emerging glibc.
 
-en_US ISO-8859-1
 en_US.UTF-8 UTF-8
 ]
 
