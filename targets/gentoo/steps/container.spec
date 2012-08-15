@@ -29,6 +29,7 @@ chmod 0640 /etc/shadow || exit 2
 
 # device nodes
 echo "Creating device nodes..."
+[ -e /lib/udev/devices ] || mkdir -pv /lib/udev/devices || exit 3
 [ -e /lib/udev/devices/ttyp0 ] || mknod /lib/udev/devices/ttyp0 c 3 0 || exit 3
 [ -e /lib/udev/devices/ptyp0 ] || mknod /lib/udev/devices/ptyp0 c 2 0 || exit 3
 [ -e /lib/udev/devices/ptmx ] || mknod /lib/udev/devices/ptmx c 5 2 || exit 3
@@ -48,6 +49,7 @@ rc-update add sshd default
 echo "Removing unnecessary udev stuff from default runlevel..."
 rc-update del udev-mount sysinit
 rc-update del udevd sysinit
+rc-update del udev sysinit
 
 # hostname - change periods from target/name into dashes
 echo "Setting hostname..."
