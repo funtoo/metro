@@ -1,7 +1,7 @@
 [section target]
 
 arch: arm
-arch_desc: arm
+arch_desc: arm-32bit
 
 [section portage]
 
