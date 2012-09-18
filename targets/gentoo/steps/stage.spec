@@ -67,7 +67,7 @@ fi
 # work around glibc sandbox issues:
 FEATURES="$FEATURES -sandbox"
 # the quotes below prevent variable expansion of anything inside make.conf
-cat > /etc/make.conf << "EOF"
+cat > /etc/portage/make.conf << "EOF"
 $[[files/make.conf]]
 EOF
 if [ "$[portage/files/package.use?]" = "yes" ]
@@ -187,14 +187,20 @@ else
 	# stage1 - make sure we include our make.conf and profile link...
 	pf=""
 	pf=$[profile/format:zap]
+	rm -f $ROOT/etc/make.conf $ROOT/etc/portage/make.conf
+	if [ -e /etc/make.conf ]; then
+		mkconf=/etc/make.conf
+	else
+		mkconf=/etc/portage/make.conf
+	fi
 	if [ "$pf" = "new" ]; then
-		rm -f $ROOT/etc/make.conf $ROOT/etc/portage/make.profile/parent || exit 3
+		rm -f $ROOT/etc/portage/make.profile/parent || exit 3
 		install -d $ROOT/etc/portage/make.profile
 		cp -a /etc/portage/make.profile/parent $ROOT/etc/portage/make.profile/parent || exit 4
-		cp -a /etc/make.conf $ROOT/etc/make.conf || exit 4
+		cp -a $mkconf $ROOT/etc/make.conf || exit 4
 	else
-		rm -f $ROOT/etc/make.conf $ROOT/etc/make.profile || exit 3
-		cp -a /etc/make.conf /etc/make.profile $ROOT/etc || exit 4
+		rm -f $ROOT/etc/make.profile || exit 3
+		cp -a $mkconf /etc/make.profile $ROOT/etc || exit 4
 	fi
 fi
 # clean up temporary locations. Note that this also ends up removing our scripts, which
@@ -222,11 +228,11 @@ find $ROOT/etc -iname '._cfg????_*' -exec rm -f {} \;
 install -d $ROOT/etc/portage
 
 # ensure that make.conf.example is set up OK...
-if [ ! -e $ROOT/etc/make.conf.example ]
+if [ ! -e $ROOT/etc/portage/make.conf.example ]
 then
 	if [ -e $ROOT/usr/share/portage/config/make.conf.example ]
 	then
-		ln -s ../usr/share/portage/config/make.conf.example $ROOT/etc/make.conf.example || exit 6
+		ln -s ../usr/share/portage/config/make.conf.example $ROOT/etc/portage/make.conf.example || exit 6
 	fi
 fi
 # locale-archive can be ~81 MB; this should shrink it to 2MB.
