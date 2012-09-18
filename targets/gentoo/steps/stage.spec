@@ -228,7 +228,7 @@ find $ROOT/etc -iname '._cfg????_*' -exec rm -f {} \;
 install -d $ROOT/etc/portage
 
 # ensure that make.conf.example is set up OK...
-if [ ! -e $ROOT/etc/portage/make.conf.example ]
+if [ ! -e $ROOT/etc/portage/make.conf.example ] && [ ! -L $ROOT/etc/portage/make.conf.example ]
 then
 	if [ -e $ROOT/usr/share/portage/config/make.conf.example ]
 	then
