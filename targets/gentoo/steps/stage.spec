@@ -67,9 +67,15 @@ fi
 # work around glibc sandbox issues:
 FEATURES="$FEATURES -sandbox"
 # the quotes below prevent variable expansion of anything inside make.conf
+if [ "$[profile/format]" = "new" ]; then
 cat > /etc/portage/make.conf << "EOF"
-$[[files/make.conf]]
+$[[files/make.conf.newprofile]]
 EOF
+else
+cat > /etc/portage/make.conf << "EOF"
+$[[files/make.conf.oldprofile]]
+EOF
+fi
 if [ "$[portage/files/package.use?]" = "yes" ]
 then
 cat > /etc/portage/package.use << "EOF"

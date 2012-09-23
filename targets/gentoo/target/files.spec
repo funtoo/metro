@@ -1,6 +1,6 @@
 [section files]
 
-make.conf: [
+make.conf.oldprofile: [
 # These settings were set by the metro build script that automatically built this stage.
 # Please consult /etc/make.conf.example for a more detailed example.
 
@@ -11,7 +11,17 @@ CFLAGS="$[portage/CFLAGS:zap]"
 CXXFLAGS="$[portage/CFLAGS:zap]"
 LDFLAGS="$[portage/LDFLAGS:zap]"
 USE="$[portage/USE:zap]"
-SYNC="$[snapshot/source/remote]"
+]
+
+make.conf.newprofile: [
+# These settings were set by the metro build script that automatically built this stage.
+# Please consult /etc/make.conf.example for a more detailed example.
+
+FEATURES="$[portage/FEATURES:zap]"
+CFLAGS="$[portage/CFLAGS:zap]"
+CXXFLAGS="$[portage/CFLAGS:zap]"
+LDFLAGS="$[portage/LDFLAGS:zap]"
+USE="$[portage/USE:zap]"
 ]
 
 locale.gen: [

@@ -68,9 +68,16 @@ fi
 ]
 
 env: [
-cat << "EOF" > $[path/chroot]/etc/make.conf || exit 5
-$[[files/make.conf]]
+install -d $[path/chroot]/etc/portage
+if [ "$[profile/format]" = "new" ]; then
+cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
+$[[files/make.conf.newprofile]]
 EOF
+else
+cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
+$[[files/make.conf.oldprofile]]
+EOF
+fi
 cat << "EOF" > $[path/chroot]/etc/env.d/99zzmetro || exit 6
 $[[files/proxyenv]]
 EOF
