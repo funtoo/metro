@@ -1,11 +1,12 @@
 #!/bin/bash
-
+kcfile="/root/.keychain/$(hostname)-sh"
+[ -e "$kcfile" ] && . "$kcfile"
 dobuild() {
-	local build=$2
-	local subarch=$3
+	local build=$1
+	local subarch=$2
 	# buildrepo returns True for this argument if last build had a stage1 built too (non-freshen), otherwise False
-	local full=$4
-	local buildtype=$1
+	local full=$3
+	local buildtype=full
 	if [ "$full" = "True" ]; then
 		buildtype="freshen"
 	fi
@@ -29,10 +30,6 @@ dobuild() {
 	fi
 }
 ( cd /root/git/metro; git pull )
-if [ "$1" = "" ]; then
-	echo "Please specify type of build (full, full+openvz, etc.)"
-	exit 1
-fi
 export METRO_BUILDS="funtoo-current funtoo-stable funtoo-experimental"
 export STALE_DAYS=3
 cd /var/tmp
@@ -47,4 +44,4 @@ elif [ $? -eq 2 ]; then
 	exit 1
 fi
 # otherwise, build what needs to be built:
-dobuild full $a
+dobuild $a

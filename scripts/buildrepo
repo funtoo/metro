@@ -181,7 +181,6 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	if "STALE_DAYS" in os.environ:
 		try:
 			stale_days =int(os.environ["STALE_DAYS"])
-			print("Using stale_days of %s" % stale_days)
 		except:
 			print("STALE_DAYS env var is not an integer. Please fix.")
 			sys.exit(2)
