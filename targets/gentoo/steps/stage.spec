@@ -186,7 +186,7 @@ then
 else
 	# stage1 - make sure we include our make.conf and profile link...
 	pf=""
-	pf=$[profile/format:zap]
+	pf="$[profile/format:zap]"
 	rm -f $ROOT/etc/make.conf $ROOT/etc/portage/make.conf
 	if [ -e /etc/make.conf ]; then
 		mkconf=/etc/make.conf

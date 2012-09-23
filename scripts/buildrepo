@@ -1,0 +1,209 @@
+#!/usr/bin/python2
+
+import os
+import sys
+import glob
+import datetime
+from db import *
+
+builds = (
+	"funtoo-experimental",
+	"funtoo-current",
+	"funtoo-stable",
+	"gentoo-stable",
+)
+
+arches = (
+	"x86-32bit",
+	"x86-64bit",
+	"sparc-64bit"
+)
+
+subarches = ( 
+	"atom_32",
+	"atom_64",
+	"corei7",
+	"i486", 
+	"i686", 
+	"athlon-xp",
+	"pentium4",
+	"core2_32",
+	"amd64-k8_32",
+	"amd64-k8",
+	"amd64-k10",
+	"core2_64",
+	"generic_64",
+	"ultrasparc",
+	"ultrasparc3",
+	"niagara",
+	"niagara2",
+	"generic_sparcv9"
+)
+
+class SubArch(dbobject):
+	@classmethod
+	def _makeTable(cls,db):
+		cls.db = db
+		cls.__table__ = Table('subarch', db.metadata,
+			Column('id', Integer, primary_key = True),
+			Column('date', DateTime, index=True),
+			Column('date_str', String, index=True),
+			Column('path', String, index=True),
+			Column('build', String, index=True),
+			Column('arch', String, index=True),
+			Column('subarch', String, index=True),
+		)
+
+class BuildDir(dbobject):
+	@classmethod
+	def _makeTable(cls,db):
+		cls.db = db
+		cls.__table__ = Table('bdir', db.metadata,
+			Column('id', Integer, primary_key = True),
+			Column('date', DateTime, index=True),
+			Column('path', String, index=True),
+			Column('build', String, index=True),
+			Column('arch', String, index=True),
+			Column('subarch', String, index=True),
+			Column('date_str', String, index=True),
+			Column('complete', Boolean, index=True),
+			Column('full', Boolean, index=True)
+		)
+
+class Snapshot(dbobject):
+	@classmethod
+	def _makeTable(cls,db):
+		cls.db = db
+		cls.__table__ = Table('snapshot', db.metadata,
+			Column('id', Integer, primary_key = True),
+			Column('path', String, index=True),
+			Column('build', String, index=True),
+		)
+
+class RepositoryDatabase(Database):
+	__database__ = "sqlite:///cleaner.db"
+	def __init__(self):
+		Database.__init__(self,[BuildDir, Snapshot, SubArch])
+		self.associate()
+	def associate(self):
+		Database.associate(self,self.__database__)
+
+initial_path = "/home/mirror/linux"
+
+if __name__ == "__main__":
+	if os.path.exists("cleaner.db"):
+		os.unlink("cleaner.db")
+	db = RepositoryDatabase()
+	session = db.session
+	for build in builds:
+		if not os.path.exists("%s/%s" % (initial_path, build)):
+			continue
+		snapdir = "%s/%s/snapshots" % ( initial_path, build )
+		if os.path.isdir(snapdir) and not os.path.islink(snapdir):
+			for match in glob.glob("%s/portage-*.tar.xz" % snapdir):
+				basename = os.path.basename(match)
+				if basename == "portage-current.tar.xz":
+					continue
+				sna = Snapshot()
+				sna.path = match
+				sna.build = build
+				session.add(sna)
+		for arch in arches:
+			if not os.path.exists("%s/%s/%s" % ( initial_path, build, arch )):
+				continue
+			for subarch in subarches:
+				path = "%s/%s/%s/%s" % (initial_path, build, arch, subarch)
+				if not os.path.exists(path):
+					continue
+				for instance in os.listdir(path):
+					ipath = "%s/%s" % ( path, instance )
+					if not os.path.isdir(ipath):
+						continue
+					if instance == ".control":
+						ctlfile = ipath + "/version/stage3"
+						if os.path.exists(ctlfile):
+							a = open(ctlfile,"r")
+							mydate = a.readlines()[0].strip()
+							date = datetime.datetime.strptime(mydate,"%Y-%m-%d")
+							mtime_path = path + "/" + mydate
+							for match in glob.glob("%s/stage3*.tar.*" % mtime_path):
+								mtime_date = datetime.datetime.fromtimestamp(os.path.getmtime(match))
+							sa = SubArch()
+							sa.path = ipath
+							sa.date = mtime_date
+							sa.date_str = mydate
+							sa.build = build
+							sa.arch = arch
+							sa.subarch = subarch
+							session.add(sa)
+							a.close()
+					else:
+						bdir = BuildDir()
+						bdir.path = ipath
+						bdir.date_str = instance
+						bdir.build = build
+						bdir.arch = arch
+						bdir.subarch = subarch
+						bdir.complete = False
+						bdir.full = False
+						for match in glob.glob("%s/stage3*.tar.*" % ipath):
+							bdir.complete = True
+							break
+						if bdir.complete:
+							for match in glob.glob("%s/stage1*.tar.*" % ipath):
+								bdir.full = True
+								break
+						session.add(bdir)
+	session.commit()
+
+if len(sys.argv) > 1 and sys.argv[1] == "clean":
+	for build in builds:
+		for arch in arches:
+			for subarch in subarches:
+				out = session.query(BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
+				for x in out[0:-3]:
+					print("rm -rf %s" % x.path)
+				for x in out[-3:]:
+					print("# keeping %s" % x.path)
+		sna = session.query(Snapshot).filter_by(build=build).order_by(Snapshot.path).all()
+		for x in sna[0:-2]:
+			print("rm %s" % x.path)
+		for x in sna[-2:]:
+			print("# keeping %s" % x.path)
+	for incomplete in session.query(BuildDir).filter_by(complete=False):
+		print("rm -rf %s # not complete" % incomplete.path)
+elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
+	if "METRO_BUILDS" not in os.environ:
+		print("Please set METRO_BUILDS env var to space-separated lists of builds, in order of preference.")
+		sys.exit(2)
+	env_builds = os.environ["METRO_BUILDS"].split()
+	stale_days = 4
+	if "STALE_DAYS" in os.environ:
+		try:
+			stale_days =int(os.environ["STALE_DAYS"])
+			print("Using stale_days of %s" % stale_days)
+		except:
+			print("STALE_DAYS env var is not an integer. Please fix.")
+			sys.exit(2)
+	now = datetime.datetime.now()
+	sa = session.query(SubArch)
+	for build in env_builds:
+		if build not in builds:
+			print("# Build %s not recognized; skipping." % builds)
+			sys.exit(2)
+		# grab all subarches for this build...
+		sa2 = sa.filter_by(build=build)
+		# order subarches by date, oldest to newest, and iterate over them:
+		for x in sa2.order_by(SubArch.__table__.c.date):
+			# if something is newer than 4 days old, it is not considered stale, so we skip over it:
+			if now - x.date < datetime.timedelta(days=stale_days):
+				continue	
+			# otherwise, we have found the next thing we should try to build. Output important info to stdout:
+			else:
+				# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
+				print x.build, x.subarch,
+				b = session.query(BuildDir).filter_by(build=x.build).filter_by(subarch=x.subarch).filter_by(date_str=x.date_str).one()
+				print b.full, x.date
+				exit(0)
+	# if we are totally current, exit with non-zero return value
+	exit(1)
