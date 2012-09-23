@@ -178,6 +178,10 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 		sys.exit(2)
 	env_builds = os.environ["METRO_BUILDS"].split()
 	stale_days = 4
+	skip_subarch = []
+	# Allows you to skip subarches that don't build on your system:
+	if "SKIP_SUBARCH" in os.environ:
+		skip_subarch = os.environ["SKIP_SUBARCH"].split()
 	if "STALE_DAYS" in os.environ:
 		try:
 			stale_days =int(os.environ["STALE_DAYS"])
@@ -194,6 +198,8 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 		sa2 = sa.filter_by(build=build)
 		# order subarches by date, oldest to newest, and iterate over them:
 		for x in sa2.order_by(SubArch.__table__.c.date):
+			if x.subarch in skip_subarch:
+				continue	
 			# if something is newer than 4 days old, it is not considered stale, so we skip over it:
 			if now - x.date < datetime.timedelta(days=stale_days):
 				continue	

@@ -32,6 +32,7 @@ dobuild() {
 ( cd /root/git/metro; git pull )
 export METRO_BUILDS="funtoo-current funtoo-stable funtoo-experimental"
 export STALE_DAYS=3
+export SKIP_SUBARCH="amd64-k10"
 cd /var/tmp
 a=$(/root/git/metro/scripts/buildrepo nextbuild)
 if [ $? -eq 1 ]; then
