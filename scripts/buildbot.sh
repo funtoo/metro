@@ -1,4 +1,11 @@
 #!/bin/bash
+
+if [ "$1" == "--pretend" ]; then
+	PRETEND=yes
+else
+	PRETEND=no
+fi
+
 kcfile="/root/.keychain/$(hostname)-sh"
 [ -e "$kcfile" ] && . "$kcfile"
 dobuild() {
@@ -23,7 +30,11 @@ dobuild() {
 	fi
 	if [ "$build" != "" ] && [ "$subarch" != "" ] && [ "$buildtype" != "" ]; then
 		echo "Building $build $subarch $buildtype"
-		exec /root/git/metro/scripts/ezbuild.sh $build $subarch $buildtype
+		if [ "$PRETEND" = "yes" ]; then
+			echo /root/git/metro/scripts/ezbuild.sh $build $subarch $buildtype
+		else
+			exec /root/git/metro/scripts/ezbuild.sh $build $subarch $buildtype
+		fi
 	else
 		echo "Couldn't determine build, subarch and build type. Exiting."
 		exit 1
