@@ -46,7 +46,11 @@ export STALE_DAYS=3
 export SKIP_SUBARCH="amd64-k10"
 cd /var/tmp
 a=$(/root/git/metro/scripts/buildrepo nextbuild)
-if [ $? -eq 1 ]; then
+if [ "$PRETEND" = "yes" ]; then
+	echo $a
+fi
+if [ "$a" = "" ]; then
+	echo "Builds are current."
 	# we are current
 	exit 0
 elif [ $? -eq 2 ]; then
