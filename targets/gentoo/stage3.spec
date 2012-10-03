@@ -25,6 +25,11 @@ rm -f /var/lib/portage/world || exit 2
 emerge $eopts $[emerge/packages/first:zap] || exit 1
 emerge $eopts $[emerge/packages:zap] || exit 1
 
+# run perl-cleaner to ensure all modules rebuilt after a major
+# perl update, fix FL-122
+perl-cleaner --all || exit 1
+
+
 # add default runlevel services
 services=""
 services="$[baselayout/services:zap]"
