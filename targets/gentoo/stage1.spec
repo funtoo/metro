@@ -130,6 +130,11 @@ cd ${ROOT}/dev || die "Could not change directory to $2."
 ! [ -c kmsg ] && rm -rf kmsg
 [ -e kmsg ] || { mknod kmsg c 2 11 && chmod 600 kmsg; } || die
 
+! [ -c full ] && rm -rf full
+[ -e full ] || { mknod full c 1 7 && chmod 644 full; } || die
+
+install -d -m1777 shm || die
+
 for x in 0 1 2 3
 do
 	# These devices are for initial serial console
