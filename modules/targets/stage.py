@@ -12,10 +12,10 @@ class StageTarget(ChrootTarget):
             self.mounts["/usr/portage/distfiles"] = self.settings["path/distfiles"]
 
         # let's bind-mount our main system's device nodes in place
-        if self.settings["portage/ROOT"] != "/":
+        #if self.settings["portage/ROOT"] != "/":
             # this seems to be needed for libperl to build (x2p) during stage1
-            self.mounts["/dev"] = "/dev"
-            self.mounts["/dev/pts"] = "/dev/pts"
+        #    self.mounts["/dev"] = "/dev"
+        #    self.mounts["/dev/pts"] = "/dev/pts"
 
     def run(self):
         ChrootTarget.run(self)
