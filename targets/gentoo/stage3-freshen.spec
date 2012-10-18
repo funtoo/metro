@@ -16,6 +16,9 @@ if [ "`emerge --list-sets | grep preserved-rebuild`" = "preserved-rebuild" ]
 then
 	emerge $eopts @preserved-rebuild || exit 3
 fi
+# run perl-cleaner to ensure all modules rebuilt after a major
+# perl update, fix FL-122
+perl-cleaner --all || exit 1
 ]
 
 [section portage]
