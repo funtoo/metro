@@ -165,6 +165,10 @@ echo "Creating motd..."
 cat > /etc/motd << "EOF"
 $[[files/motd]]
 EOF
+
+# FL-190 add sshd
+echo "Adding sshd to default runlevel..."
+rc-update add sshd default
 ]
 
 clean: [
