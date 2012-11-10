@@ -33,7 +33,12 @@ dobuild() {
 		if [ "$PRETEND" = "yes" ]; then
 			echo /root/git/metro/scripts/ezbuild.sh $build $subarch $buildtype
 		else
-			exec /root/git/metro/scripts/ezbuild.sh $build $subarch $buildtype
+			/root/git/metro/scripts/ezbuild.sh $build $subarch $buildtype
+			if [ $? -ne 0 ]; then
+				return $EXIT_CODE_ON_SUCCESS
+			else
+				return $EXIT_CODE_ON_FAL
+			fi
 		fi
 	else
 		echo "Couldn't determine build, subarch and build type. Exiting."
@@ -44,6 +49,10 @@ dobuild() {
 export METRO_BUILDS="funtoo-current funtoo-stable funtoo-experimental"
 export STALE_DAYS=5
 export SKIP_SUBARCH="amd64-k10"
+# Allow tweaking for cron to get the emails you want. These values will be returned only
+# after a non-pretend dobuild() run.
+export EXIT_CODE_ON_SUCCESS=1
+export EXIT_CODE_ON_FAIL=2
 cd /var/tmp
 a=$(/root/git/metro/scripts/buildrepo nextbuild)
 if [ "$PRETEND" = "yes" ]; then
