@@ -124,19 +124,25 @@ if __name__ == "__main__":
 						if os.path.exists(ctlfile):
 							a = open(ctlfile,"r")
 							mydate = a.readlines()[0].strip()
-							date = datetime.datetime.strptime(mydate,"%Y-%m-%d")
-							mtime_path = path + "/" + mydate
-							for match in glob.glob("%s/stage3*.tar.*" % mtime_path):
-								mtime_date = datetime.datetime.fromtimestamp(os.path.getmtime(match))
-							sa = SubArch()
-							sa.path = ipath
-							sa.date = mtime_date
-							sa.date_str = mydate
-							sa.build = build
-							sa.arch = arch
-							sa.subarch = subarch
-							session.add(sa)
 							a.close()
+						else:
+							mydate = "1999-01-01"
+						date = datetime.datetime.strptime(mydate,"%Y-%m-%d")
+						mtime_path = path + "/" + mydate
+						mtime_date = None
+						for match in glob.glob("%s/stage3*.tar.*" % mtime_path):
+							mtime_date = datetime.datetime.fromtimestamp(os.path.getmtime(match))
+						sa = SubArch()
+						sa.path = ipath
+						if mtime_date != None:
+							sa.date = mtime_date
+						else:
+							sa.date = date
+						sa.date_str = mydate
+						sa.build = build
+						sa.arch = arch
+						sa.subarch = subarch
+						session.add(sa)
 					else:
 						bdir = BuildDir()
 						bdir.path = ipath
@@ -207,8 +213,11 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 			else:
 				# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
 				print x.build, x.subarch,
-				b = session.query(BuildDir).filter_by(build=x.build).filter_by(subarch=x.subarch).filter_by(date_str=x.date_str).one()
-				print b.full, x.date
+				b = session.query(BuildDir).filter_by(build=x.build).filter_by(subarch=x.subarch).filter_by(date_str=x.date_str).first()
+				if b == None:
+					print "None", "None"
+				else:
+					print b.full, x.date
 				exit(0)
 	# if we are totally current, exit with non-zero return value
 	exit(1)
