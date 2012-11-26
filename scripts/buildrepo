@@ -23,7 +23,7 @@ subarches = (
 	"atom_32",
 	"atom_64",
 	"corei7",
-	"i486", 
+	"generic_32", 
 	"i686", 
 	"athlon-xp",
 	"pentium4",
