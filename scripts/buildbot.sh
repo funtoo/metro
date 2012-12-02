@@ -17,16 +17,14 @@ dobuild() {
 	if [ "$full" = "True" ]; then
 		buildtype="freshen"
 	fi
-	if [ "$build" = "funtoo-current" ]; then
-		if [ "$subarch" = "corei7" ]; then
-			buildtype="$buildtype+openvz"
-		fi
-		if [ "$subarch" = "core2_64" ]; then
-			buildtype="$buildtype+openvz"
-		fi
-		if [ "$subarch" = "generic_64" ]; then
-			buildtype="$buildtype+openvz"
-		fi
+	if [ "$subarch" = "corei7" ]; then
+		buildtype="$buildtype+openvz"
+	fi
+	if [ "$subarch" = "core2_64" ]; then
+		buildtype="$buildtype+openvz"
+	fi
+	if [ "$subarch" = "generic_64" ]; then
+		buildtype="$buildtype+openvz"
 	fi
 	if [ "$build" != "" ] && [ "$subarch" != "" ] && [ "$buildtype" != "" ]; then
 		echo "Building $build $subarch $buildtype"
