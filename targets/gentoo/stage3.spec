@@ -31,9 +31,10 @@ services="$[baselayout/services:zap]"
 
 for service in $services
 do
-	s=${service/:*}
-	l=${service#*:}
-	rc-update add $s ${l:-default}
+	s=${service%%:*}
+	l=${service##*:}
+	[ "$l" == "$s" ] && l="default"
+	rc-update add $s ${l}
 done
 
 if [ -e /usr/share/eselect/modules/vi.eselect ] && [ -e /bin/busybox ]
