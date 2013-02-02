@@ -66,6 +66,7 @@ else
 fi
 # work around glibc sandbox issues:
 FEATURES="$FEATURES -sandbox"
+install -d /etc/portage
 # the quotes below prevent variable expansion of anything inside make.conf
 if [ "$[profile/format]" = "new" ]; then
 cat > /etc/portage/make.conf << "EOF"
@@ -194,6 +195,7 @@ else
 	pf=""
 	pf="$[profile/format:zap]"
 	rm -f $ROOT/etc/make.conf $ROOT/etc/portage/make.conf
+	install -d $ROOT/etc/portage
 	if [ -e /etc/make.conf ]; then
 		mkconf=/etc/make.conf
 	else
