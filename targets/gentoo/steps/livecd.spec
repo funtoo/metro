@@ -17,6 +17,11 @@ then
 		/etc/ssh/sshd_config
 fi
 
+# use the public (insecure) ssh key from vagrant
+mkdir -p /root/.ssh
+chmod 0700 /root/.ssh
+curl -s -L https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub > /root/.ssh/authorized_keys
+
 # set timezone
 rm -rf /etc/localtime
 cp /usr/share/zoneinfo/UTC /etc/localtime || exit 1
@@ -27,6 +32,10 @@ echo '127.0.0.1 livecd.local livecd localhost' > /etc/hosts.orig
 
 # try to get a network address via dhcp
 echo 'dhcpcd eth0' > /etc/ifup.eth0
+
+# for our virtualbox target we need this hostonly interface
+echo 'ip link set eth1 up' > /etc/ifup.eth1
+echo 'ip addr add 10.99.99.2/24 dev eth1' >> /etc/ifup.eth1
 
 # for hwsetup
 mkdir -p /etc/sysconfig

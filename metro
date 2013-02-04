@@ -122,6 +122,7 @@ class Metro:
         # collect main configuration file
         if os.path.exists(self.configfile):
             settings.collect(self.configfile, None)
+            settings["path/config"] = os.path.dirname(self.configfile)
         else:
             raise RuntimeError("config file '%s' not found" % self.configfile)
 
