@@ -240,7 +240,7 @@ if [ ! -e $ROOT/etc/portage/make.conf.example ] && [ ! -L $ROOT/etc/portage/make
 then
 	if [ -e $ROOT/usr/share/portage/config/make.conf.example ]
 	then
-		ln -s ../usr/share/portage/config/make.conf.example $ROOT/etc/portage/make.conf.example || exit 6
+		ln -s ../../usr/share/portage/config/make.conf.example $ROOT/etc/portage/make.conf.example || exit 6
 	fi
 fi
 # locale-archive can be ~81 MB; this should shrink it to 2MB.
