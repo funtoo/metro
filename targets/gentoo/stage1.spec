@@ -61,9 +61,12 @@ cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]
 EOF
 
+# Portage ebuild now using Progress overlay python_abis, hence we need at least on of 
+# ABI's explicitly set to satisfy REQUIRED_USE in ebuild
+
 export buildpkgs="$(python /tmp/build.py)"
 export BOOTSTRAP_USE="$(portageq envvar BOOTSTRAP_USE)"
-export USE="-* bindist build xml ${BOOTSTRAP_USE} ssl threads"
+export USE="-* bindist build xml ${BOOTSTRAP_USE} ssl threads python_abis_3.3"
 export FEATURES="$FEATURES nodoc noman noinfo"
 
 # In some cases permissions of the root directory are false, force them to 755
