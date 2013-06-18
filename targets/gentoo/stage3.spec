@@ -16,7 +16,7 @@ then
 	eselect python set $a
 fi
 
-USE="build" emerge --oneshot --nodeps portage || exit 1
+emerge --oneshot portage || exit 1
 export USE="$[portage/USE] bindist"
 emerge $eopts -e system || exit 1
 
