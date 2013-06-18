@@ -20,7 +20,8 @@ $[[files/bootstrap.py]]
 EOF
 python /tmp/bootstrap.py --check || exit 1
 
-USE="-* build bootstrap" emerge portage || exit 1
+## FL-588, portage require at least one ABI flag set
+USE="-* build bootstrap python_abis_3.3" emerge portage || exit 1
 
 export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
 # adding oneshot below so "libtool" doesn't get added to the world file... 
