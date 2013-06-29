@@ -20,12 +20,18 @@ dobuild() {
 	if [ "$subarch" = "corei7" ]; then
 		buildtype="$buildtype+openvz"
 	fi
+	if [ "$subarch" = "corei7-pure64" ]; then
+		buildtype="$buildtype+openvz"
+	fi	
 	if [ "$subarch" = "core2_64" ]; then
 		buildtype="$buildtype+openvz"
 	fi
 	if [ "$subarch" = "generic_64" ]; then
 		buildtype="$buildtype+openvz"
 	fi
+	if [ "$subarch" = "generic64-pure64" ]; then
+		buildtype="$buildtype+openvz"
+	fi	
 	if [ "$subarch" = "generic_32" ]; then
 		buildtype="$buildtype+openvz"
 	fi

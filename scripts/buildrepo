@@ -17,12 +17,14 @@ arches = (
 	"x86-32bit",
 	"x86-64bit",
 	"sparc-64bit"
+	"pure64"
 )
 
 subarches = ( 
 	"atom_32",
 	"atom_64",
 	"corei7",
+	"corei7-pure64",
 	"generic_32", 
 	"i686", 
 	"athlon-xp",
@@ -33,6 +35,7 @@ subarches = (
 	"amd64-k10",
 	"core2_64",
 	"generic_64",
+	"generic_64-pure64",
 	"ultrasparc",
 	"ultrasparc3",
 	"niagara",
