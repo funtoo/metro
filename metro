@@ -161,9 +161,7 @@ class Metro:
                     print key+": "+str(settings[key])
 
     def setup_paths(self):
-        binpath = os.path.abspath(sys.argv[0])
-        if os.path.islink(binpath):
-            binpath = os.readlink(binpath)
+        binpath = os.path.realpath(sys.argv[0])
 
         libdir = os.path.dirname(binpath)
         if self.has_opts(["-l", "--libdir"]):
