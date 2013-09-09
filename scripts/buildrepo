@@ -16,7 +16,7 @@ builds = (
 arches = (
 	"x86-32bit",
 	"x86-64bit",
-	"sparc-64bit"
+	"sparc-64bit",
 	"pure64"
 )
 
