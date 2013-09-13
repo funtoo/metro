@@ -1,4 +1,6 @@
 #!/bin/bash
+#preserve group permissions:
+umask 002
 
 if [ "$1" == "--pretend" ]; then
 	PRETEND=yes
