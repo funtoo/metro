@@ -58,7 +58,7 @@ dobuild() {
 	fi
 }
 ( cd /root/git/metro; git pull )
-export METRO_BUILDS="funtoo-current funtoo-stable funtoo-experimental"
+export METRO_BUILDS="funtoo-current funtoo-stable"
 export STALE_DAYS=5
 export SKIP_SUBARCH="amd64-k10"
 # Allow tweaking for cron to get the emails you want. These values will be returned only
