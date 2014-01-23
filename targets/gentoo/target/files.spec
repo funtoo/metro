@@ -22,18 +22,6 @@ CFLAGS="$[portage/CFLAGS:zap]"
 CXXFLAGS="$[portage/CFLAGS:zap]"
 LDFLAGS="$[portage/LDFLAGS:zap]"
 USE="$[portage/USE:zap]"
-
-# Portage Tree
-SYNC="https://github.com/fearedbliss/Funtoo-ARBOL.git"
-
-# Portage Source Repository
-GENTOO_MIRRORS="http://medd.homeip.net:3333/funtoo/releases/14.1/"
-
-# Portage Binary Repository
-PORTAGE_BINHOST="http://medd.homeip.net:3333/funtoo/releases/14.1/packages"
-
-# Default Portage Options
-EMERGE_DEFAULT_OPTS="--with-bdeps=y --binpkg-respect-use=n"
 ]
 
 locale.gen: [
