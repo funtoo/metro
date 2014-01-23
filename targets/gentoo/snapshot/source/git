@@ -2,31 +2,30 @@
 
 sync: [
 
-! [ -d "$[path/cache/git]" ] && install -d "$[path/cache/git]"
+[[ ! -d "$[path/cache/git]" ]] && install -d "$[path/cache/git]"
 
-if ! [ -e "$[path/cache/git]/$[snapshot/source/name]" ]
-then
-	# create repo if it doesn't exist
+# Create repo if it doesn't exist
+if [[ ! -e "$[path/cache/git]/$[snapshot/source/name]" ]]; then
 	git clone $[snapshot/source/remote] $[path/cache/git]/$[snapshot/source/name] || die "Couldn't clone git repo"
 fi
 
 cd $[path/cache/git]/$[snapshot/source/name] || die "Couldn't change directories to git repo"
 
 branch=`git rev-parse --symbolic --branches | grep "^$[snapshot/source/branch]"`
-if [ "$branch" != "$[snapshot/source/branch]" ]
-then
-	# create local branch since it doesn't exist yet
+
+# Create the local branch if it doesn't exist, otherwise make sure the
+# branch is active (so we can pull if necessary).
+if [[ "${branch}" != "$[snapshot/source/branch]" ]]; then
 	git checkout --track -b $[snapshot/source/branch] origin/$[snapshot/source/branch] || die "Couldn't create local git branch"
 else
-	# otherwise, make sure the branch is active (so we can pull if necessary)
 	git checkout $[snapshot/source/branch] || die "Couldn't checkout local git branch"
 fi
 
 options="$[snapshot/source/options]"
-if [ "${options/pull/}" != "${options}" ]
-then
-	echo "Performing git pull..."
-	# if we have the "pull" option in snapshot/source/options, then make sure we're up-to-date
+
+# If we have the "pull" option in snapshot/source/options, then make sure we're up-to-date
+if [[ "${options/pull/}" != "${options}" ]]; then
+	echo "[Metro] Performing git pull ..."
 	git pull > /dev/null || die "Couldn't perform git pull"
 fi
 

@@ -1,6 +1,79 @@
 # ChangeLog for metro 
-# Copyright 2008-2009 Funtoo Technologies, LLC; Distributed under the GPL v2
+# Copyright 2008-2014 Funtoo Technologies, LLC; Distributed under the GPL v2
 # Portions Copyright 1999-2007 Gentoo Foundation;
+
+*metro-1.6.0 (22 Jan 2014)
+
+  22 Jan 2014; Jonathan Vasquez <fearedbliss@funtoo.org>:
+  New Features, Cleanups, and Bug Fixes
+
+  * stage1 now exports 'xterm' as the ${TERM} in order to prevent the below error message:
+    tput: No value for $TERM and no -T specified
+  * devtmpfs is now being used for all stages to avoid the following message:
+    openpty failed: 'out of pty devices'
+  * util-linux is now installed in the stage1 so that we have the mount/umount commands in
+    further stages.
+  * Gradually cleaning up a lot of the code and syntax, including but not limited 
+    to using [[ ]] instead of [ ], variables are now using brackets ${variable} 
+    instead of $variable, and more.
+  * Metro will now default to building stage4. A stage4 is what was previously a stage3.
+    The stage3 will now be what it use to be in the old days where it only included @system
+    and no extra packages. The stage4 will now include any further additions that Funtoo decides to add.
+    Isolating the stage3 @system from the stage4 (Further packages) allows us to quickly rebuild a new stage4
+    without having to recompile the @system set. This won't make much of a difference with the rolling release
+    side of Funtoo since system packages are always being updated and need to be recompiled anyway, but it will
+    make a huge difference for Funtoo semi-rolling/non-rolling builds since the @system set is Frozen.
+
+    Note: A stage4 is now required for building new stages. During transition, just take a stage3 and rename it
+    to stage4 and add a count number of 1 to the end:
+
+    Example (Old): stage3-generic_64-funtoo-current-2014-01-01.tar.xz
+    Example (New): stage4-generic_64-funtoo-current-2014-01-01-1.tar.xz
+    
+  * 'quick' multi-target has been removed (stage3-quick).
+  * 'stage1', 'stage2', 'stage3', and 'stage4' multi-targets has been added.
+  * Added support for frozen builds
+  * Added stage4-freshen and updated stage3-freshen accordingly.
+  * Creating the "targets/gentoo/source/seed/strategy/{local/remote}-{frozen/rolling}" files
+  * Changed references to "New-style profile" to "Modern Profile"
+  * Removed some debug code and cleaned up output messages
+  * Added support for parallel xz and gz compression/decompression. 
+    Also removed the 4 processor limit (-p4) on pbzip2 since pbzip2 by default uses the
+    maximum amount of processors rather than a single core.
+  * replaced 'die' functions with 'exit' from stage1 since that function cannot be found.
+  * Removed stage1, stage2, and stage3 direct build support (via .control..), only stage4 will be directly built in
+    a linear fashion.
+  * Added 'rpackages' variable in the build.conf. This means 'rebuild-packages', basically what it does
+    is that it ignores the --usepkg variable and always rebuilds this list of packages. Thus you can
+    confidently place packages that need to compile against a kernel in this list so they can always be rebuilt.
+  * All the stages now use the portage and python binary package if was previously compiled. 
+  * Added build count support. All builds will default to a build number of 1 if not specified.
+  * Added the following files for initial seed or other builds:
+      .control/version/count
+      .control/version/frozen
+      .control/strategy/model
+      
+      For the count, you should put 1, for frozen if you are using it you put the date of the build you are using
+      as a seed, and for strategy/model you put either 'frozen' or 'rolling'. If you use 'rolling' as the model,
+      the application will not use the .control/version/frozen value but rather the .control/version/stage4 value
+      which is updated every time you successfully build a stage4 (Same as has always been done).
+
+  * A fifth parameter has been added to the metro program which is for the count. This parameter is optional and defaults to 1.
+    Example: scripts/ezbuild.sh funtoo-current generic_64 full 14.1 1
+
+    The above will build the '1' build of '14.1' for generic_64/funtoo-current. These are both strings so if you want you could
+    easily say: scripts/ezbuild.sh funtoo-current generic_64 full tom jerry
+
+    If no value is passed for the fifth parameter, you will get a "1" by default. So an example output stage4 file would be named:
+    stage4-generic_64-funtoo-current-14.1-1.tar.xz
+
+  * With the above frozen support, and the addition of the "count" parameter, means that we now have more flexibility and isolation
+    with builds. We also have further reusability of the binary packages created during a build. In the above example, the
+    "14.1" acts as the "common base" of all builds with that name, and the "1" acts as the build number to keep track of separate builds.
+    For example, after you build 14.1 build 1, you can start a new build called 14.1 build 2 or build "tom" (or any other label since 
+    it's just a string) and Metro will know that it should use the binary packages created from the last build of 14.1.
+
+  * Updated Metro copyright years (2009 -> 2014)
 
 *metro-1.5.1 (19 Mar 2010)
 

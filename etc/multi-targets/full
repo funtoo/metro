@@ -1,4 +1,5 @@
-# If $[strategy/seed] is stage3, we build a stage1/2/3,
-# otherwise we build a stage2/3:
+# If $[strategy/seed] is stage4, we build stages 1-4, otherwise
+# the application will just either do a full build using the original seed,
+# or it will get the last stage recorded and continue the stage process.
 
 [collect ./strategy/seed/$[strategy/seed]]

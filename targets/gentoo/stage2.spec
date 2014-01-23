@@ -11,37 +11,40 @@ ROOT: /
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
+
+# Set CONFIG_PROTECT to some non-existant directory so that we don't get
+# CONFIG_PROTECT is empty messages.
+export CONFIG_PROTECT="-* /imagine"
 export AUTOCLEAN="yes"
-export CONFIG_PROTECT="-*"
-export FEATURES="$FEATURES -collision-protect"
+export FEATURES="${FEATURES} -collision-protect"
 
 cat > /tmp/bootstrap.py << "EOF"
 $[[files/bootstrap.py]]
 EOF
+
 python /tmp/bootstrap.py --check || exit 1
 
 # Set at least one PYTHON_ABIS flag to satisfy REQUIRED_USE of sys-apps/portage.
 export PYTHON_ABIS="$(portageq envvar PYTHON_ABIS | sed -e "s/.* //")"
 
-USE="-* build bootstrap" emerge portage || exit 1
-
+USE="-* build bootstrap" emerge ${eopts} -q portage || exit 1
 export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
+
 # adding oneshot below so "libtool" doesn't get added to the world file... 
 # libtool should be in the system profile, but is not currently there it seems.
-emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
-emerge --clean 
+emerge ${eopts} -1 `python /tmp/bootstrap.py --pkglist` || exit 1
+emerge --clean
 emerge --prune sys-devel/gcc || exit 1
 
 # Currently, a minimal, barely functional Python is installed. Upgrade to
-# a full-featured Python installation to avoid problems during the stage3
-# build:
-
+# a full-featured Python install to avoid problems during the stage3 build:
 unset USE
-for atom in `portageq match / dev-lang/python`
-do
-	emerge $eopts --oneshot =$atom || exit 1
+
+for atom in `portageq match / dev-lang/python`; do
+	emerge ${eopts} -1 =${atom} || exit 1
 done
 
+# Set the correct compiler
 gcc-config $(gcc-config --get-current-profile)
 
 # remove any remaining cruft in cached files...
@@ -52,10 +55,11 @@ env-update
 
 bootstrap.py: [
 #!/usr/bin/python
-import portage,sys
-pkgdict={}
-alloweduse=["nls", "bindist", "nptl", "nptlonly", "multilib", "userlocales" ]
-alloweduse_startswith = ["userland_"]
+import portage, sys
+
+pkgdict = {}
+alloweduse = [ "nls", "bindist", "nptl", "nptlonly", "multilib", "userlocales" ]
+alloweduse_startswith = [ "userland_" ]
 
 use=portage.settings["USE"].split()
 
@@ -79,20 +83,20 @@ for dep in portage.settings.packages:
 	else:
 		pkgdict[catpkg.split("/")[1]]=dep
 
-pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib", "shadow" ]
+pkglist = [ "texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib", "shadow" ]
 
-#, "perl", "python", "libtool" ]
+# "perl", "python", "libtool"
 
-# perl needs an interim remerge so it references the new CHOST in Config.pm, although this has been fixed in funtoo.
-# python needs  a remerge so it references the new CHOST in its installed Makefile in /usr/lib/pythonx.y.
-# libtool refernces the old CHOST so it seems like a good idea to remerge as well. This is all good stuff
-# when we are using a non-native stage1. Not necessary when using a native stage1.
-
+# 'perl' needs an interim remerge so it references the new CHOST in Config.pm. This has been fixed in Funtoo though.
+# 'python' needs a remerge so it references the new CHOST in its installed Makefile in /usr/lib/pythonx.y.
+# 'libtool' references the old CHOST so it seems like a good idea to remerge as well.
+# This is good when we are using a non-native stage1. Not necessary when using a native stage1.
 if "nls" not in use or "gettext" not in pkgdict.keys():
 	pkglist.remove("gettext")
 
 if not "linux-headers" in pkgdict:
 	pkgdict["linux-headers"]="virtual/os-headers"
+
 if sys.argv[1] == "--check":
 	if "build" in use or "bootstrap" in use:
 		print("Error: please do not specify \"build\" or \"bootstrap\" in USE. Exiting.")

@@ -13,10 +13,11 @@ __license__ = """ Distributed under the terms of the GNU General Public License 
  redistribute it under certain conditions. See /usr/lib/metro/LICENSE for details.
 """
 __status__ = "Release"
-__version__ = "1.5.1"
+__version__ = "1.6.0"
 
 def usage():
     version()
+
     print """ metro [OPTION]... [FILE]...
 
  -h, --help                 Print this message
@@ -37,7 +38,7 @@ def usage():
 def version():
     print " " + __app__, "version", __version__
     print
-    print " Copyright 2008-2009 Funtoo Technologies, LLC; Portions copyright 2003-2007 Gentoo Foundation"
+    print " Copyright 2008-2014 Funtoo Technologies, LLC; Portions copyright 2003-2007 Gentoo Foundation"
     print " Maintainer:", __maintainer__
     print
     print " Web: http://www.funtoo.org"
@@ -61,7 +62,6 @@ class Metro:
         if len(sys.argv) < 2:
             usage()
             sys.exit(1)
-
         try:
             opts, args = getopt.getopt(sys.argv[1:], "dfhvxVk:l:", ["debug", "debug-flexdata", "help", "verbose", "version", "key=", "libdir="])
         except getopt.GetoptError:
@@ -76,7 +76,7 @@ class Metro:
 
         # Step 1: check preconditions
         if os.getuid() != 0:
-            raise RuntimeError("this script requires root privileges to operate")
+            raise RuntimeError("[Metro] This script requires root privileges to operate!")
 
         # Step 2: infer binpath and libdir and load modules
         self.setup_paths()
@@ -102,7 +102,7 @@ class Metro:
         elif settings.has_key("target"):
             targetlist = [settings["target"]]
         else:
-            raise RuntimeError("please specify a target or enable multi mode")
+            raise RuntimeError("[Metro] Please specify a target or enable multi mode.")
 
         self.run_targets(targetlist, args)
 
@@ -153,12 +153,12 @@ class Metro:
             try:
                 value = settings[key]
             except:
-                print key+" cannot be resolved with this target!"
+                print key + " cannot be resolved with this target!"
             else:
                 if type(value) is list:
-                    print key+": [...]"
+                    print key + ": [...]"
                 else:
-                    print key+": "+str(settings[key])
+                    print key + ": "+str(settings[key])
 
     def setup_paths(self):
         binpath = os.path.realpath(sys.argv[0])
@@ -169,9 +169,9 @@ class Metro:
 
         if self.verbose:
             print "Using library directory of %s.\n" % libdir
-        sys.path.append(libdir+"/modules")
+        sys.path.append(libdir + "/modules")
 
-        self.configfile = libdir+"/etc/metro.conf"
+        self.configfile = libdir + "/etc/metro.conf"
         if self.verbose:
             print "Using main configuration file %s.\n" % self.configfile
 
@@ -183,23 +183,25 @@ class Metro:
             settings = self.init_settings(args, {"target": targetname})
             target = self.find_target(settings)
 
-            print "Running target %s with class %s" % (targetname, settings["target/class"])
+            print "[Metro] Running target %s with class %s!" % (targetname, settings["target/class"])
 
             # dump all settings
             if self.debug_flexdata:
                 Metro.dump_settings(settings)
 
             target.run()
-            print "Target run complete"
+            print "[Metro] Complete!"
             print
 
     def find_target(self, settings):
         """
 
-        Use the "target/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
+        Use the "target/class" setting in our metadata to initialize the proper
+        class defined in the modules/targets.py module.
 
-        The targets.__dict__ dictionary contains all the objects in the targets module. We look inside it to see if the class
-        defined in "target/class" exists in there and is a class. If not, we raise an exception.
+        The targets.__dict__ dictionary contains all the objects in the targets
+        module. We look inside it to see if the class defined in "target/class"
+        exists in there and is a class. If not, we raise an exception.
 
         """
         cls = settings["target/class"].capitalize()+"Target"
@@ -208,12 +210,10 @@ class Metro:
         if type(self.targets.__dict__[cls]) != types.ClassType:
             raise NameError("target class "+cls+" does not appear to be a class.")
         return self.targets.__dict__[cls](settings)
-
-
 try:
     Metro().run()
 except KeyboardInterrupt:
-    print "\n Build aborted due to user interrupt (ctrl-C)"
+    print "\n [Metro] Build aborted due to user interrupt (ctrl-C)!"
     sys.exit(1)
 
 # vim: ts=4 sw=4 et

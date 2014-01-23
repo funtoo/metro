@@ -2,6 +2,6 @@
 
 [section source]
 
-: stage3
-name: $[]-$[:subarch]-$[:build]-$[:version]
-[collect ./seed/strategy/$[strategy/build]]
+: stage4
+name: $[]-$[:subarch]-$[:build]-$[:version]-$[:count]
+[collect ./seed/strategy/$[strategy/build]-$[strategy/model]]

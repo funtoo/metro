@@ -1,0 +1,6 @@
+[section source]
+
+build: $[target/build]
+subarch: $[target/subarch]
+version: << $[path/mirror/target/control]/version/frozen
+count: << $[path/mirror/target/control]/version/count

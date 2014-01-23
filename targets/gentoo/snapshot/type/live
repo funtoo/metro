@@ -1,8 +1,7 @@
 [section steps]
 
 create: [
-if [ "$[snapshot/source/type]" = "git" ]
-then
+if [[ "$[snapshot/source/type]" == "git" ]]; then
 	cp -a $[path/cache/git]/$[snapshot/source/name] $[path/work]/portage
 
 	# This rebuilds the git repo with built-in git gzip compression turned off.
@@ -15,8 +14,8 @@ then
 	( cd $[path/work]/portage; git config core.compression 0 )
 	( cd $[path/work]/portage; git gc --aggressive )
 	
-	tar -c -C $[path/work] portage > $tarout || die "Couldn't create tar archive"
+	tar -c -C $[path/work] portage > ${tarout} || die "Couldn't create tar archive"
 else
-	die "snapshot/type: live is only supported for snapshot/source/type: git"
+	die "[Metro] snapshot/type: live is only supported for snapshot/source/type: git"
 fi
 ]

@@ -35,13 +35,13 @@ class BaseTarget:
         if type(self.settings[key]) != types.ListType:
             raise MetroError, "run_script: key '%s' is not a multi-line element." % (key, )
 
-        print "run_script: running %s..." % key
+        print "[run_script]: running %s..." % key
 
         os.environ["PATH"] = self.env["PATH"]
 
         if chroot:
-            chrootfile = "/tmp/"+key+".metro"
-            outfile = chroot+chrootfile
+            chrootfile = "/tmp/" + key + ".metro"
+            outfile = chroot + chrootfile
         else:
             outfile = self.settings["path/tmp"]+"/pid/"+repr(os.getpid())
 
@@ -98,20 +98,25 @@ class BaseTarget:
     def clean_path(self, path=None, recreate=False):
         if path == None:
             path = self.settings["path/work"]
+
         if os.path.exists(path):
-            print "Cleaning up %s..." % path
-        self.cmd(self.cmds["rm"]+" -rf "+path)
+            print "[Metro] Cleaning up %s ..." % path
+
+        self.cmd(self.cmds["rm"]+" -rf " + path)
+
         if recreate:
-            # This line ensures that the root /var/tmp/metro path has proper 0700 perms:
-            self.cmd(self.cmds["install"]+" -d -m 0700 -g root -o root " + self.settings["path/tmp"])
-            # This creates the directory we want.
-            self.cmd(self.cmds["install"]+" -d -m 0700 -g root -o root "+path)
             # The 0700 perms prevent Metro-generated /tmp directories from being abused by others -
             # because they are world-writeable, they could be used by malicious local users to
             # inject arbitrary data/executables into a Metro build.
 
+            # This line ensures that the root /var/tmp/metro path has proper 0700 perms:
+            self.cmd(self.cmds["install"]+" -d -m 0700 -g root -o root " + self.settings["path/tmp"])
+
+            # This creates the directory we want.
+            self.cmd(self.cmds["install"]+" -d -m 0700 -g root -o root " + path)
+
     def cmd(self, mycmd, myexc="", badval=None):
-        print "Executing \""+mycmd+"\"..."
+        #print "Executing \""+mycmd+"\"..."
         try:
             sys.stdout.flush()
             retval = spawn_bash(mycmd, self.env)

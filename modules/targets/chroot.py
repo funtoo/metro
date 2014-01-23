@@ -116,7 +116,7 @@ class ChrootTarget(BaseTarget):
             if not os.path.exists(wdst):
                 os.makedirs(wdst, 0755)
 
-            print "Mounting %s to %s ..." % (src, dst)
+            #print "Mounting %s to %s ..." % (src, dst)
             if os.system(self.cmds["mount"]+" --bind "+src+" "+wdst) != 0:
                 self.unbind()
                 raise MetroError, "Couldn't bind mount "+src

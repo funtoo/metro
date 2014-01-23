@@ -2,4 +2,5 @@
 
 [section target]
 
-name: stage2-$[:subarch]-$[:build]-$[:version]
+base: stage2-$[:subarch]-$[:build]-$[:version]
+name: stage2-$[:subarch]-$[:build]-$[:version]-$[:count]

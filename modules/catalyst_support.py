@@ -1,10 +1,8 @@
-
 import sys,string,os,types,re,signal,traceback
-#import md5,sha
+
 selinux_capable = False
-#userpriv_capable = (os.getuid() == 0)
-#fakeroot_capable = False
-BASH_BINARY             = "/bin/bash"
+
+BASH_BINARY = "/bin/bash"
 
 class MetroError(Exception):
 	def __init__(self, *args):
@@ -14,7 +12,6 @@ class MetroError(Exception):
 			return str(self.args[0])
 		else:
 			return "(no message)"
-
 try:
         import resource
         max_fd_limit=resource.getrlimit(RLIMIT_NOFILE)
@@ -69,8 +66,6 @@ def spawn_bash(mycommand,env={},debug=False,opt_name=None,**keywords):
 	args.append(mycommand)
 	return spawn(args,env=env,opt_name=opt_name,**keywords)
 
-#def spawn_get_output(mycommand,spawn_type=spawn,raw_exit_code=False,emulate_gso=True, \
-#        collect_fds=[1],fd_pipes=None,**keywords):
 def spawn_get_output(mycommand,raw_exit_code=False,emulate_gso=True, \
         collect_fds=[1],fd_pipes=None,**keywords):
         """call spawn, collecting the output to fd's specified in collect_fds list
@@ -82,10 +77,6 @@ def spawn_get_output(mycommand,raw_exit_code=False,emulate_gso=True, \
         spawn_type is the passed in function to call- typically spawn_bash, spawn, spawn_sandbox, or spawn_fakeroot"""
         global selinux_capable
         pr,pw=os.pipe()
-
-        #if type(spawn_type) not in [types.FunctionType, types.MethodType]:
-        #        s="spawn_type must be passed a function, not",type(spawn_type),spawn_type
-        #        raise Exception,s
 
         if fd_pipes==None:
                 fd_pipes={}
@@ -115,7 +106,6 @@ def spawn_get_output(mycommand,raw_exit_code=False,emulate_gso=True, \
         retval=process_exit_code(retval)
         return [retval, mydata]
 
-
 # base spawn function
 def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,returnpid=False,\
 	 uid=None,gid=None,groups=None,umask=None,logfile=None,path_lookup=True,\
@@ -141,7 +131,6 @@ def spawn(mycommand,env={},raw_exit_code=False,opt_name=None,fd_pipes=None,retur
 
 	non-returnpid calls to spawn will block till the process has exited, returning the exitcode/signal
 	raw_exit_code controls whether the actual waitpid result is returned, or intrepretted."""
-
 
 	myc=''
 	if not func_call:

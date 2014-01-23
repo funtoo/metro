@@ -1,5 +1,0 @@
-[section source]
-
-build: $[target/build]
-subarch: $[target/subarch]
-version: $[target/version]

@@ -1,0 +1,10 @@
+# WARNING: This is experimental and will not work with gentoo.org tree.
+# It might not even work with the funtoo.org tree either.
+
+# This builds a new (clean) stage2 using a stage1 as a seed.
+# Thus we skip the process of building a stage1.
+
+# This only builds a stage2
+[section multi]
+
+targets: $[:snapshot] stage2

@@ -6,7 +6,7 @@ class FlexDataError(Exception):
 	def __init__(self, message):
 		if message:
 			print
-			print "Metro Parser: "+message
+			print "Metro Parser: " + message
 			print
 
 class collection:
@@ -14,12 +14,14 @@ class collection:
 
 	__init__() contains several important variable definitions.
 
-	self.immutable - if set to true, the parser will throw a warning if a variable is redefined. Otherwise it will not.
-	This variable can be toggled at any time, so a collection can start out in a mutable state and then be switched to
-	immutable for parsing of additional files.
+	self.immutable - if set to true, the parser will throw a warning if a
+        variable is redefined. Otherwise it will not. This variable can be 
+        toggled at any time, so a collection can start out in a mutable state
+        and then be switched to immutable for parsing of additional files.
 
-	self.lax = the "lax" option, if True, will allow for a undefined single-line variable to expand to the empty string.
-	If lax is False, then the parser will throw an exception if an undefined single-line variable is expanded.
+	self.lax = the "lax" option, if True, will allow for a undefined single-line 
+        variable to expand to the empty string. If lax is False, then the parser will
+        throw an exception if an undefined single-line variable is expanded.
 
 	"""
 	def __init__(self,debug=False):
@@ -67,7 +69,6 @@ class collection:
 		else:
 			#shouldn't get here
 			raise FlexDataError
-
 
 	def expand(self,myvar,options={}):
 		if myvar[-1] == "?":
@@ -387,7 +388,6 @@ class collection:
 				continue
 
 	def parseline(self,filename,openfile=None,dups=False):
-
 		# parseline() will parse a line and return None on EOF, return [] on a blank line with no data, or will
 		# return a list of string elements if there is data on the line, split along whitespace: [ "foo:", "bar", "oni" ]
 		# parseline() will also remove "# comments" from a line as appropriate
@@ -398,6 +398,7 @@ class collection:
 			curline = openfile.readline()
 		if curline == "": #EOF
 			return None
+
 		# get list of words separated by whitespace
 		mysplit = curline[:-1].strip().split(" ")
 		if len(mysplit) == 1 and  mysplit[0] == '':
@@ -547,8 +548,8 @@ class collection:
 				break
 		openfile.close()
 		# add to our list of parsed files
-		if self.debug:
-			sys.stdout.write("Debug: collected: %s\n" % os.path.normpath(filename))
+		#if self.debug:
+		#	sys.stdout.write("Debug: collected: %s\n" % os.path.normpath(filename))
 		self.collected.append(os.path.normpath(filename))
 
 	def conditionOnConditional(self,cond):
@@ -663,4 +664,3 @@ if __name__ == "__main__":
 		coll.collect(arg)
 	coll.runCollector()
 	sys.exit(0)
-

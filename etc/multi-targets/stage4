@@ -1,0 +1,7 @@
+# WARNING: This is experimental and will not work with gentoo.org tree.
+# It might not even work with the funtoo.org tree either.
+
+# This builds a new stage4 from a stage3 seed
+[section multi]
+
+targets: $[:snapshot] stage4

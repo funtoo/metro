@@ -35,7 +35,7 @@ stage3
 
 The stage3 source is used for all stage3 derivatives. Stage3 derivatives are
 those targets that are generated directly from a stage3, and include
-stage3-freshen, stage3-quick, stage4, container or livecd media.
+stage3-freshen, stage4, container or livecd media.
 
 When building from a stage3, we simply use the stage3 with matching build,
 subarch and version. To build from a different subarch/version use the seed
