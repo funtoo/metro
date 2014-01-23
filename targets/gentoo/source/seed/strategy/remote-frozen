@@ -2,5 +2,5 @@
 
 build: << $[path/mirror/target/control]/remote/build
 subarch: << $[path/mirror/target/control]/remote/subarch
-version: << $[path/mirror/target/control]/version/stage4
+version: << $[path/mirror/target/control]/version/frozen
 count: << $[path/mirror/target/control]/version/count
