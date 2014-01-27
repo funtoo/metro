@@ -2,5 +2,5 @@
 
 build: $[target/build]
 subarch: $[target/subarch]
-version: << $[path/mirror/target/control]/version/frozen
-count: << $[path/mirror/target/control]/version/count
+version: << $[path/mirror/target/control]/version/frozen-stage4
+count: << $[path/mirror/target/control]/version/frozen-count

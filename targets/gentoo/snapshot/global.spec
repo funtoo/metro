@@ -4,7 +4,7 @@
 [section portage]
 
 name: portage
-name/full: $[:name]-$[target/version]
+name/full: $[:name]-$[target/version]-$[target/count]
 
 [section path/mirror]
 
