@@ -135,7 +135,7 @@ follows::
 
   [section path]
 
-  mirror: /home/mirror/ifuntoo
+  mirror: /home/mirror/funtoo
   mirror/snapshot: /home/mirror/funtoo/snapshots
   metro: /usr/lib/metro
 
