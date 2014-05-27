@@ -131,7 +131,7 @@ class Database(object):
 		self.metadata.create_all()
 
 	def initSession(self):
-		self.sessionmaker = sessionmaker(bind=self.engine, class_=None)
+		self.sessionmaker = sessionmaker(bind=self.engine)
 
 	@property
 	def session(self):

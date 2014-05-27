@@ -31,7 +31,11 @@ case "$[target/compression]" in
 		fi
 		;;
 	xz)
-		xz $tarout
+		if [ -e /usr/bin/pxz ]; then
+			pxz $tarout
+		else
+			xz $tarout
+		fi
 		;;
 	gz)
 		gzip $tarout

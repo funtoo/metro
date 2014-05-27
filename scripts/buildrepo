@@ -91,7 +91,7 @@ class RepositoryDatabase(Database):
 	def associate(self):
 		Database.associate(self,self.__database__)
 
-initial_path = "/home/mirror/linux"
+initial_path = "/home/mirror/funtoo"
 
 if __name__ == "__main__":
 	if os.path.exists("cleaner.db"):

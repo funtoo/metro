@@ -5,7 +5,7 @@ import os
 import sys
 from subprocess import call
 print("Generating hashes...")
-for root, dirnames, filenames in os.walk('/home/mirror/linux'):
+for root, dirnames, filenames in os.walk('/home/mirror/funtoo'):
 	for filename in fnmatch.filter(filenames, '*.tar.*'):
 		if filename[-4:] == ".txt":
 			continue
@@ -21,7 +21,7 @@ for root, dirnames, filenames in os.walk('/home/mirror/linux'):
 			sys.stdout.flush()
 print
 print("Cleaning up old hashes...")
-for root, dirnames, filenames in os.walk('/home/mirror/linux'):
+for root, dirnames, filenames in os.walk('/home/mirror/funtoo'):
 	for filename in fnmatch.filter(filenames, '*.hash.txt'):
 		p = os.path.join(root, filename)
 		ptar = p[:-9]
