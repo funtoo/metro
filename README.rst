@@ -120,8 +120,8 @@ specify any values after the colon::
 In Metro, the / character is used to delineate various classes of elements, as
 follows::
 
-  path/mirror: /home/mirror/linux
-  path/mirror/snapshot: /home/mirror/linux/snapshots
+  path/mirror: /home/mirror/funtoo
+  path/mirror/snapshot: /home/mirror/funtoo/snapshots
   path/metro: /usr/lib/metro
 
 Above, we see the proper Metro convention for specifying paths. Each path has a
@@ -135,8 +135,8 @@ follows::
 
   [section path]
 
-  mirror: /home/mirror/linux
-  mirror/snapshot: /home/mirror/linux/snapshots
+  mirror: /home/mirror/funtoo
+  mirror/snapshot: /home/mirror/funtoo/snapshots
   metro: /usr/lib/metro
 
 Above, the ``[section path]`` line is a *section annotation*, and it tells the
@@ -150,20 +150,20 @@ data a bit more compact::
 
   [section path]
 
-  mirror: /home/mirror/linux
+  mirror: /home/mirror/funtoo
   mirror/snapshot: $[path/mirror]/snapshots
   metro: /usr/lib/metro
 
 Above, we have used an *element reference* of ``$[path/mirror]`` to reference
 our path/mirror element. What this means is that ``path/snapshot`` will have a
-value of ``/home/mirror/linux/snapshots``.
+value of ``/home/mirror/funtoo/snapshots``.
 
 Also, it's worth pointing out that we could just have well written::
 
   [section path]
 
   mirror/snapshot: $[path/mirror]/snapshots
-  mirror: /home/mirror/linux
+  mirror: /home/mirror/funtoo
   metro: /usr/lib/metro
 
 In other words, it's perfectly OK to use the element reference of
@@ -180,7 +180,7 @@ organize your data as follows::
 
   [section path/mirror]
 
-  : /home/mirror/linux
+  : /home/mirror/funtoo
   snapshot: $[]/snapshot
   source: $[]/$[source/subarch]/funtoo-$[source/subarch]-$[source/version]/$[source/name].tar.bz2
 
