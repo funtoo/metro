@@ -7,7 +7,7 @@ sync: [
 if ! [ -e "$[path/cache/git]/$[snapshot/source/name]" ]
 then
 	# create repo if it doesn't exist
-	git clone --depth=1 $[snapshot/source/remote] $[path/cache/git]/$[snapshot/source/name] || die "Couldn't clone git repo"
+	git clone --depth=1 --no-single-branch $[snapshot/source/remote] $[path/cache/git]/$[snapshot/source/name] || die "Couldn't clone git repo"
 fi
 
 cd $[path/cache/git]/$[snapshot/source/name] || die "Couldn't change directories to git repo"
