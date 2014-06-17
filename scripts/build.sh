@@ -25,7 +25,7 @@ EOF
 
 if [ ! -e /usr/bin/metro ]
 then
-	die "Metro is required for build.sh to run"
+	die "/usr/bin/metro is required for build.sh to run"
 fi
 
 if [ $# -lt 1 ] || [ $# -gt 3 ]
