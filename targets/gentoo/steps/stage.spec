@@ -246,6 +246,7 @@ fi
 # locale-archive can be ~81 MB; this should shrink it to 2MB.
 rm -f /usr/lib*/locale/locale-archive
 locale-gen
+rm -rf $ROOT/run/*
 ]
 
 postclean: [
