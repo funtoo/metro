@@ -5,13 +5,15 @@ import os
 import sys
 from subprocess import call
 print("Generating hashes...")
+links = []
 for root, dirnames, filenames in os.walk('/home/mirror/funtoo'):
 	for filename in fnmatch.filter(filenames, '*.tar.*'):
 		if filename[-4:] == ".txt":
 			continue
 		p = os.path.join(root, filename)
-		if os.path.islink(p):
-			continue
+                if os.path.islink(p):
+                    links.append(os.path.join(dirnames,p))
+                    continue
 		if not os.path.exists(p+".hash.txt"):
 			sys.stdout.write('.')
 			sys.stdout.flush()
@@ -19,6 +21,16 @@ for root, dirnames, filenames in os.walk('/home/mirror/funtoo'):
 		else:
 			sys.stdout.write('e')
 			sys.stdout.flush()
+# update stage3-latest hashes... look for original, link into place:
+for link in links:
+    realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
+    if os.path.exists(link + ".hash.txt"):
+        os.unlink(link + ".hash.txt")
+    if os.path.exists(realpath + ".hash.txt"):
+        os.symlink(os.readlink(link) + ".hash.txt", link + ".hash.txt")
+    else:
+        print(link + " dead")
+
 print
 print("Cleaning up old hashes...")
 for root, dirnames, filenames in os.walk('/home/mirror/funtoo'):
