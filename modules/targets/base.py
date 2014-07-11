@@ -27,9 +27,6 @@ class BaseTarget:
 		self.clean_path()
 
 	def run_script(self, key, chroot=None, optional=False):
-		print("run_script")
-		print("key: %s" % key)
-		print("key in self.settings", key in self.settings)
 		if key not in self.settings:
 			if optional:
 				return
