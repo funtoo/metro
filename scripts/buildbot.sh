@@ -15,7 +15,6 @@ dobuild() {
 	local subarch=$2
 	# buildrepo returns True for this argument if last build had a stage1 built too (non-freshen), otherwise False
 	local full=$3
-	local buildtype=full
 	if [ "$full" = "True" ]; then
 		buildtype="freshen"
 	fi
