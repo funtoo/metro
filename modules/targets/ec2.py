@@ -24,7 +24,7 @@ class Ec2Target(RemoteTarget):
 
     def prepare_remote(self):
         if self.settings["target/arch"] not in ["amd64", "x86"]:
-            raise MetroError, "EC2 target class only supports x86 targets"
+            raise MetroError("EC2 target class only supports x86 targets")
 
         self.clean_remote()
 
@@ -159,7 +159,7 @@ class Ec2Target(RemoteTarget):
         })
 
         self.bootstrap_kernel = sorted(kernels, key=lambda k: k.location)[-1]
-        print "bootstrap kernel-id: " + self.bootstrap_kernel.id
+        print("bootstrap kernel-id: " + self.bootstrap_kernel.id)
 
     def get_instance_kernel(self):
         kernels = self.ec2.get_all_images(owners=['amazon'], filters={
@@ -169,7 +169,7 @@ class Ec2Target(RemoteTarget):
         })
 
         self.instance_kernel = sorted(kernels, key=lambda k: k.location)[-1]
-        print "instance kernel-id: " + self.instance_kernel.id
+        print("instance kernel-id: " + self.instance_kernel.id)
 
     def get_bootstrap_image(self):
         images = self.ec2.get_all_images(filters={
@@ -182,6 +182,6 @@ class Ec2Target(RemoteTarget):
         })
 
         self.bootstrap_image = images[-1]
-        print "bootstrap image-id: " + self.bootstrap_image.id
+        print("bootstrap image-id: " + self.bootstrap_image.id)
 
 # vim: ts=4 sw=4 et

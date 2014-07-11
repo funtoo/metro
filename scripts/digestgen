@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 import fnmatch
 import os
@@ -29,9 +29,9 @@ for link in links:
     if os.path.exists(realpath + ".hash.txt"):
         os.symlink(os.readlink(link) + ".hash.txt", link + ".hash.txt")
     else:
-        print(link + " dead")
+        print((link + " dead"))
 
-print
+print()
 print("Cleaning up old hashes...")
 for root, dirnames, filenames in os.walk('/home/mirror/funtoo'):
 	for filename in fnmatch.filter(filenames, '*.hash.txt'):
@@ -42,5 +42,5 @@ for root, dirnames, filenames in os.walk('/home/mirror/funtoo'):
 			sys.stdout.write('.')
 			sys.stdout.flush()
 
-print
+print()
 print("Done!")

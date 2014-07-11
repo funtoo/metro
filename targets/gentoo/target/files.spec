@@ -48,10 +48,10 @@ en_US.UTF-8 UTF-8
 proxyenv: [
 <?python
 for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
-	if os.environ.has_key(x):
-		print x+"=\""+os.environ[x]+"\""
+	if x in os.environ:
+		print(x+"=\""+os.environ[x]+"\"")
 	else:
-		print "# "+x+" is not set"
+		print("# "+x+" is not set")
 ?>
 ]
 

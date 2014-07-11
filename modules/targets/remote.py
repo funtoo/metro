@@ -46,7 +46,7 @@ class RemoteTarget(BaseTarget):
         self.clean_path()
 
     def ssh_options(self):
-        os.chmod(self.ssh_key_path, 0400)
+        os.chmod(self.ssh_key_path, 0o400)
         return [
             "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null",
@@ -60,15 +60,15 @@ class RemoteTarget(BaseTarget):
         return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=sys.stdout)
 
     def run_script_at_remote(self, key, optional=False):
-        if not self.settings.has_key(key):
+        if key not in self.settings:
             if optional:
                 return
-            raise MetroError, "run_script: key '%s' not found." % (key,)
+            raise MetroError("run_script: key '%s' not found." % (key,))
 
-        if type(self.settings[key]) != types.ListType:
-            raise MetroError, "run_script: key '%s' is not a multi-line element." % (key, )
+        if type(self.settings[key]) != list:
+            raise MetroError("run_script: key '%s' is not a multi-line element." % (key, ))
 
-        print "run_script_at_remote: running %s..." % key
+        print("run_script_at_remote: running %s..." % key)
 
         ssh = self.ssh_pipe_to_remote("sudo -i /bin/bash -s")
         ssh.stdin.write("\n".join(self.settings[key]))
@@ -76,13 +76,13 @@ class RemoteTarget(BaseTarget):
         ssh.wait()
 
         if ssh.returncode != 0:
-            raise MetroError, "Command failure (key %s, return value %s)" % (key, repr(ssh.returncode))
+            raise MetroError("Command failure (key %s, return value %s)" % (key, repr(ssh.returncode)))
 
     def upload_file(self, src_path):
         dst_path = "%s:%s/%s" % (self.ssh_uri, self.remote_upload_path,
                 os.path.basename(src_path))
 
-        print "Uploading %s to %s" % (src_path, dst_path)
+        print("Uploading %s to %s" % (src_path, dst_path))
 
         cmd = ["scp"] + self.ssh_options() + [src_path, dst_path]
         ssh = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=sys.stdout)

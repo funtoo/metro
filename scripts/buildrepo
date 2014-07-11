@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 import os
 import sys
@@ -171,16 +171,16 @@ if len(sys.argv) > 1 and sys.argv[1] == "clean":
 			for subarch in subarches:
 				out = session.query(BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
 				for x in out[0:-3]:
-					print("rm -rf %s" % x.path)
+					print(("rm -rf %s" % x.path))
 				for x in out[-3:]:
-					print("# keeping %s" % x.path)
+					print(("# keeping %s" % x.path))
 		sna = session.query(Snapshot).filter_by(build=build).order_by(Snapshot.path).all()
 		for x in sna[0:-2]:
-			print("rm %s" % x.path)
+			print(("rm %s" % x.path))
 		for x in sna[-2:]:
-			print("# keeping %s" % x.path)
+			print(("# keeping %s" % x.path))
 	for incomplete in session.query(BuildDir).filter_by(complete=False):
-		print("rm -rf %s # not complete" % incomplete.path)
+		print(("rm -rf %s # not complete" % incomplete.path))
 elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	if "METRO_BUILDS" not in os.environ:
 		print("Please set METRO_BUILDS env var to space-separated lists of builds, in order of preference.")
@@ -201,7 +201,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	sa = session.query(SubArch)
 	for build in env_builds:
 		if build not in builds:
-			print("# Build %s not recognized; skipping." % builds)
+			print(("# Build %s not recognized; skipping." % builds))
 			sys.exit(2)
 		# grab all subarches for this build...
 		sa2 = sa.filter_by(build=build)
@@ -215,12 +215,12 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 			# otherwise, we have found the next thing we should try to build. Output important info to stdout:
 			else:
 				# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
-				print x.build, x.subarch,
+				print(x.build, x.subarch, end=' ')
 				b = session.query(BuildDir).filter_by(build=x.build).filter_by(subarch=x.subarch).filter_by(date_str=x.date_str).first()
 				if b == None:
-					print "None", "None"
+					print("None", "None")
 				else:
-					print b.full, x.date
+					print(b.full, x.date)
 				exit(0)
 	# if we are totally current, exit with non-zero return value
 	exit(1)

@@ -26,7 +26,7 @@ class VirtualboxTarget(RemoteTarget):
 
     def prepare_remote(self):
         if self.settings["target/arch"] not in ["amd64", "x86"]:
-            raise MetroError, "VirtualBox target class only supports x86 targets"
+            raise MetroError("VirtualBox target class only supports x86 targets")
 
         for mod in ["vboxdrv", "vboxpci", "vboxnetadp", "vboxnetflt"]:
             self.cmd(self.cmds["modprobe"]+" "+mod)

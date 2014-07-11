@@ -14,12 +14,12 @@ class ChrootTarget(BaseTarget):
         # define general linux mount points
         self.mounts = {"/proc": "/proc"}
 
-        if not self.settings.has_key("target/class"):
+        if "target/class" not in self.settings:
             return
 
         okey = "metro/options/"+self.settings["target/class"]
 
-        if not self.settings.has_key(okey):
+        if okey not in self.settings:
             return
 
         options = self.settings[okey].split()
@@ -35,8 +35,8 @@ class ChrootTarget(BaseTarget):
 
         for key, name, dst in caches:
             if name in options:
-                if not self.settings.has_key(key):
-                    raise MetroError, "Required setting %s not found (for %s option support)" % (key, name)
+                if key not in self.settings:
+                    raise MetroError("Required setting %s not found (for %s option support)" % (key, name))
                 self.mounts[dst] = self.settings[key]
 
     def run(self):
@@ -97,7 +97,7 @@ class ChrootTarget(BaseTarget):
 
     def kill_chroot_pids(self):
         for pid, mylink in self.get_chroot_pids():
-            print "Killing process "+pid+" ("+mylink+")"
+            print("Killing process "+pid+" ("+mylink+")")
             self.cmd(self.cmds["kill"]+" -9 "+pid)
 
     def run_script_in_chroot(self, key, chroot=None, optional=False):
@@ -108,18 +108,18 @@ class ChrootTarget(BaseTarget):
 
     def bind(self):
         """ Perform bind mounts """
-        for dst, src in self.mounts.items():
+        for dst, src in list(self.mounts.items()):
             if not os.path.exists(src):
-                os.makedirs(src, 0755)
+                os.makedirs(src, 0o755)
 
             wdst = self.settings["path/work"]+dst
             if not os.path.exists(wdst):
-                os.makedirs(wdst, 0755)
+                os.makedirs(wdst, 0o755)
 
-            print "Mounting %s to %s ..." % (src, dst)
+            print("Mounting %s to %s ..." % (src, dst))
             if os.system(self.cmds["mount"]+" --bind "+src+" "+wdst) != 0:
                 self.unbind()
-                raise MetroError, "Couldn't bind mount "+src
+                raise MetroError("Couldn't bind mount "+src)
 
     def unbind(self, attempt=0):
         mounts = self.get_active_mounts()
@@ -143,7 +143,7 @@ class ChrootTarget(BaseTarget):
                 mstring = ""
                 for mount in mounts:
                     mstring += mount+"\n"
-                raise MetroError, "The following bind mounts could not be unmounted: \n"+mstring
+                raise MetroError("The following bind mounts could not be unmounted: \n"+mstring)
             else:
                 attempt += 1
                 self.kill_chroot_pids()

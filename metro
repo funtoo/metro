@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -OO
+#!/usr/bin/python3 -OO
 
 import os, sys, getopt, types
 from importlib import import_module
@@ -17,7 +17,7 @@ __version__ = "1.5.1"
 
 def usage():
     version()
-    print """ metro [OPTION]... [FILE]...
+    print(""" metro [OPTION]... [FILE]...
 
  -h, --help                 Print this message
  -V, --version              Display version information
@@ -32,19 +32,19 @@ def usage():
  -k [key], --key [key]      Print value of [key], ie. "distfiles"
 
  [FILE]                     File(s) to parse and evaluate
-    """
+    """)
 
 def version():
-    print " " + __app__, "version", __version__
-    print
-    print " Copyright 2008-2009 Funtoo Technologies, LLC; Portions copyright 2003-2007 Gentoo Foundation"
-    print " Maintainer:", __maintainer__
-    print
-    print " Web: http://www.funtoo.org"
-    print " Documentation: http://www.funtoo.org/wiki/Metro"
-    print " Project: https://github.com/funtoo/metro"
-    print
-    print __license__
+    print(" " + __app__, "version", __version__)
+    print()
+    print(" Copyright 2008-2009 Funtoo Technologies, LLC; Portions copyright 2003-2007 Gentoo Foundation")
+    print(" Maintainer:", __maintainer__)
+    print()
+    print(" Web: http://www.funtoo.org")
+    print(" Documentation: http://www.funtoo.org/wiki/Metro")
+    print(" Project: https://github.com/funtoo/metro")
+    print()
+    print(__license__)
 
 class Metro:
     def __init__(self):
@@ -93,25 +93,23 @@ class Metro:
         settings = self.init_settings(args)
 
         if self.has_opts(["-k", "--key"]):
-            print settings[self.get_opts(["-k", "--key"])]
+            print(settings[self.get_opts(["-k", "--key"])])
             sys.exit(0)
 
         # Step 6: Create list of targets to run, checking whether "multi" mode is enabled
-        if settings.has_key("multi") and settings["multi"] == "yes":
+        if settings["multi"] == "yes":
             targetlist = settings["multi/targets"].split()
-        elif settings.has_key("target"):
-            targetlist = [settings["target"]]
         else:
-            raise RuntimeError("please specify a target or enable multi mode")
+            targetlist = [settings["target"]]
 
         self.run_targets(targetlist, args)
 
     def has_opts(self, opts, fnc=any):
-        return fnc(self.optdict.has_key(key) for key in opts)
+        return fnc(key in self.optdict for key in opts)
 
     def get_opts(self, opts):
         result = None
-        for key, value in self.optdict.items():
+        for key, value in list(self.optdict.items()):
             if key in opts:
                 result = value
         return result
@@ -128,9 +126,9 @@ class Metro:
 
         # parse command-line supplied values
         # such as: target/version: 2008.10.12
-        args = dict(zip(args[::2], args[1::2]))
+        args = dict(list(zip(args[::2], args[1::2])))
 
-        for key, value in args.items():
+        for key, value in list(args.items()):
             if key[-1] == ":":
                 settings[key[:-1]] = value
             else:
@@ -138,7 +136,7 @@ class Metro:
 
         # add extra values
         if extraargs:
-            for arg in extraargs.keys():
+            for arg in list(extraargs.keys()):
                 settings[arg] = extraargs[arg]
 
         settings.runCollector()
@@ -147,18 +145,18 @@ class Metro:
 
     @staticmethod
     def dump_settings(settings):
-        keys = settings.keys()
+        keys = list(settings.keys())
         keys.sort()
         for key in keys:
             try:
                 value = settings[key]
             except:
-                print key+" cannot be resolved with this target!"
+                print(key+" cannot be resolved with this target!")
             else:
                 if type(value) is list:
-                    print key+": [...]"
+                    print(key+": [...]")
                 else:
-                    print key+": "+str(settings[key])
+                    print(key+": "+str(settings[key]))
 
     def setup_paths(self):
         binpath = os.path.realpath(sys.argv[0])
@@ -168,12 +166,12 @@ class Metro:
             libdir = self.get_opts(["-l", "--libdir"])
 
         if self.verbose:
-            print "Using library directory of %s.\n" % libdir
+            print("Using library directory of %s.\n" % libdir)
         sys.path.append(libdir+"/modules")
 
         self.configfile = libdir+"/etc/metro.conf"
         if self.verbose:
-            print "Using main configuration file %s.\n" % self.configfile
+            print("Using main configuration file %s.\n" % self.configfile)
 
         self.flexdata = import_module("flexdata")
         self.targets = import_module("targets")
@@ -183,15 +181,15 @@ class Metro:
             settings = self.init_settings(args, {"target": targetname})
             target = self.find_target(settings)
 
-            print "Running target %s with class %s" % (targetname, settings["target/class"])
+            print("Running target %s with class %s" % (targetname, settings["target/class"]))
 
             # dump all settings
             if self.debug_flexdata:
                 Metro.dump_settings(settings)
 
             target.run()
-            print "Target run complete"
-            print
+            print("Target run complete")
+            print()
 
     def find_target(self, settings):
         """
@@ -203,9 +201,9 @@ class Metro:
 
         """
         cls = settings["target/class"].capitalize()+"Target"
-        if not self.targets.__dict__.has_key(cls):
+        if cls not in self.targets.__dict__:
             raise NameError("target class "+cls+" not defined in modules/targets.py.")
-        if type(self.targets.__dict__[cls]) != types.ClassType:
+        if type(self.targets.__dict__[cls]) != type:
             raise NameError("target class "+cls+" does not appear to be a class.")
         return self.targets.__dict__[cls](settings)
 
@@ -213,7 +211,7 @@ class Metro:
 try:
     Metro().run()
 except KeyboardInterrupt:
-    print "\n Build aborted due to user interrupt (ctrl-C)"
+    print("\n Build aborted due to user interrupt (ctrl-C)")
     sys.exit(1)
 
 # vim: ts=4 sw=4 et

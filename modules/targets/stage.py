@@ -8,7 +8,7 @@ class StageTarget(ChrootTarget):
         self.required_files.append("path/mirror/snapshot")
 
         # define gentoo specific mounts
-        if self.settings.has_key("path/distfiles"):
+        if "path/distfiles" in self.settings:
             self.mounts["/usr/portage/distfiles"] = self.settings["path/distfiles"]
 
         # let's bind-mount our main system's device nodes in place
@@ -21,9 +21,9 @@ class StageTarget(ChrootTarget):
         ChrootTarget.run(self)
 
         # now, we want to clean up our build-related caches, if configured to do so:
-        if self.settings.has_key("metro/options"):
+        if "metro/options" in self.settings:
             if "clean/auto" in self.settings["metro/options"].split():
-                if self.settings.has_key("path/cache/build"):
+                if "path/cache/build" in self.settings:
                     self.clean_path(self.settings["path/cache/build"])
 
 # vim: ts=4 sw=4 et
