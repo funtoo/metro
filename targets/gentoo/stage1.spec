@@ -48,14 +48,18 @@ for b in buildpkgs: print(b)
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
-# upgrade portage on stage3 if necessary, before we begin:
+# upgrade portage, if necessary, before we begin:
 emerge -u sys-apps/portage || die
 
-# update python if it is available
+# update python
 emerge -u python || die 
 # switch to correct python
 eselect python set python$[version/python] || die
 python-updater || die
+
+# FL-1398 update perl before we begin and try to update perl modules, if any installed/or will be installed.
+emerge -u --nodeps perl || die
+perl-cleaner --all || die
 
 cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]
