@@ -55,11 +55,12 @@ emerge -u sys-apps/portage || die
 emerge -u python || die 
 # switch to correct python
 eselect python set python$[version/python] || die
-python-updater || die
+python-updater -- $eopts || die
 
 # FL-1398 update perl before we begin and try to update perl modules, if any installed/or will be installed.
-emerge -u --nodeps perl || die
-perl-cleaner --all || die
+emerge -u --nodeps $eopts perl || die
+emerge $eopts -uDN world || die
+perl-cleaner --all -- $eopts || die
 
 cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]
