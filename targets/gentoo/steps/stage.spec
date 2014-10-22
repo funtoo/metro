@@ -107,7 +107,13 @@ $[[probe/setup:lax]]
 fi
 ]
 
-#[option parse/strict]
+clean: [
+#!/bin/bash
+# We do this in steps/clean instead of steps/chroot/clean because we have package
+# cache bind-mount in /var/tmp. So we need to ensure it's unmounted first.
+rm -rf $[path/chroot/stage]$[portage/ROOT]/var/tmp/*
+]
+
 
 [section steps/chroot]
 
@@ -215,7 +221,7 @@ fi
 # exist in /tmp inside the chroot. So after this cleanup, any execution inside the chroot
 # won't work. This is normally okay.
 
-rm -rf $ROOT/var/tmp/* $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
+rm -rf $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
 rm -rf $ROOT/var/cache/edb/dep/*
 rm -f $ROOT/etc/.pwd.lock
 for x in passwd group shadow
