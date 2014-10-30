@@ -3,3 +3,4 @@
 build: $[target/build]
 subarch: $[target/subarch]
 version: $[target/version]
+arch_desc: $[target/arch_desc]
