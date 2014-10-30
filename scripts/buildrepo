@@ -9,8 +9,8 @@ from db import *
 builds = (
 	"funtoo-experimental",
 	"funtoo-current",
+	"funtoo-current-hardened",
 	"funtoo-stable",
-	"gentoo-stable",
 )
 
 arches = (

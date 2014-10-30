@@ -222,7 +222,7 @@ fi
 # won't work. This is normally okay.
 
 rm -rf $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
-rm -rf $ROOT/var/cache/edb/dep/*
+rm -rf $ROOT/var/cache/*
 rm -f $ROOT/etc/.pwd.lock
 for x in passwd group shadow
 do
