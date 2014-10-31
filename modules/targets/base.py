@@ -87,6 +87,7 @@ class BaseTarget:
 	def check_required_files(self):
 		for loc in self.required_files:
 			try:
+				print("DEBUGIT: "+loc)
 				matches = glob(self.settings[loc])
 			except:
 				raise MetroError("Setting %s is set to %s; glob failed." % (loc, repr(self.settings[loc])))
