@@ -43,6 +43,12 @@ subarches = (
 	"generic_sparcv9"
 )
 
+subarches = (
+        "amd64-k8",
+        "amd64-k10",
+        "amd64-k10-pure64"
+)
+
 class SubArch(dbobject):
 	@classmethod
 	def _makeTable(cls,db):
