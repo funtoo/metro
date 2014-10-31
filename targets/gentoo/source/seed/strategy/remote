@@ -2,4 +2,5 @@
 
 build: << $[path/mirror/target/control]/remote/build
 subarch: << $[path/mirror/target/control]/remote/subarch
+arch_desc: << $[path/mirror/target/control]/remote/arch_desc
 version: << $[path/mirror/source/control]/version/stage3
