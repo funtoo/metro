@@ -15,7 +15,7 @@ dobuild() {
 	local subarch=$2
 	# buildrepo returns True for this argument if last build had a stage1 built too (non-freshen), otherwise False
 	local full=$3
-	local buildtype=$5
+	local buildtype=$4
 	if [ "$build" != "" ] && [ "$subarch" != "" ] && [ "$buildtype" != "" ]; then
 		echo "Building $build $subarch $buildtype"
 		if [ "$PRETEND" = "yes" ]; then

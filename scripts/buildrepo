@@ -217,9 +217,9 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 				print(x.build, x.subarch, end=' ')
 				b = session.query(BuildDir).filter_by(build=x.build).filter_by(subarch=x.subarch).filter_by(date_str=x.date_str).first()
 				if b == None:
-					print("None", "None", end=' ')
+					print("None", end=' ')
 				else:
-					print(b.full, x.date, end=' ')
+					print(b.full, end=' ')
 				print(map_build(x.build, x.subarch, b.full if b else None, x.date if b else None))
 				sys.exit(0)
 		sys.exit(1)
