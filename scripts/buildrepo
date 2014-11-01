@@ -1,10 +1,18 @@
 #!/usr/bin/python3
 
 import os
+import os.path
 import sys
 import glob
 import datetime
 from db import *
+
+cfgfile = os.path.join(os.path.expanduser("~"),".buildbot")
+if os.path.exists(cfgfile):
+    exec(open(cfgfile, "rb").read())
+else:
+    print("""
+Create a ~/.buildbot file that contains something like this (python syntax):
 
 builds = (
 	"funtoo-experimental",
@@ -36,18 +44,19 @@ subarches = (
 	"core2_64",
 	"generic_64",
 	"generic_64-pure64",
-	"ultrasparc",
-	"ultrasparc3",
-	"niagara",
-	"niagara2",
-	"generic_sparcv9"
 )
 
-subarches = (
-        "amd64-k8",
-        "amd64-k10",
-        "amd64-k10-pure64"
-)
+def map_build(build, subarch, full, full_date):
+	# arguments refer to last build...
+	if full == True:
+		buildtype = "freshen"
+	else:
+		buildtype = "full"
+	if subarch in [ "corei7", "corei7-pure64", "generic_64",  "generic_64-pure64" ]:
+		buildtype = buildtype + "+openvz"
+	return buildtype
+""")
+    sys.exit(1)
 
 class SubArch(dbobject):
 	@classmethod
@@ -188,24 +197,10 @@ if len(sys.argv) > 1 and sys.argv[1] == "clean":
 	for incomplete in session.query(BuildDir).filter_by(complete=False):
 		print(("rm -rf %s # not complete" % incomplete.path))
 elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
-	if "METRO_BUILDS" not in os.environ:
-		print("Please set METRO_BUILDS env var to space-separated lists of builds, in order of preference.")
-		sys.exit(2)
-	env_builds = os.environ["METRO_BUILDS"].split()
 	stale_days = 4
-	skip_subarch = []
-	# Allows you to skip subarches that don't build on your system:
-	if "SKIP_SUBARCH" in os.environ:
-		skip_subarch = os.environ["SKIP_SUBARCH"].split()
-	if "STALE_DAYS" in os.environ:
-		try:
-			stale_days =int(os.environ["STALE_DAYS"])
-		except:
-			print("STALE_DAYS env var is not an integer. Please fix.")
-			sys.exit(2)
 	now = datetime.datetime.now()
 	sa = session.query(SubArch)
-	for build in env_builds:
+	for build in builds:
 		if build not in builds:
 			print(("# Build %s not recognized; skipping." % builds))
 			sys.exit(2)
@@ -213,8 +208,6 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 		sa2 = sa.filter_by(build=build)
 		# order subarches by date, oldest to newest, and iterate over them:
 		for x in sa2.order_by(SubArch.__table__.c.date):
-			if x.subarch in skip_subarch:
-				continue	
 			# if something is newer than 4 days old, it is not considered stale, so we skip over it:
 			if now - x.date < datetime.timedelta(days=stale_days):
 				continue	
@@ -224,9 +217,9 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 				print(x.build, x.subarch, end=' ')
 				b = session.query(BuildDir).filter_by(build=x.build).filter_by(subarch=x.subarch).filter_by(date_str=x.date_str).first()
 				if b == None:
-					print("None", "None")
+					print("None", "None", end=' ')
 				else:
-					print(b.full, x.date)
-				exit(0)
-	# if we are totally current, exit with non-zero return value
-	exit(1)
+					print(b.full, x.date, end=' ')
+				print(map_build(x.build, x.subarch, b.full if b else None, x.date if b else None))
+				sys.exit(0)
+		sys.exit(1)

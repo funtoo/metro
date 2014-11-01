@@ -15,31 +15,7 @@ dobuild() {
 	local subarch=$2
 	# buildrepo returns True for this argument if last build had a stage1 built too (non-freshen), otherwise False
 	local full=$3
-	local buildtype=full
-	if [ "$full" = "True" ]; then
-		buildtype="freshen"
-	fi
-	if [ "$subarch" = "corei7" ]; then
-		buildtype="$buildtype+openvz"
-	fi
-	if [ "$subarch" = "corei7-pure64" ]; then
-		buildtype="$buildtype+openvz"
-	fi	
-	if [ "$subarch" = "core2_64" ]; then
-		buildtype="$buildtype+openvz"
-	fi
-	if [ "$subarch" = "generic_64" ]; then
-		buildtype="$buildtype+openvz"
-	fi
-	if [ "$subarch" = "generic_64-pure64" ]; then
-		buildtype="$buildtype+openvz"
-	fi	
-	if [ "$subarch" = "generic_32" ]; then
-		buildtype="$buildtype+openvz"
-	fi
-	if [ "$subarch" = "core2_32" ]; then
-		buildtype="$buildtype+openvz"
-	fi
+	local buildtype=$5
 	if [ "$build" != "" ] && [ "$subarch" != "" ] && [ "$buildtype" != "" ]; then
 		echo "Building $build $subarch $buildtype"
 		if [ "$PRETEND" = "yes" ]; then
@@ -58,14 +34,16 @@ dobuild() {
 	fi
 }
 ( cd /root/git/metro; git pull )
-export METRO_BUILDS="funtoo-current funtoo-stable"
-export STALE_DAYS=5
-export SKIP_SUBARCH="amd64-k10"
 # Allow tweaking for cron to get the emails you want. These values will be returned only
 # after a non-pretend dobuild() run.
 export EXIT_CODE_ON_SUCCESS=1
 export EXIT_CODE_ON_FAIL=2
 cd /var/tmp
+/root/git/metro/scripts/buildrepo nextbuild >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+	/root/git/metro/scripts/buildrepo nextbuild
+	exit 1
+fi
 a=$(/root/git/metro/scripts/buildrepo nextbuild)
 if [ "$PRETEND" = "yes" ]; then
 	echo $a
