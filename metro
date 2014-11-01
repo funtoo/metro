@@ -138,9 +138,9 @@ class Metro:
 		if extraargs:
 			for arg in list(extraargs.keys()):
 				settings[arg] = extraargs[arg]
-		if "portage/MAKEOPTS" in settings and settings["portage/MAKEOPTS"] == "auto":
-			settings["portage/MAKEOPTS"] = subprocess.getoutput("nproc")
 		settings.runCollector()
+		if settings["portage/MAKEOPTS"] == "auto":
+			settings["portage/MAKEOPTS"] = "-j%s" % (int(subprocess.getoutput("nproc")) + 1)
 
 		return settings
 
