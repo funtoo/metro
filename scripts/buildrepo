@@ -149,13 +149,12 @@ if __name__ == "__main__":
 						mtime_path = path + "/" + mydate
 						mtime_date = None
 						for match in glob.glob("%s/stage3*.tar.*" % mtime_path):
-							mtime_date = datetime.datetime.fromtimestamp(os.path.getmtime(match))
+							if os.path.exists(match):
+								mtime_date = datetime.datetime.fromtimestamp(os.path.getmtime(match))
 						sa = SubArch()
 						sa.path = ipath
 						if mtime_date != None:
 							sa.date = mtime_date
-						else:
-							sa.date = date
 						sa.date_str = mydate
 						sa.build = build
 						sa.arch = arch
@@ -209,7 +208,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 		# order subarches by date, oldest to newest, and iterate over them:
 		for x in sa2.order_by(SubArch.__table__.c.date):
 			# if something is newer than 4 days old, it is not considered stale, so we skip over it:
-			if now - x.date < datetime.timedelta(days=stale_days):
+			if x.date != None and now - x.date < datetime.timedelta(days=stale_days):
 				continue	
 			# otherwise, we have found the next thing we should try to build. Output important info to stdout:
 			else:
