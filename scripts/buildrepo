@@ -200,9 +200,6 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	now = datetime.datetime.now()
 	sa = session.query(SubArch)
 	for build in builds:
-		if build not in builds:
-			print(("# Build %s not recognized; skipping." % builds))
-			sys.exit(2)
 		# grab all subarches for this build...
 		sa2 = sa.filter_by(build=build)
 		# order subarches by date, oldest to newest, and iterate over them:
@@ -221,4 +218,4 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 					print(b.full, end=' ')
 				print(map_build(x.build, x.subarch, b.full if b else None, x.date if b else None))
 				sys.exit(0)
-		sys.exit(1)
+	sys.exit(1)
