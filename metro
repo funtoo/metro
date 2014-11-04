@@ -172,7 +172,7 @@ class Metro:
 
 		self.configfile = os.path.expanduser("~/.metro")
 		if not os.path.exists(self.configfile):
-			print("Please copy %s to ~/.metro and customize for your environment." % libdir+"/metro.conf")
+			print("Please copy %s to ~/.metro and customize for your environment." % (libdir+"/metro.conf"))
 			sys.exit(1)
 		if self.verbose:
 			print("Using main configuration file %s.\n" % self.configfile)

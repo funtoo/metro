@@ -196,7 +196,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "clean":
 	for incomplete in session.query(BuildDir).filter_by(complete=False):
 		print(("rm -rf %s # not complete" % incomplete.path))
 elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
-	stale_days = 4
+	stale_days = 2
 	now = datetime.datetime.now()
 	sa = session.query(SubArch)
 	for build in builds:
