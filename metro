@@ -170,7 +170,10 @@ class Metro:
 			print("Using library directory of %s.\n" % libdir)
 		sys.path.append(libdir+"/modules")
 
-		self.configfile = libdir+"/etc/metro.conf"
+		self.configfile = os.path.expanduser("~/.metro")
+		if not os.path.exists(self.configfile):
+			print("Please copy %s to ~/.metro and customize for your environment." % libdir+"/metro.conf")
+			sys.exit(1)
 		if self.verbose:
 			print("Using main configuration file %s.\n" % self.configfile)
 
