@@ -11,7 +11,7 @@ capture: [
 outdir=`dirname $[path/mirror/target]`
 if [ ! -d $outdir ]
 then
-	install -d $outdir || exit 1
+	install -o $[path/mirror/owner] -g $[path/mirror/group] -m $[path/mirror/dirmode] -d $outdir || exit 1
 fi
 tarout="$[path/mirror/target]"
 tarout="${tarout%.*}"
@@ -47,4 +47,5 @@ then
 	rm -f $[path/mirror/target]
 	exit 99
 fi
+chown $[path/mirror/owner]:$[path/mirror/group] $[path/mirror/target]
 ]

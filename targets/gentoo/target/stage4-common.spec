@@ -6,8 +6,9 @@
 ok/run: [
 #!/bin/bash
 
-install -d $[path/mirror/target/control]/version/stage4 || exit 1
+install -o $[path/mirror/owner] -g $[path/mirror/group] -m $[path/mirror/dirmode] -d $[path/mirror/target/control]/version/stage4 || exit 1
 echo "$[target/version]" > $[path/mirror/target/control]/version/stage4/$[stage4/target/name] || exit 1
+chown $[path/mirror/owner]:$[path/mirror/group] $[path/mirror/target/control]/version/stage4/$[stage4/target/name] || exit 1
 
 $[[trigger/ok/symlink]]
 ]
