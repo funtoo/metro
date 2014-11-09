@@ -5,7 +5,7 @@ class SnapshotTarget(BaseTarget):
 		BaseTarget.__init__(self, settings)
 
 	def run(self):
-		self.run()
+		BaseTarget.run(self)
 		self.run_script("trigger/ok/run", optional=True)
 
 
