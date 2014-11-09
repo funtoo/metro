@@ -55,20 +55,22 @@ class Metro:
 		self.optdict = {}
 		self.flexdata = None
 		self.targets = None
+		self.ts = None
+		self.opts = None
+		self.args = None
 
-	def run(self):
 		# Step 0: parse out the command line arguments
 		if len(sys.argv) < 2:
 			usage()
 			sys.exit(1)
 
 		try:
-			opts, args = getopt.getopt(sys.argv[1:], "dfhvxVk:l:", ["debug", "debug-flexdata", "help", "verbose", "version", "key=", "libdir="])
+			self.opts, self.args = getopt.getopt(sys.argv[1:], "dfhvxVk:l:", ["debug", "debug-flexdata", "help", "verbose", "version", "key=", "libdir="])
 		except getopt.GetoptError:
 			usage()
 			sys.exit(1)
 
-		self.optdict = dict(opts)
+		self.optdict = dict(self.opts)
 
 		self.debug = self.has_opts(["-d", "--debug"])
 		self.debug_flexdata = self.has_opts(["-f", "--debug-flexdata"])
@@ -81,6 +83,7 @@ class Metro:
 		# Step 2: infer binpath and libdir and load modules
 		self.setup_paths()
 
+	def run(self):
 		# Step 3: check for "special" help/version options, handle them and exit:
 		if self.has_opts(["-h", "--help"]):
 			usage()
@@ -90,7 +93,7 @@ class Metro:
 			sys.exit(0)
 
 		# Step 5: Initialize Metro data
-		settings = self.init_settings(args)
+		settings = self.init_settings()
 
 		if self.has_opts(["-k", "--key"]):
 			print(settings[self.get_opts(["-k", "--key"])])
@@ -102,7 +105,7 @@ class Metro:
 		else:
 			targetlist = [settings["target"]]
 
-		self.run_targets(targetlist, args)
+		self.run_targets(targetlist, self.args)
 
 	def has_opts(self, opts, fnc=any):
 		return fnc(key in self.optdict for key in opts)
@@ -114,7 +117,8 @@ class Metro:
 				result = value
 		return result
 
-	def init_settings(self, args, extraargs=None):
+	def init_settings(self, extraargs=None):
+		args = self.args
 		settings = self.flexdata.collection(self.debug)
 
 		# collect main configuration file
@@ -181,16 +185,30 @@ class Metro:
 		self.targets = import_module("targets")
 
 	def run_targets(self, targetlist, args):
+		global ts
 		for targetname in targetlist:
-			settings = self.init_settings(args, {"target": targetname})
+			settings = self.init_settings({"target": targetname})
 			target = self.find_target(settings)
 
 			print("Running target %s with class %s" % (targetname, settings["target/class"]))
-
+			
+			if targetname == "snapshot":
+				tsfn = settings["path/mirror/snapshot"]
+			else:
+				tsfn = settings["path/mirror/target/control"]
 			# dump all settings
 			if self.debug_flexdata:
 				Metro.dump_settings(settings)
-
+			tsfn = os.path.join(os.path.dirname(tsfn), "." + os.path.basename(tsfn) + "_progress")
+			self.ts = timestampFile(tsfn)
+			if self.ts.exists():
+				print("Target already in progress -- %s exists. Aborting." % self.ts.path)
+				sys.exit(1)
+				# build in progress
+			else:
+				if not self.ts.create():
+					print("Could not create timestamp file %s" % self.ts.path)
+					sys.exit(1)
 			target.run()
 			print("Target run complete")
 			print()
@@ -213,9 +231,14 @@ class Metro:
 
 
 try:
-	Metro().run()
+	m = Metro()
+	from metro_support import timestampFile
+	m.run()
 except KeyboardInterrupt:
 	print("\n Build aborted due to user interrupt (ctrl-C)")
 	sys.exit(1)
+finally:
+	# clean up timestamp "in progress" file for this target. This only unlinks if we created it:
+	m.ts.unlink()
 
 # vim: ts=4 sw=4 et

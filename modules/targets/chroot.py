@@ -84,7 +84,7 @@ class ChrootTarget(BaseTarget):
 		self.clean_path()
 
 	def get_chroot_pids(self):
-		cdir = self.settings["path/work"]
+		cdir = self.settings["path/cache/build"]
 		pids = []
 		for pid in os.listdir("/proc"):
 			if not os.path.isdir("/proc/"+pid):
