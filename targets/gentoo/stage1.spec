@@ -48,6 +48,8 @@ for b in buildpkgs: print(b)
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
+export ORIG_PKGDIR=$PKGDIR
+export PKGDIR=$ORIG_PKGDIR/initial_root
 # upgrade portage, if necessary, before we begin:
 emerge -u sys-apps/portage || die
 
@@ -89,6 +91,7 @@ else
 fi
 
 export ROOT="$[portage/ROOT]"
+export PKGDIR=$ORIG_PKGDIR/new_root
 install -d ${ROOT}
 
 # It's important to merge baselayout first so it can set perms on key dirs
