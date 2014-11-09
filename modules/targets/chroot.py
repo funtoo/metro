@@ -37,7 +37,10 @@ class ChrootTarget(BaseTarget):
 			if name in options:
 				if key not in self.settings:
 					raise MetroError("Required setting %s not found (for %s option support)" % (key, name))
-				self.mounts[dst] = self.settings[key]
+				if self.settings[key] != None:
+					# package cache dir will not be defined for snapshot...
+					print("Warning: NOT mounting %s due to variable being set to None." % key)
+					self.mounts[dst] = self.settings[key]
 
 	def run(self):
 		if self.target_exists("path/mirror/target"):
@@ -162,6 +165,7 @@ class ChrootTarget(BaseTarget):
 		with open("/proc/mounts", "r") as myf:
 			mounts = [line.split()[1] for line in myf]
 			mounts = [mount for mount in mounts if mount.startswith(prefix)]
+			mounts.sort(reverse=True)
 			return mounts
 
 # vim: ts=4 sw=4 et
