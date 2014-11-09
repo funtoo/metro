@@ -3,6 +3,7 @@
 [section target]
 
 name: stage1-$[:subarch]-$[:build]-$[:version]
+pkgcache: stage1
 
 [section trigger]
 
