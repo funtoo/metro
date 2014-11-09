@@ -1,7 +1,7 @@
 import os, sys, time, types, glob
 import subprocess
 
-from catalyst_support import MetroError, ismount
+from metro_support import MetroError
 
 from .remote import RemoteTarget
 

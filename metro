@@ -37,7 +37,7 @@ def usage():
 def version():
 	print(" " + __app__, "version", __version__)
 	print()
-	print(" Copyright 2008-2014 Funtoo Technologies, LLC; Portions copyright 2003-2007 Gentoo Foundation")
+	print(" Copyright 2008-2014 Funtoo Technologies, LLC")
 	print(" Maintainer:", __maintainer__)
 	print()
 	print(" Web: http://www.funtoo.org")

@@ -5,7 +5,7 @@ import boto.ec2
 from boto.ec2.blockdevicemapping import BlockDeviceType
 from boto.ec2.blockdevicemapping import BlockDeviceMapping
 
-from catalyst_support import MetroError, ismount
+from metro_support import MetroError, ismount
 
 from .remote import RemoteTarget
 

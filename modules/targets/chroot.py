@@ -1,6 +1,6 @@
 import os
 
-from catalyst_support import MetroError, ismount
+from metro_support import MetroError, ismount
 
 from .base import BaseTarget
 

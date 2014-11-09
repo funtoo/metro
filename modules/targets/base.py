@@ -1,7 +1,7 @@
 import os, sys, types
 from glob import glob
 
-from catalyst_support import MetroError, spawn, spawn_bash
+from metro_support import MetroError, spawn
 
 class BaseTarget:
 	cmds = {
@@ -114,7 +114,7 @@ class BaseTarget:
 		print("Executing \""+mycmd+"\"...")
 		try:
 			sys.stdout.flush()
-			retval = spawn_bash(mycmd, self.env)
+			retval = spawn(mycmd.split(), self.env)
 			if badval:
 				# This code is here because tar has a retval of 1 for non-fatal warnings
 				if retval == badval:
