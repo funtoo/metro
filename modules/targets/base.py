@@ -72,18 +72,6 @@ class BaseTarget:
 		if os.path.exists(outfile):
 			os.unlink(outfile)
 
-	def target_exists(self, key):
-		if "metro/options" in self.settings and "replace" in self.settings["metro/options"].split():
-			if os.path.exists(self.settings[key]):
-				print("Removing existing file %s..." % self.settings[key])
-				self.cmd(self.cmds["rm"] + " -f " + self.settings[key])
-			return False
-		elif os.path.exists(self.settings[key]):
-			print("File %s already exists - skipping..." % self.settings[key])
-			return True
-		else:
-			return False
-
 	def check_required_files(self):
 		for loc in self.required_files:
 			try:

@@ -43,10 +43,6 @@ class ChrootTarget(BaseTarget):
 					self.mounts[dst] = self.settings[key]
 
 	def run(self):
-		if self.target_exists("path/mirror/target"):
-			self.run_script("trigger/ok/run", optional=True)
-			return
-
 		self.check_required_files()
 
 		# before we clean up - make sure we are unmounted

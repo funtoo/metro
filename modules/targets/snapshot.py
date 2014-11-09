@@ -5,8 +5,7 @@ class SnapshotTarget(BaseTarget):
 		BaseTarget.__init__(self, settings)
 
 	def run(self):
-		if not self.target_exists("path/mirror/snapshot"):
-			BaseTarget.run(self)
+		self.run()
 		self.run_script("trigger/ok/run", optional=True)
 
 

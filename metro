@@ -192,10 +192,27 @@ class Metro:
 
 			print("Running target %s with class %s" % (targetname, settings["target/class"]))
 			
+			#Initial setup to test if target exists, and if so, create an "in progress" timeStampFile:
+					
 			if targetname == "snapshot":
-				tsfn = settings["path/mirror/snapshot"]
+				tsfn = targ = settings["path/mirror/snapshot"]
 			else:
 				tsfn = settings["path/mirror/target/control"]
+				targ = settings["path/mirror/target"]
+
+			#Let's see if our target exists. Should we replace it? Or should we just skip it?
+
+			if "metro/options" in settings and "replace" in settings["metro/options"].split():
+				if os.path.exists(targ):
+					print("Removing existing file %s..." % targ)
+					target.cmd(self.cmds["rm"] + " -f " + targ)
+			elif os.path.exists(targ):
+				print("File %s already exists - skipping..." % targ)
+				target.run_script("trigger/ok/run", optional=True)
+				continue
+
+			# Okay, we need to build our target. Let's create an "in progress" timestamp file:
+
 			# dump all settings
 			if self.debug_flexdata:
 				Metro.dump_settings(settings)
@@ -239,6 +256,7 @@ except KeyboardInterrupt:
 	sys.exit(1)
 finally:
 	# clean up timestamp "in progress" file for this target. This only unlinks if we created it:
-	m.ts.unlink()
+	if m.ts != None:
+		m.ts.unlink()
 
 # vim: ts=4 sw=4 et

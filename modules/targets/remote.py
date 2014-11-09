@@ -16,10 +16,6 @@ class RemoteTarget(BaseTarget):
 		self.name = self.settings["target/name"]
 
 	def run(self):
-		if self.target_exists("path/mirror/target"):
-			self.run_script("trigger/ok/run", optional=True)
-			return
-
 		self.check_required_files()
 		self.prepare_remote()
 
