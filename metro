@@ -56,6 +56,7 @@ class Metro:
 		self.flexdata = None
 		self.targets = None
 		self.ts = None
+		self.multi_ts = None
 		self.opts = None
 		self.args = None
 
@@ -185,7 +186,35 @@ class Metro:
 		self.targets = import_module("targets")
 
 	def run_targets(self, targetlist, args):
-		global ts
+
+		temp_targets = targetlist[:]
+		try:
+			temp_targets.remove("snapshot")
+		except ValueError:
+			pass
+
+		if len(temp_targets):
+
+			# We are doing a multi-target build:
+
+			# It looks like we are building something. Therefore, we should "lock" the build/arch/subarch.
+			# This locking will allow other multi-target runs to abort early, and allow buildbot to actually
+			# skip over in-progress multi-targets so it can build the next multi-target (allowing parallel
+			# multi-target builds.
+
+			settings = self.init_settings({"target": temp_targets[0]})
+			target = self.find_target(settings)
+
+			multi_tsfn = settings["path/mirror/target/control"] + "/.multi_progress"
+			self.multi_ts = timestampFile(multi_tsfn)
+			if self.multi_ts.exists():
+				print("Multi-target already in progress -- %s exists. Aborting." % self.multi_ts.path)
+				sys.exit(1)
+			else:
+				if not self.multi_ts.create():
+					print("Could not create multi-target timestamp file %s" % self.multi_ts.path)
+					sys.exit(1)
+
 		for targetname in targetlist:
 			settings = self.init_settings({"target": targetname})
 			target = self.find_target(settings)
@@ -196,8 +225,9 @@ class Metro:
 					
 			if targetname == "snapshot":
 				tsfn = targ = settings["path/mirror/snapshot"]
+				tsfn = os.path.join(os.path.dirname(tsfn), "." + os.path.basename(tsfn) + "_progress")
 			else:
-				tsfn = settings["path/mirror/target/control"]
+				tsfn = os.path.join(settings["path/mirror/target/control"], "." + targetname + "_progress")
 				targ = settings["path/mirror/target"]
 
 			#Let's see if our target exists. Should we replace it? Or should we just skip it?
@@ -216,19 +246,31 @@ class Metro:
 			# dump all settings
 			if self.debug_flexdata:
 				Metro.dump_settings(settings)
-			tsfn = os.path.join(os.path.dirname(tsfn), "." + os.path.basename(tsfn) + "_progress")
 			self.ts = timestampFile(tsfn)
+			abort = False
 			if self.ts.exists():
 				print("Target already in progress -- %s exists. Aborting." % self.ts.path)
-				sys.exit(1)
-				# build in progress
+				abort = True
 			else:
 				if not self.ts.create():
 					print("Could not create timestamp file %s" % self.ts.path)
+					abort = True
+			try:
+				if not abort:
+					target.run()
+					
+					print("Target run complete")
+					print()
+			except KeyboardInterrupt:
+				print("Target %s aborted due to user interrupt (ctrl-C)" % target)
+				abort = True
+			finally:
+				if self.ts != None:
+					self.ts.unlink()
+				if self.multi_ts != None:
+					self.multi_ts.unlink()
+				if abort:
 					sys.exit(1)
-			target.run()
-			print("Target run complete")
-			print()
 
 	def find_target(self, settings):
 		"""
@@ -247,16 +289,6 @@ class Metro:
 		return self.targets.__dict__[cls](settings)
 
 
-try:
-	m = Metro()
-	from metro_support import timestampFile
-	m.run()
-except KeyboardInterrupt:
-	print("\n Build aborted due to user interrupt (ctrl-C)")
-	sys.exit(1)
-finally:
-	# clean up timestamp "in progress" file for this target. This only unlinks if we created it:
-	if m.ts != None:
-		m.ts.unlink()
-
-# vim: ts=4 sw=4 et
+m = Metro()
+from metro_support import timestampFile
+m.run()
