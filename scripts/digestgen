@@ -28,7 +28,8 @@ for link in links:
 	if os.path.exists(abs_realpath + ".hash.txt"):
 		os.symlink(os.readlink(link) + ".hash.txt", link + ".hash.txt")
 	else:
-		print((link + " dead"))
+		print((link + " dead; cleaning up"))
+		os.unlink(link)
 
 print()
 print("Cleaning up old hashes...")
