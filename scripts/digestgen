@@ -21,12 +21,11 @@ for root, dirnames, filenames in os.walk('/home/mirror/funtoo'):
 		else:
 			sys.stdout.write('e')
 			sys.stdout.flush()
-# update stage3-latest hashes... look for original, link into place:
 for link in links:
-	realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
-	if os.path.exists(link + ".hash.txt"):
+	abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
+	if os.path.lexists(link + ".hash.txt"):
 		os.unlink(link + ".hash.txt")
-	if os.path.exists(realpath + ".hash.txt"):
+	if os.path.exists(abs_realpath + ".hash.txt"):
 		os.symlink(os.readlink(link) + ".hash.txt", link + ".hash.txt")
 	else:
 		print((link + " dead"))
