@@ -178,7 +178,8 @@ if __name__ == "__main__":
 								break
 						session.add(bdir)
 	session.commit()
-
+now = datetime.datetime.now()
+stale_days = 2
 if len(sys.argv) > 1 and sys.argv[1] == "clean":
 	for build in builds:
 		for arch in arches:
@@ -193,11 +194,11 @@ if len(sys.argv) > 1 and sys.argv[1] == "clean":
 			print(("rm %s" % x.path))
 		for x in sna[-2:]:
 			print(("# keeping %s" % x.path))
-	for incomplete in session.query(BuildDir).filter_by(complete=False):
-		print(("rm -rf %s # not complete" % incomplete.path))
+	for x in session.query(BuildDir).filter_by(complete=False):
+		# ignore non-stale builds for cleaning -- they could be in-progress...
+		if x.date != None and now - x.date < datetime.timedelta(days=stale_days):	
+			print(("rm -rf %s # not complete" % x.path))
 elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
-	stale_days = 2
-	now = datetime.datetime.now()
 	sa = session.query(SubArch)
 	for build in builds:
 		# grab all subarches for this build...
