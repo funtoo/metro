@@ -147,14 +147,16 @@ if __name__ == "__main__":
 							mydate = "1999-01-01"
 						date = datetime.datetime.strptime(mydate,"%Y-%m-%d")
 						mtime_path = path + "/" + mydate
-						mtime_date = None
-						for match in glob.glob("%s/stage3*.tar.*" % mtime_path):
-							if os.path.exists(match):
-								mtime_date = datetime.datetime.fromtimestamp(os.path.getmtime(match))
+						#mtime_date = None
+						#for match in glob.glob("%s/stage3*.tar.*" % mtime_path):
+						#	if os.path.exists(match):
+						#		mtime_date = datetime.datetime.fromtimestamp(os.path.getmtime(match))
 						sa = SubArch()
 						sa.path = ipath
-						if mtime_date != None:
-							sa.date = mtime_date
+						#if mtime_date != None:
+						#	sa.date = mtime_date
+						#else:
+						sa.date = date
 						sa.date_str = mydate
 						sa.build = build
 						sa.arch = arch
