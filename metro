@@ -248,13 +248,14 @@ class Metro:
 				Metro.dump_settings(settings)
 			self.ts = timestampFile(tsfn)
 			abort = False
+			error = False
 			if self.ts.exists():
 				print("Target already in progress -- %s exists. Aborting." % self.ts.path)
 				abort = True
 			else:
 				if not self.ts.create():
 					print("Could not create timestamp file %s" % self.ts.path)
-					abort = True
+					abort = error = True
 			try:
 				if not abort:
 					target.run()
@@ -263,14 +264,14 @@ class Metro:
 					print()
 			except KeyboardInterrupt:
 				print("Target %s aborted due to user interrupt (ctrl-C)" % target)
-				abort = True
+				abort = error = True
 			finally:
 				if self.ts != None:
 					self.ts.unlink()
 				if self.multi_ts != None:
 					self.multi_ts.unlink()
 				if abort:
-					sys.exit(1)
+					sys.exit(1 if error else 0)
 
 	def find_target(self, settings):
 		"""
