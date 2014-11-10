@@ -39,11 +39,6 @@ dobuild() {
 export EXIT_CODE_ON_SUCCESS=1
 export EXIT_CODE_ON_FAIL=2
 cd /var/tmp
-/root/git/metro/scripts/buildrepo nextbuild >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	/root/git/metro/scripts/buildrepo nextbuild
-	exit 1
-fi
 a=$(/root/git/metro/scripts/buildrepo nextbuild)
 if [ "$PRETEND" = "yes" ]; then
 	echo $a
