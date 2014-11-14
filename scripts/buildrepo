@@ -115,8 +115,6 @@ if ret:
 	print("Error calling metro for mirror path.")
 else:
 	initial_path = out.decode("ascii").strip()
-print(initial_path)
-sys.exit(1)
 
 initial_path = "/mnt/data/funtoo"
 
