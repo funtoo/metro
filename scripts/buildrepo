@@ -106,7 +106,19 @@ class RepositoryDatabase(Database):
 	def associate(self):
 		Database.associate(self,self.__database__)
 
-initial_path = "/home/mirror/funtoo"
+from subprocess import Popen, PIPE
+
+process = Popen(["%s/../metro" % os.path.dirname(os.path.realpath(__file__)), "-k", "path/mirror"], stdout=PIPE, stderr=PIPE)
+out = process.stdout.read()
+ret = process.wait()
+if ret:
+	print("Error calling metro for mirror path.")
+else:
+	initial_path = out.decode("ascii").strip()
+print(initial_path)
+sys.exit(1)
+
+initial_path = "/mnt/data/funtoo"
 
 if __name__ == "__main__":
 	if os.path.exists("cleaner.db"):
@@ -133,52 +145,47 @@ if __name__ == "__main__":
 				path = "%s/%s/%s/%s" % (initial_path, build, arch, subarch)
 				if not os.path.exists(path):
 					continue
+				most_recent = None
+				most_recent_str = None
 				for instance in os.listdir(path):
+					try:
+						date = datetime.datetime.strptime(instance,"%Y-%m-%d")
+					except ValueError:
+						continue
 					ipath = "%s/%s" % ( path, instance )
 					if not os.path.isdir(ipath):
 						continue
-					if instance == ".control":
-						ctlfile = ipath + "/version/stage3"
-						if os.path.exists(ctlfile):
-							a = open(ctlfile,"r")
-							mydate = a.readlines()[0].strip()
-							a.close()
-						else:
-							mydate = "1999-01-01"
-						date = datetime.datetime.strptime(mydate,"%Y-%m-%d")
-						mtime_path = path + "/" + mydate
-						#mtime_date = None
-						#for match in glob.glob("%s/stage3*.tar.*" % mtime_path):
-						#	if os.path.exists(match):
-						#		mtime_date = datetime.datetime.fromtimestamp(os.path.getmtime(match))
-						sa = SubArch()
-						sa.path = ipath
-						#if mtime_date != None:
-						#	sa.date = mtime_date
-						#else:
-						sa.date = date
-						sa.date_str = mydate
-						sa.build = build
-						sa.arch = arch
-						sa.subarch = subarch
-						session.add(sa)
-					else:
-						bdir = BuildDir()
-						bdir.path = ipath
-						bdir.date_str = instance
-						bdir.build = build
-						bdir.arch = arch
-						bdir.subarch = subarch
-						bdir.complete = False
-						bdir.full = False
-						for match in glob.glob("%s/stage3*.tar.*" % ipath):
-							bdir.complete = True
+					complete = False
+					for match in glob.glob("%s/stage3*.tar.*" % ipath):
+						complete = True
+						break
+					bdir = BuildDir()
+					bdir.path = ipath
+					bdir.date = date
+					bdir.date_str = instance
+					bdir.build = build
+					bdir.arch = arch
+					bdir.subarch = subarch
+					bdir.complete = complete
+					if complete:
+						for match in glob.glob("%s/stage1*.tar.*" % ipath):
+							bdir.full = True
 							break
-						if bdir.complete:
-							for match in glob.glob("%s/stage1*.tar.*" % ipath):
-								bdir.full = True
-								break
-						session.add(bdir)
+					session.add(bdir)
+					if most_recent == None or most_recent < bdir.date:
+						most_recent = bdir.date
+						most_recent_str = bdir.date_str
+
+				sa = SubArch()
+				sa.build = build
+				sa.arch = arch
+				sa.subarch = subarch
+				sa.date = most_recent
+				sa.date_str = most_recent_str
+				sa.path = path
+
+				session.add(sa)
+
 	session.commit()
 now = datetime.datetime.now()
 stale_days = 2
