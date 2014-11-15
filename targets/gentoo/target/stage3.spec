@@ -16,6 +16,10 @@ ok/run: [
 install -o $[path/mirror/owner] -g $[path/mirror/group] -m $[path/mirror/dirmode] -d $[path/mirror/target/control]/version || exit 1
 echo "$[target/version]" > $[path/mirror/target/control]/version/stage3 || exit 1
 chown $[path/mirror/owner]:$[path/mirror/group] $[path/mirror/target/control]/version/stage3 || exit 1
+if [ "$[strategy/build]" == "remote" ]; then
+	# auto-switch to local build once we have a local stage3:
+	echo "local" > $[strategy/build]
+fi
 
 
 $[[trigger/ok/symlink]]
