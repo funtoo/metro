@@ -216,7 +216,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 			if x.date != None and now - x.date < datetime.timedelta(days=stale_days):
 				continue	
 			# otherwise, we have found the next thing we should try to build. Output important info to stdout:
-			elif os.path.exists(x.path+"/../.control/.multi_progress"):
+			if os.path.exists(x.path+"/.control/.multi_progress"):
 				sys.stderr.write("Build at %s in progress, skipping...\n" % x.path)
 				continue
 			else:
