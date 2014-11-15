@@ -170,7 +170,7 @@ if __name__ == "__main__":
 							bdir.full = True
 							break
 					session.add(bdir)
-					if most_recent == None or most_recent < bdir.date:
+					if complete and ( most_recent == None or most_recent < bdir.date ):
 						most_recent = bdir.date
 						most_recent_str = bdir.date_str
 
