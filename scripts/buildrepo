@@ -231,3 +231,8 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	oldies = sa.filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).order_by(SubArch.__table__.c.date)
 	find_build(oldies)
 	sys.exit(1)
+elif len(sys.argv) ==2 and sys.argv[1] == "empties":
+	empties = session.query(SubArch).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
+	for x in empties:
+		print(x.build,x.arch,x.subarch)
+	
