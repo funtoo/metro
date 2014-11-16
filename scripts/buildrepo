@@ -202,7 +202,7 @@ def find_build(q):
 		else:
 			# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
 			print(x.build, x.subarch, x.full_date, end=' ')
-			print(map_build(x.build, x.subarch, x.full_date == x.date, x.full_date))
+			print(map_build(x.build, x.subarch, x.full_date == x.date and x.date != None, x.full_date))
 			sys.exit(0)
 if len(sys.argv) > 1 and sys.argv[1] == "clean":
 	for build in builds:
@@ -234,5 +234,5 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 elif len(sys.argv) ==2 and sys.argv[1] == "empties":
 	empties = session.query(SubArch).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
 	for x in empties:
-		print(x.build,x.arch,x.subarch)
+		print(x.path)
 	
