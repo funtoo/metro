@@ -18,7 +18,7 @@ echo "$[target/version]" > $[path/mirror/target/control]/version/stage3 || exit 
 chown $[path/mirror/owner]:$[path/mirror/group] $[path/mirror/target/control]/version/stage3 || exit 1
 if [ "$[strategy/build]" == "remote" ]; then
 	# auto-switch to local build once we have a local stage3:
-	echo "local" > $[strategy/build]
+	echo "local" > $[path/mirror/target/control]/strategy/build
 fi
 
 
