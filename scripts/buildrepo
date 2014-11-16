@@ -70,6 +70,7 @@ class SubArch(dbobject):
 			Column('build', String, index=True),
 			Column('arch', String, index=True),
 			Column('subarch', String, index=True),
+			Column('full_date', DateTime, index=True)
 		)
 
 class BuildDir(dbobject):
@@ -143,6 +144,7 @@ if __name__ == "__main__":
 					continue
 				most_recent = None
 				most_recent_str = None
+				most_recent_full = None
 				for instance in os.listdir(path):
 					try:
 						date = datetime.datetime.strptime(instance,"%Y-%m-%d")
@@ -171,6 +173,8 @@ if __name__ == "__main__":
 					if complete and ( most_recent == None or most_recent < bdir.date ):
 						most_recent = bdir.date
 						most_recent_str = bdir.date_str
+						if bdir.full:
+							most_recent_full = bdir.date
 
 				sa = SubArch()
 				sa.build = build
@@ -178,6 +182,7 @@ if __name__ == "__main__":
 				sa.subarch = subarch
 				sa.date = most_recent
 				sa.date_str = most_recent_str
+				sa.full_date = most_recent_full
 				sa.path = path
 
 				session.add(sa)
@@ -185,6 +190,20 @@ if __name__ == "__main__":
 	session.commit()
 now = datetime.datetime.now()
 stale_days = 2
+def find_build(q):
+	for x in q:
+		# if something is newer than 4 days old, it is not considered stale, so we skip over it:
+		if x.date != None and now - x.date < datetime.timedelta(days=stale_days):
+			continue	
+		# otherwise, we have found the next thing we should try to build. Output important info to stdout:
+		if os.path.exists(x.path+"/.control/.multi_progress"):
+			sys.stderr.write("Build at %s in progress, skipping...\n" % x.path)
+			continue
+		else:
+			# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
+			print(x.build, x.subarch, x.full_date, end=' ')
+			print(map_build(x.build, x.subarch, x.full_date == x.date, x.full_date))
+			sys.exit(0)
 if len(sys.argv) > 1 and sys.argv[1] == "clean":
 	for build in builds:
 		for arch in arches:
@@ -205,26 +224,10 @@ if len(sys.argv) > 1 and sys.argv[1] == "clean":
 			print(("rm -rf %s # not complete" % x.path))
 elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	sa = session.query(SubArch)
-	for build in builds:
-		# grab all subarches for this build...
-		sa2 = sa.filter_by(build=build)
-		# order subarches by date, oldest to newest, and iterate over them:
-		for x in sa2.order_by(SubArch.__table__.c.date):
-			# if something is newer than 4 days old, it is not considered stale, so we skip over it:
-			if x.date != None and now - x.date < datetime.timedelta(days=stale_days):
-				continue	
-			# otherwise, we have found the next thing we should try to build. Output important info to stdout:
-			if os.path.exists(x.path+"/.control/.multi_progress"):
-				sys.stderr.write("Build at %s in progress, skipping...\n" % x.path)
-				continue
-			else:
-				# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
-				print(x.build, x.subarch, end=' ')
-				b = session.query(BuildDir).filter_by(build=x.build).filter_by(subarch=x.subarch).filter_by(date_str=x.date_str).first()
-				if b == None:
-					print("None", end=' ')
-				else:
-					print(b.full, end=' ')
-				print(map_build(x.build, x.subarch, b.full if b else None, x.date if b else None))
-				sys.exit(0)
+	# first, look for an "empty" build -- with no stages:
+	empties = sa.filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
+	find_build(empties)
+	# if we can't find one, look for an "oldy" build -- one with stale stages. Oldest first.
+	oldies = sa.filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).order_by(SubArch.__table__.c.date)
+	find_build(oldies)
 	sys.exit(1)
