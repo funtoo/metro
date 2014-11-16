@@ -116,8 +116,6 @@ if ret:
 else:
 	initial_path = out.decode("ascii").strip()
 
-initial_path = "/mnt/data/funtoo"
-
 if __name__ == "__main__":
 	if os.path.exists("cleaner.db"):
 		os.unlink("cleaner.db")
