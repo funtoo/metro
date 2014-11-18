@@ -207,7 +207,7 @@ class Metro:
 			multi_tsfn = initial_settings["path/mirror/target/control"] + "/.multi_progress"
 			self.multi_ts = timestampFile(multi_tsfn)
 			if self.multi_ts.exists():
-				print("Multi-target already in progress -- %s exists. Aborting." % self.multi_ts.path)
+				print("Multi-target already in progress -- %s exists. Exiting." % self.multi_ts.path)
 				sys.exit(1)
 			else:
 				if not self.multi_ts.create():
@@ -248,21 +248,49 @@ class Metro:
 			self.ts = timestampFile(tsfn)
 			abort = False
 			error = False
-			if self.ts.exists():
-				print("Target already in progress -- %s exists. Aborting." % self.ts.path)
-				abort = True
-			else:
-				if not self.ts.create():
-					print("Could not create timestamp file %s" % self.ts.path)
-					abort = error = True
 			try:
-				if not abort:
-					target.run()
-					
+				if self.ts.exists():
+					if targetname == "snapshot":
+						print("Another snapshot is running... waiting for it to complete...")
+						okay = self.ts.wait(60 * 15)
+						if not okay:
+							print("Other snapshot did not complete in time (15 minutes.) Aborting.")
+							abort = error = True
+							break
+						else:
+							# snapshot was done by someone else, so we don't need to do it:
+							continue
+					else:
+						print("Target already in progress -- %s exists. Aborting." % self.ts.path)
+						abort = error = True
+				else:
+					if not self.ts.create():
+						print("Could not create timestamp file %s" % self.ts.path)
+						abort = error = True
+				if abort:
+					break
+				else:
+					try:
+						target.run()
+					except MetroError as m:
+						print("Metro encountered an error: %s", m)	
+						abort = error = True
+						break
+					except KeyboardInterrupt:
+						raise KeyboardInterrupt
+					except:
+						print("Metro encountered an unexpected error!")
+						print()
+						if self.ts:
+							self.ts.unlink()
+						if self.multi_ts:
+							self.multi_ts.unlink()
+						raise
 					print("Target run complete")
 					print()
+					self.ts.unlink()
 			except KeyboardInterrupt:
-				print("Target %s aborted due to user interrupt (ctrl-C)" % target)
+				print("Target %s aborted due to user interrupt (ctrl-C)" % targetname)
 				abort = error = True
 				if self.ts != None:
 					self.ts.unlink()
@@ -289,7 +317,8 @@ class Metro:
 			raise NameError("target class "+cls+" does not appear to be a class.")
 		return self.targets.__dict__[cls](settings)
 
-
 m = Metro()
-from metro_support import timestampFile
+from metro_support import timestampFile, MetroError
 m.run()
+
+# vim: ts=4 sw=4 noet

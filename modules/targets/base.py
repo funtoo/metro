@@ -18,6 +18,7 @@ class BaseTarget:
 		self.settings = settings
 		self.env = {}
 		self.env["PATH"] = "/bin:/sbin:/usr/bin:/usr/sbin"
+		self.env["TERM"] = os.environ["TERM"]
 		self.required_files = []
 
 	def run(self):
@@ -36,8 +37,6 @@ class BaseTarget:
 			raise MetroError("run_script: key '%s' is not a multi-line element." % (key, ))
 
 		print("run_script: running %s..." % key)
-
-		os.environ["PATH"] = self.env["PATH"]
 
 		if chroot:
 			chrootfile = "/tmp/"+key+".metro"

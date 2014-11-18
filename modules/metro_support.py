@@ -1,8 +1,7 @@
 #!/usr/bin/python3
 
 from subprocess import Popen
-import os
-from datetime import datetime
+import os, sys, time
 
 def ismount(path):
 	"enhanced to handle bind mounts"
@@ -39,14 +38,32 @@ class timestampFile(object):
 
 	"Class to create timestamp files; used for tracking in-progress metro builds."
 
-	format = "%Y-%m-%dT%H:%M:%S.%f"
-
 	def __init__(self,path):
 		self.path = path
 		self.created = False
 
 	def exists(self):
-		return os.path.exists(self.path)
+		exists = False
+		if os.path.exists(self.path):
+			exists = True
+			mypid = self.get()
+			if mypid == False:
+				try:
+					os.unlink(self.path)
+				except FileNotFoundError:
+					pass
+				return False
+			try:
+				os.kill(mypid, 0)
+			except OSError:
+				exists = False
+				# stale pid, remove:
+				print("Removing stale timestamp: %s" % self.path)
+				try:
+					os.unlink(self.path)
+				except FileNotFoundError:
+					pass
+		return exists
 
 	def unlink(self):
 		if self.created and os.path.exists(self.path):
@@ -55,18 +72,17 @@ class timestampFile(object):
 	def create(self):
 		if self.exists():
 			return False
-		now = datetime.utcnow()
 		try:
 			out = open(self.path,"w")
 		except IOError:
 			return False
-		out.write(now.isoformat())
+		out.write(str(os.getpid()))
 		out.close()
 		self.created = True
 		return True
 
 	def get(self):
-		if not self.exists():
+		if not os.path.exists(self.path):
 			return False
 		try:
 			inf = open(self.path,"r")
@@ -74,14 +90,21 @@ class timestampFile(object):
 			return False
 		data = inf.read()
 		inf.close()
-		dt = datetime.strptime(data,self.format)
-		return dt
-
-	def age(self):
-		dt = self.get()
-		if dt == False:
+		try:
+			return int(data) 
+		except ValueError:
 			return False
-		return datetime.utcnow() - dt
+
+	def wait(self,seconds):
+		elapsed = 0
+		while os.path.exists(self.path) and elapsed < seconds:
+			sys.stdout.write(".")
+			sys.stdout.flush()
+			time.sleep(5)
+			elapsed += 5
+		if os.path.exists(self.path):
+			return False
+		return True
 
 if __name__ == "__main__":
 	a = timestampFile("/var/tmp/foo.ts")
@@ -90,3 +113,4 @@ if __name__ == "__main__":
 	print(a.get())
 	print(a.age())
 
+# vim: ts=4 sw=4 noet
