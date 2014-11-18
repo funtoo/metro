@@ -215,9 +215,9 @@ if len(sys.argv) > 1 and sys.argv[1] == "clean":
 			for subarch in subarches:
 				out = session.query(BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
 				for x in out[0:-3]:
-					print(("rm -rf %s*" % x.path))
+					print(("rm -rf %s" % x.path))
 				for x in out[-3:]:
-					print(("# keeping %s*" % x.path))
+					print(("# keeping %s" % x.path))
 		# next, remove any more than 2 snapshots:
 		sna = session.query(Snapshot).filter_by(build=build).order_by(Snapshot.path).all()
 		for x in sna[0:-3]:
