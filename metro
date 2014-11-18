@@ -193,6 +193,7 @@ class Metro:
 		except ValueError:
 			pass
 
+
 		if len(temp_targets):
 
 			# We are doing a multi-target build:
@@ -202,10 +203,8 @@ class Metro:
 			# skip over in-progress multi-targets so it can build the next multi-target (allowing parallel
 			# multi-target builds.
 
-			settings = self.init_settings({"target": temp_targets[0]})
-			target = self.find_target(settings)
-
-			multi_tsfn = settings["path/mirror/target/control"] + "/.multi_progress"
+			initial_settings = self.init_settings()
+			multi_tsfn = initial_settings["path/mirror/target/control"] + "/.multi_progress"
 			self.multi_ts = timestampFile(multi_tsfn)
 			if self.multi_ts.exists():
 				print("Multi-target already in progress -- %s exists. Aborting." % self.multi_ts.path)
@@ -214,7 +213,7 @@ class Metro:
 				if not self.multi_ts.create():
 					print("Could not create multi-target timestamp file %s" % self.multi_ts.path)
 					sys.exit(1)
-
+		
 		for targetname in targetlist:
 			settings = self.init_settings({"target": targetname})
 			target = self.find_target(settings)
@@ -265,13 +264,14 @@ class Metro:
 			except KeyboardInterrupt:
 				print("Target %s aborted due to user interrupt (ctrl-C)" % target)
 				abort = error = True
-			finally:
 				if self.ts != None:
 					self.ts.unlink()
-				if self.multi_ts != None:
-					self.multi_ts.unlink()
-				if abort:
-					sys.exit(1 if error else 0)
+				# break out of multi-target loop so we can exit:
+				break
+		if self.multi_ts != None:
+			self.multi_ts.unlink()
+		if abort:
+			sys.exit(1 if error else 0)
 
 	def find_target(self, settings):
 		"""

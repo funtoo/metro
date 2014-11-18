@@ -70,7 +70,8 @@ class SubArch(dbobject):
 			Column('build', String, index=True),
 			Column('arch', String, index=True),
 			Column('subarch', String, index=True),
-			Column('full_date', DateTime, index=True)
+			Column('full_date', DateTime, index=True),
+			Column('full_date_str', String, index=True)
 		)
 
 class BuildDir(dbobject):
@@ -145,6 +146,7 @@ if __name__ == "__main__":
 				most_recent = None
 				most_recent_str = None
 				most_recent_full = None
+				most_recent_full_str = None
 				for instance in os.listdir(path):
 					try:
 						date = datetime.datetime.strptime(instance,"%Y-%m-%d")
@@ -175,6 +177,7 @@ if __name__ == "__main__":
 						most_recent_str = bdir.date_str
 						if bdir.full:
 							most_recent_full = bdir.date
+							most_recent_full_str = bdir.date_str
 
 				sa = SubArch()
 				sa.build = build
@@ -183,6 +186,7 @@ if __name__ == "__main__":
 				sa.date = most_recent
 				sa.date_str = most_recent_str
 				sa.full_date = most_recent_full
+				sa.full_date_str = most_recent_full_str
 				sa.path = path
 
 				session.add(sa)
@@ -201,8 +205,8 @@ def find_build(q):
 			continue
 		else:
 			# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
-			print(x.build, x.subarch, x.full_date, end=' ')
-			print(map_build(x.build, x.subarch, x.full_date == x.date and x.date != None, x.full_date))
+			print(x.build, x.subarch, x.full_date_str, end=' ')
+			print(map_build(x.build, x.subarch, x.full_date == x.date and x.date != None, x.full_date_str))
 			sys.exit(0)
 if len(sys.argv) > 1 and sys.argv[1] == "clean":
 	for build in builds:
