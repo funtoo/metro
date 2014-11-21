@@ -18,7 +18,8 @@ class BaseTarget:
 		self.settings = settings
 		self.env = {}
 		self.env["PATH"] = "/bin:/sbin:/usr/bin:/usr/sbin"
-		self.env["TERM"] = os.environ["TERM"]
+		if "TERM" in os.environ:
+			self.env["TERM"] = os.environ["TERM"]
 		self.required_files = []
 
 	def run(self):
