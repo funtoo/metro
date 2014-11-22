@@ -115,7 +115,7 @@ class lockFile(stampFile):
 			except OSError:
 				exists = False
 				# stale pid, remove:
-				sys.stderr.write("# Removing stale lock file: %s" % self.path)
+				sys.stderr.write("# Removing stale lock file: %s\n" % self.path)
 				try:
 					os.unlink(self.path)
 				except FileNotFoundError:
@@ -139,7 +139,7 @@ class countFile(stampFile):
 			f = open(self.path,"r")
 			d = f.readlines()
 			return int(d)
-		except IOError, ValueError:
+		except (IOError, ValueError):
 			return None
 
 	def increment(self):
@@ -151,7 +151,7 @@ class countFile(stampFile):
 			f = open(self.path,"w")
 			f.write(str(count))
 			f.close()
-		except IOError, ValueError:
+		except (IOError, ValueError):
 			return None
 
 if __name__ == "__main__":
