@@ -4,10 +4,11 @@ source /etc/profile
 umask 002
 SCRIPT_DIR=$(readlink -f $(dirname ${BASH_SOURCE[0]}))
 cd $SCRIPT_DIR
-a=$(./buildrepo nextbuild)
-if [ "$PRETEND" = "yes" ]; then
-	echo $a
+if [ ! -e ./buildrepo ]; then
+	echo "can't find buildrepo. Path is " `cwd`
+	exit 1
 fi
+a=$(./buildrepo nextbuild)
 if [ $? -eq 2 ]; then
 	# error
 	echo "buildrepo error: (re-doing to get full output):"
@@ -21,6 +22,10 @@ if [ "$a" = "" ]; then
 else
 	# evaluate output of buildrepo to get things defined as env vars:
 	eval $a
+	if [ -z "$build" ]; then
+		echo "build not defined. Call to buildrepo probably failed. Exiting."
+		exit 1
+	fi
 	if [ "$1" == "--pretend" ]; then
 		cmd="echo ../metro"
 	else
