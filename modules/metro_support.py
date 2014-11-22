@@ -58,7 +58,7 @@ class timestampFile(object):
 			except OSError:
 				exists = False
 				# stale pid, remove:
-				print("# Removing stale timestamp: %s" % self.path)
+				sys.stderr.write("# Removing stale timestamp: %s" % self.path)
 				try:
 					os.unlink(self.path)
 				except FileNotFoundError:
@@ -98,8 +98,8 @@ class timestampFile(object):
 	def wait(self,seconds):
 		elapsed = 0
 		while os.path.exists(self.path) and elapsed < seconds:
-			sys.stdout.write(".")
-			sys.stdout.flush()
+			sys.stderr.write(".")
+			sys.stderr.flush()
 			time.sleep(5)
 			elapsed += 5
 		if os.path.exists(self.path):
