@@ -58,7 +58,7 @@ class timestampFile(object):
 			except OSError:
 				exists = False
 				# stale pid, remove:
-				print("Removing stale timestamp: %s" % self.path)
+				print("# Removing stale timestamp: %s" % self.path)
 				try:
 					os.unlink(self.path)
 				except FileNotFoundError:
