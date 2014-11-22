@@ -193,6 +193,7 @@ class Metro:
 		except ValueError:
 			pass
 
+		self.mult_ts = None
 
 		if len(temp_targets):
 
