@@ -194,6 +194,7 @@ class Metro:
 			pass
 
 		self.mult_ts = None
+		abort = error = False
 
 		if len(temp_targets):
 
