@@ -7,7 +7,7 @@ import glob
 import datetime
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../modules"))
 
-from metro_support import timestampFile
+from metro_support import lockFile, countFile
 from db import *
 
 cfgfile = os.path.join(os.path.expanduser("~"),".buildbot")
@@ -197,16 +197,27 @@ if __name__ == "__main__":
 	session.commit()
 now = datetime.datetime.now()
 stale_days = 2
+# more than 3 fails and we remove the build from our rotation:
+fail_count = 3
 def find_build(q):
 	for x in q:
 		# if something is newer than 4 days old, it is not considered stale, so we skip over it:
 		if x.date != None and now - x.date < datetime.timedelta(days=stale_days):
 			continue	
 		# otherwise, we have found the next thing we should try to build. Output important info to stdout:
+
+		# drop it from our build rotation if the build has failed too many consecutive times:
+		fcfilepath = x.path+"/.control/.failcount"
+		if os.path.exists(fcfilepath):
+			fcfile = countFile(fcfilepath)
+			if fcfile.exists() and fcfile.count >= fail_count:
+				sys.stderr.write("# Build at %s has failed more than %s times; skipping...\n" % (x.path, fail_count))
+				continue
+		# skip it if it is currently being built....
 		tsfilepath = x.path+"/.control/.multi_progress"
 		if os.path.exists(tsfilepath):
-			tsfile = timestampFile(tsfilepath)
-			# ensure timestampFile is not stale. The exists() method will clean it up automatically if it is:
+			tsfile = lockFile(tsfilepath)
+			# ensure lockFile is not stale. The exists() method will clean it up automatically if it is:
 			if tsfile.exists():
 				sys.stderr.write("# Build at %s in progress, skipping...\n" % x.path)
 				continue

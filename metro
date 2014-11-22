@@ -193,7 +193,6 @@ class Metro:
 		except ValueError:
 			pass
 
-		self.mult_ts = None
 		abort = error = False
 
 		if len(temp_targets):
@@ -206,16 +205,17 @@ class Metro:
 			# multi-target builds.
 
 			initial_settings = self.init_settings()
+
 			multi_tsfn = initial_settings["path/mirror/target/control"] + "/.multi_progress"
-			self.multi_ts = timestampFile(multi_tsfn)
+			self.multi_ts = lockFile(multi_tsfn)
 			if self.multi_ts.exists():
 				print("Multi-target already in progress -- %s exists. Exiting." % self.multi_ts.path)
 				sys.exit(1)
 			else:
 				if not self.multi_ts.create():
-					print("Could not create multi-target timestamp file %s" % self.multi_ts.path)
+					print("Could not create multi-target lock file %s" % self.multi_ts.path)
 					sys.exit(1)
-		
+
 		for targetname in targetlist:
 			settings = self.init_settings({"target": targetname})
 			target = self.find_target(settings)
@@ -242,12 +242,12 @@ class Metro:
 				target.run_script("trigger/ok/run", optional=True)
 				continue
 
-			# Okay, we need to build our target. Let's create an "in progress" timestamp file:
+			# Okay, we need to build our target. Let's create an "in progress" lock file:
 
 			# dump all settings
 			if self.debug_flexdata:
 				Metro.dump_settings(settings)
-			self.ts = timestampFile(tsfn)
+			self.ts = lockFile(tsfn)
 			abort = False
 			error = False
 			try:
@@ -264,10 +264,10 @@ class Metro:
 							continue
 					else:
 						print("Target already in progress -- %s exists. Aborting." % self.ts.path)
-						abort = error = True
+						abort =  True
 				else:
 					if not self.ts.create():
-						print("Could not create timestamp file %s" % self.ts.path)
+						print("Could not create lock file %s" % self.ts.path)
 						abort = error = True
 				if abort:
 					break
@@ -293,15 +293,26 @@ class Metro:
 					self.ts.unlink()
 			except KeyboardInterrupt:
 				print("Target %s aborted due to user interrupt (ctrl-C)" % targetname)
-				abort = error = True
+				abort = True
 				if self.ts != None:
 					self.ts.unlink()
 				# break out of multi-target loop so we can exit:
 				break
 		if self.multi_ts != None:
 			self.multi_ts.unlink()
+
+		failcnt_fn = initial_settings["path/mirror/target/control"] + "/.failcount"
+		failcnt = countFile(failcnt_fn)
+
+		if error:
+			# increment failcount - we record consecutive fails
+			failcnt.increment()
+			sys.exit(1)
+		else:
+			# we didn't fail - remove the fail counter if it exists:
+			failcnt.unlink()
 		if abort:
-			sys.exit(1 if error else 0)
+			sys.exit(1)
 		else:
 			sys.exit(0)
 
@@ -322,7 +333,7 @@ class Metro:
 		return self.targets.__dict__[cls](settings)
 
 m = Metro()
-from metro_support import timestampFile, MetroError
+from metro_support import lockFile, countFile, MetroError
 m.run()
 
 # vim: ts=4 sw=4 noet

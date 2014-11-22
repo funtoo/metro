@@ -34,13 +34,70 @@ def spawn(cmd, env):
 		return exitcode
 	return 0
 
-class timestampFile(object):
-
-	"Class to create timestamp files; used for tracking in-progress metro builds."
+class stampFile(object):
 
 	def __init__(self,path):
 		self.path = path
+
+	def getFileContents(self):
+		return "replaceme"
+
+	def exists(self):
+		return os.path.exists(self.path)
+
+	def get(self):
+		if not os.path.exists(self.path):
+			return False
+		try:
+			inf = open(self.path,"r")
+		except IOError:
+			return False
+		data = inf.read()
+		inf.close()
+		try:
+			return int(data) 
+		except ValueError:
+			return False
+
+	def unlink(self):
+		if os.path.exists(self.path):
+			os.unlink(self.path)
+
+	def wait(self,seconds):
+		elapsed = 0
+		while os.path.exists(self.path) and elapsed < seconds:
+			sys.stderr.write(".")
+			sys.stderr.flush()
+			time.sleep(5)
+			elapsed += 5
+		if os.path.exists(self.path):
+			return False
+		return True
+
+class lockFile(stampFile):
+
+	"Class to create lock files; used for tracking in-progress metro builds."
+
+	def __init__(self,path):
+		stampFile.__init__(self,path)
 		self.created = False
+
+	def unlink(self):
+		"only unlink if *we* created the file. Otherwise leave alone."
+		if self.created and os.path.exists(self.path):
+			os.unlink(self.path)
+
+	def create(self):
+		if self.exists():
+			return False
+		try:
+			out = open(self.path,"w")
+		except IOError:
+			return False
+		out.write(self.getFileContents())
+		out.close()
+		self.created = True
+		return True
 
 	def exists(self):
 		exists = False
@@ -58,7 +115,7 @@ class timestampFile(object):
 			except OSError:
 				exists = False
 				# stale pid, remove:
-				sys.stderr.write("# Removing stale timestamp: %s" % self.path)
+				sys.stderr.write("# Removing stale lock file: %s" % self.path)
 				try:
 					os.unlink(self.path)
 				except FileNotFoundError:
@@ -69,45 +126,36 @@ class timestampFile(object):
 		if self.created and os.path.exists(self.path):
 			os.unlink(self.path)
 
-	def create(self):
-		if self.exists():
-			return False
-		try:
-			out = open(self.path,"w")
-		except IOError:
-			return False
-		out.write(str(os.getpid()))
-		out.close()
-		self.created = True
-		return True
+	def getFileContents(self):
+		return(str(os.getpid()))
 
-	def get(self):
-		if not os.path.exists(self.path):
-			return False
-		try:
-			inf = open(self.path,"r")
-		except IOError:
-			return False
-		data = inf.read()
-		inf.close()
-		try:
-			return int(data) 
-		except ValueError:
-			return False
+class countFile(stampFile):
 
-	def wait(self,seconds):
-		elapsed = 0
-		while os.path.exists(self.path) and elapsed < seconds:
-			sys.stderr.write(".")
-			sys.stderr.flush()
-			time.sleep(5)
-			elapsed += 5
-		if os.path.exists(self.path):
-			return False
-		return True
+	"Class to record fail count for builds."
+
+	@property
+	def count(self):
+		try:
+			f = open(self.path,"r")
+			d = f.readlines()
+			return int(d)
+		except IOError, ValueError:
+			return None
+
+	def increment(self):
+		try:
+			count = self.count
+			if count == None:
+				count = 0
+			count += 1
+			f = open(self.path,"w")
+			f.write(str(count))
+			f.close()
+		except IOError, ValueError:
+			return None
 
 if __name__ == "__main__":
-	a = timestampFile("/var/tmp/foo.ts")
+	a = lockFile("/var/tmp/foo.ts")
 	print(a.exists())
 	print(a.create())
 	print(a.get())
