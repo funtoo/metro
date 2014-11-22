@@ -300,6 +300,8 @@ class Metro:
 			self.multi_ts.unlink()
 		if abort:
 			sys.exit(1 if error else 0)
+		else:
+			sys.exit(0)
 
 	def find_target(self, settings):
 		"""
