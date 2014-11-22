@@ -5,6 +5,9 @@ import os.path
 import sys
 import glob
 import datetime
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../modules"))
+
+from metro_support import timestampFile
 from db import *
 
 cfgfile = os.path.join(os.path.expanduser("~"),".buildbot")
@@ -200,26 +203,29 @@ def find_build(q):
 		if x.date != None and now - x.date < datetime.timedelta(days=stale_days):
 			continue	
 		# otherwise, we have found the next thing we should try to build. Output important info to stdout:
-		if os.path.exists(x.path+"/.control/.multi_progress"):
-			sys.stderr.write("# Build at %s in progress, skipping...\n" % x.path)
-			continue
+		tsfilepath = x.path+"/.control/.multi_progress"
+		if os.path.exists(tsfilepath):
+			tsfile = timestampFile(tsfilepath)
+			# ensure timestampFile is not stale. The exists() method will clean it up automatically if it is:
+			if tsfile.exists():
+				sys.stderr.write("# Build at %s in progress, skipping...\n" % x.path)
+				continue
+		# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
+		print("build=%s" % x.build)
+		print("subarch=%s" % x.subarch)
+		print("fulldate=%s" % x.full_date_str)
+		print("nextdate=%s" % datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d"))
+		mb = map_build(x.build, x.subarch, x.full_date == x.date and x.date != None, x.full_date_str)
+		# handle case where map_build returns "full+openvz":
+		if type(mb) == str:
+			mb = mb.split("+")
+		# handle case where map_build returns ("full", "openvz"):
+		print("target=%s" % mb[0])
+		if len(mb) > 1:
+			print("extras='%s'" % " ".join(mb[1:]))
 		else:
-			# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
-			print("build=%s" % x.build)
-			print("subarch=%s" % x.subarch)
-			print("fulldate=%s" % x.full_date_str)
-			print("nextdate=%s" % datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d"))
-			mb = map_build(x.build, x.subarch, x.full_date == x.date and x.date != None, x.full_date_str)
-			# handle case where map_build returns "full+openvz":
-			if type(mb) == str:
-			    mb = mb.split("+")
-			# handle case where map_build returns ("full", "openvz"):
-			print("target=%s" % mb[0])
-			if len(mb) > 1:
-				print("extras='%s'" % " ".join(mb[1:]))
-			else:
-				print("extras=''")
-			sys.exit(0)
+			print("extras=''")
+		sys.exit(0)
 
 if len(sys.argv) > 1 and sys.argv[1] == "clean":
 	for build in builds:
