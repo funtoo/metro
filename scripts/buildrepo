@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
 	session.commit()
 now = datetime.datetime.now()
-stale_days = 0
+stale_days = 2
 def find_build(q):
 	for x in q:
 		# if something is newer than 4 days old, it is not considered stale, so we skip over it:
