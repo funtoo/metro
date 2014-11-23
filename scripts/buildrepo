@@ -272,12 +272,19 @@ if len(sys.argv) > 1 and sys.argv[1] == "clean":
 
 elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	sa = session.query(SubArch)
-	# first, look for an "empty" build -- with no stages:
-	empties = sa.filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).order_by(SubArch.__table__.c.failcount.asc())
-	find_build(empties)
-	# if we can't find one, look for an "oldy" build -- one with stale stages. Oldest first.
-	oldies = sa.filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).order_by(SubArch.__table__.c.failcount.asc(), SubArch.__table__.c.date)
-	find_build(oldies)
+	myfail = 0
+	while myfail < failcount:
+		# we start with failcount of zero, and prioritize not-yet-built stages:
+		empties = sa.filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter(failcount=myfail)
+		find_build(empties)
+		# if we can't find one, we look for a failcount of zero, but prioritize by date:
+		oldies = sa.filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).filter(failcount=myfail).order_by(SubArch.__table__.c.date)
+		find_build(oldies)
+		myfail += 1
+		# if no builds are found, we increment failcount, and try again:
+	# if our loop didn't present a build, we ignore date, look for all builds with failcount >= our max, and then order by failcount, and pick a build:
+	baddies = sa.filter(SubArch.__table__.c.build.in_(builds)).filter(SubArch.__table__.c.failcount >= failcount).order_by(SubArch.__table__.c.failcount.asc())
+	find_build(baddies)
 	sys.exit(1)
 elif len(sys.argv) ==2 and sys.argv[1] == "empties":
 	empties = session.query(SubArch).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
