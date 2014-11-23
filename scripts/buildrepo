@@ -10,6 +10,18 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../mod
 from metro_support import lockFile, countFile
 from db import *
 
+# these variables are used for building:
+
+builds = ( )
+arches = ( )
+subarches = ( )
+
+# these variables, if defined, are used for repo management (cleaning, etc.):
+
+all_builds = ( )
+all_arches = ( )
+all_subarches = ( )
+
 cfgfile = os.path.join(os.path.expanduser("~"),".buildbot")
 if os.path.exists(cfgfile):
     exec(open(cfgfile, "rb").read())
@@ -61,6 +73,12 @@ def map_build(build, subarch, full, full_date):
 """)
     sys.exit(1)
 
+if len(all_builds) == 0:
+	# if the all_variables are not defined, inherit values from the non-all vars:
+	all_builds = builds
+	all_arches = arches
+	all_subarches = subarches
+
 class SubArch(dbobject):
 	@classmethod
 	def _makeTable(cls,db):
@@ -75,7 +93,8 @@ class SubArch(dbobject):
 			Column('subarch', String, index=True),
 			Column('failcount', Integer, index=True),
 			Column('full_date', DateTime, index=True),
-			Column('full_date_str', String, index=True)
+			Column('full_date_str', String, index=True),
+			Column('do_build', Boolean, index=True)
 		)
 
 class BuildDir(dbobject):
@@ -127,7 +146,7 @@ if __name__ == "__main__":
 		os.unlink("cleaner.db")
 	db = RepositoryDatabase()
 	session = db.session
-	for build in builds:
+	for build in all_builds:
 		if not os.path.exists("%s/%s" % (initial_path, build)):
 			continue
 		snapdir = "%s/%s/snapshots" % ( initial_path, build )
@@ -140,10 +159,10 @@ if __name__ == "__main__":
 				sna.path = match
 				sna.build = build
 				session.add(sna)
-		for arch in arches:
+		for arch in all_arches:
 			if not os.path.exists("%s/%s/%s" % ( initial_path, build, arch )):
 				continue
-			for subarch in subarches:
+			for subarch in all_subarches:
 				path = "%s/%s/%s/%s" % (initial_path, build, arch, subarch)
 				if not os.path.exists(path):
 					continue
@@ -198,6 +217,11 @@ if __name__ == "__main__":
 				sa.full_date_str = most_recent_full_str
 				sa.failcount = failcount
 				sa.path = path
+				# is subarch in our list of things to build, or just to maintain (ie. clean, for main repo)?
+				if build in builds and arch in arches and subarch in subarches:
+					sa.do_build = True
+				else:
+					sa.do_build = False
 				session.add(sa)
 
 	session.commit()
@@ -245,10 +269,10 @@ def find_build(q):
 		sys.exit(0)
 
 if len(sys.argv) > 1 and sys.argv[1] == "clean":
-	for build in builds:
+	for build in all_builds:
 		# first -- remove any more than 3 complete builds, starting with oldest, of course:
-		for arch in arches:
-			for subarch in subarches:
+		for arch in all_arches:
+			for subarch in all_subarches:
 				out = session.query(BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
 				for x in out[0:-3]:
 					print(("rm -rf %s" % x.path))
@@ -275,20 +299,20 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	myfail = 0
 	while myfail < failcount:
 		# we start with failcount of zero, and prioritize not-yet-built stages:
-		empties = sa.filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter(failcount=myfail)
+		empties = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter(failcount=myfail)
 		find_build(empties)
 		# if we can't find one, we look for a failcount of zero, but prioritize by date:
-		oldies = sa.filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).filter(failcount=myfail).order_by(SubArch.__table__.c.date)
+		oldies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).filter(failcount=myfail).order_by(SubArch.__table__.c.date)
 		find_build(oldies)
 		myfail += 1
 		# if no builds are found, we increment failcount, and try again:
 	# THIS PART IS DISABLED. IF A BUILD IS BEYOND ITS FAILCOUNT, IT IS OUT OF ROTATION UNTIL SOMEONE MANUALLY INTERVENES:
 	# if our loop didn't present a build, we ignore date, look for all builds with failcount >= our max, and then order by failcount, and pick a build:
-	#baddies = sa.filter(SubArch.__table__.c.build.in_(builds)).filter(SubArch.__table__.c.failcount >= failcount).order_by(SubArch.__table__.c.failcount.asc())
+	#baddies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.build.in_(builds)).filter(SubArch.__table__.c.failcount >= failcount).order_by(SubArch.__table__.c.failcount.asc())
 	#find_build(baddies)
 	sys.exit(1)
 elif len(sys.argv) ==2 and sys.argv[1] == "empties":
-	empties = session.query(SubArch).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
+	empties = session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
 	for x in empties:
 		print(x.path)
 	
