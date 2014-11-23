@@ -138,7 +138,7 @@ class countFile(stampFile):
 		try:
 			f = open(self.path,"r")
 			d = f.readlines()
-			return int(d)
+			return int(d[0])
 		except (IOError, ValueError):
 			return None
 
