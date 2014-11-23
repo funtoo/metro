@@ -73,6 +73,7 @@ class SubArch(dbobject):
 			Column('build', String, index=True),
 			Column('arch', String, index=True),
 			Column('subarch', String, index=True),
+			Column('failcount', Integer, index=True),
 			Column('full_date', DateTime, index=True),
 			Column('full_date_str', String, index=True)
 		)
@@ -150,6 +151,12 @@ if __name__ == "__main__":
 				most_recent_str = None
 				most_recent_full = None
 				most_recent_full_str = None
+				failpath = path + "/.control/.failcount"
+				if not os.path.exists(failpath):
+					failcount = 0
+				else:
+					fc = countFile(failpath)
+					failcount = fc.count
 				for instance in os.listdir(path):
 					try:
 						date = datetime.datetime.strptime(instance,"%Y-%m-%d")
@@ -181,7 +188,6 @@ if __name__ == "__main__":
 						if bdir.full:
 							most_recent_full = bdir.date
 							most_recent_full_str = bdir.date_str
-
 				sa = SubArch()
 				sa.build = build
 				sa.arch = arch
@@ -190,8 +196,8 @@ if __name__ == "__main__":
 				sa.date_str = most_recent_str
 				sa.full_date = most_recent_full
 				sa.full_date_str = most_recent_full_str
+				sa.failcount = failcount
 				sa.path = path
-
 				session.add(sa)
 
 	session.commit()
@@ -267,10 +273,10 @@ if len(sys.argv) > 1 and sys.argv[1] == "clean":
 elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	sa = session.query(SubArch)
 	# first, look for an "empty" build -- with no stages:
-	empties = sa.filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
+	empties = sa.filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).order_by(SubArch.__table__.c.failcount.asc())
 	find_build(empties)
 	# if we can't find one, look for an "oldy" build -- one with stale stages. Oldest first.
-	oldies = sa.filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).order_by(SubArch.__table__.c.date)
+	oldies = sa.filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).order_by(SubArch.__table__.c.failcount.asc(), SubArch.__table__.c.date)
 	find_build(oldies)
 	sys.exit(1)
 elif len(sys.argv) ==2 and sys.argv[1] == "empties":
