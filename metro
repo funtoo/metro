@@ -275,21 +275,19 @@ class Metro:
 					try:
 						target.run()
 					except MetroError as m:
-						print("Metro encountered an error: %s", m)	
+						print("Metro encountered an error: %s" % m)	
 						abort = error = True
 						break
 					except KeyboardInterrupt:
 						raise KeyboardInterrupt
 					except:
 						print("Metro encountered an unexpected error!")
-						print()
 						if self.ts:
 							self.ts.unlink()
 						if self.multi_ts:
 							self.multi_ts.unlink()
 						raise
 					print("Target run complete")
-					print()
 					self.ts.unlink()
 			except KeyboardInterrupt:
 				print("Target %s aborted due to user interrupt (ctrl-C)" % targetname)
@@ -300,18 +298,21 @@ class Metro:
 				break
 		if self.multi_ts != None:
 			self.multi_ts.unlink()
+		if self.ts != None:
+			self.ts.unlink()
 
 		failcnt_fn = initial_settings["path/mirror/target/control"] + "/.failcount"
 		failcnt = countFile(failcnt_fn)
 
 		if error:
+			print("Incrementing failcount.")
 			# increment failcount - we record consecutive fails
 			failcnt.increment()
-			sys.exit(1)
 		else:
+			print("Removing failcount.")
 			# we didn't fail - remove the fail counter if it exists:
 			failcnt.unlink()
-		if abort:
+		if abort or error:
 			sys.exit(1)
 		else:
 			sys.exit(0)

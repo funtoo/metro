@@ -244,6 +244,7 @@ def find_build(q):
 				continue
 		# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
 		print("build=%s" % x.build)
+		print("arch_desc=%s" % x.arch)
 		print("subarch=%s" % x.subarch)
 		print("fulldate=%s" % x.full_date_str)
 		print("nextdate=%s" % datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d"))
