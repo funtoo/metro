@@ -228,21 +228,12 @@ if __name__ == "__main__":
 now = datetime.datetime.now()
 stale_days = 2
 # more than 3 fails and we remove the build from our rotation:
-fail_count = 3
+max_failcount = 3
 def find_build(q):
 	for x in q:
 		# if something is newer than 4 days old, it is not considered stale, so we skip over it:
 		if x.date != None and now - x.date < datetime.timedelta(days=stale_days):
 			continue	
-		# otherwise, we have found the next thing we should try to build. Output important info to stdout:
-
-		# drop it from our build rotation if the build has failed too many consecutive times:
-		fcfilepath = x.path+"/.control/.failcount"
-		if os.path.exists(fcfilepath):
-			fcfile = countFile(fcfilepath)
-			if fcfile.exists() and fcfile.count >= fail_count:
-				sys.stderr.write("# Build at %s has failed more than %s times; skipping...\n" % (x.path, fail_count))
-				continue
 		# skip it if it is currently being built....
 		tsfilepath = x.path+"/.control/.multi_progress"
 		if os.path.exists(tsfilepath):
@@ -298,7 +289,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "clean":
 elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	sa = session.query(SubArch)
 	myfail = 0
-	while myfail < failcount:
+	while myfail < max_failcount:
 		# we start with failcount of zero, and prioritize not-yet-built stages:
 		empties = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail)
 		find_build(empties)

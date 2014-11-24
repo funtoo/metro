@@ -9,6 +9,5 @@ sh clean.sh || exit 1
 #opts="--delete --delete-excluded"
 rsync --exclude=stage2*.tar.xz $opts -rlve ssh /home/mirror/funtoo/ funtoo@ftp-osl.osuosl.org:/data/ftp/pub/funtoo/
 ssh funtoo@ftp-osl.osuosl.org chmod -R go+r /data/ftp/pub/funtoo/*
-ssh funtoo@ftp-osl.osuosl.org ./trigger-funtoo
 rm -f $pidfile
 
