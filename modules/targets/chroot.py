@@ -39,7 +39,7 @@ class ChrootTarget(BaseTarget):
 					raise MetroError("Required setting %s not found (for %s option support)" % (key, name))
 				if self.settings[key] != None:
 					# package cache dir will not be defined for snapshot...
-					print("Warning: NOT mounting %s due to variable being set to None." % key)
+					print("Enabling cache: %s" % key)
 					self.mounts[dst] = self.settings[key]
 
 	def run(self):
@@ -164,4 +164,4 @@ class ChrootTarget(BaseTarget):
 			mounts.sort(reverse=True)
 			return mounts
 
-# vim: ts=4 sw=4 et
+# vim: ts=4 sw=4 noet
