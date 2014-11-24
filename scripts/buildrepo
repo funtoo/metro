@@ -256,6 +256,7 @@ def find_build(q):
 		print("subarch=%s" % x.subarch)
 		print("fulldate=%s" % x.full_date_str)
 		print("nextdate=%s" % datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d"))
+		print("failcount=%s" % x.failcount)
 		mb = map_build(x.build, x.subarch, x.full_date == x.date and x.date != None, x.full_date_str)
 		# handle case where map_build returns "full+openvz":
 		if type(mb) == str:
@@ -299,10 +300,10 @@ elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
 	myfail = 0
 	while myfail < failcount:
 		# we start with failcount of zero, and prioritize not-yet-built stages:
-		empties = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter(failcount=myfail)
+		empties = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail)
 		find_build(empties)
 		# if we can't find one, we look for a failcount of zero, but prioritize by date:
-		oldies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).filter(failcount=myfail).order_by(SubArch.__table__.c.date)
+		oldies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail).order_by(SubArch.__table__.c.date)
 		find_build(oldies)
 		myfail += 1
 		# if no builds are found, we increment failcount, and try again:
