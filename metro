@@ -267,7 +267,7 @@ class Metro:
 						abort =  True
 				else:
 					if not self.ts.create():
-						print("Could not create lock file %s" % self.ts.path)
+						print("Could not create lock file %s -- please ensure that %s directory exists." % ( self.ts.path, os.path.dirname(self.ts.path)))
 						abort = error = True
 				if abort:
 					break
