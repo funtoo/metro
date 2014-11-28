@@ -5,7 +5,7 @@
 
 source /etc/profile
 SCRIPT_DIR=$(readlink -f $(dirname ${BASH_SOURCE[0]}))
-
+cd $SCRIPT_DIR
 die() {
 	echo $*
 	exit 1
