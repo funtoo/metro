@@ -45,7 +45,7 @@ def spawn(cmdargs, env, fname=None, tee=False, append=False):
 		else:
 			cmdout = fout
 	else:
-		cmdout = subprocess.STDOUT
+		cmdout = None
 		tee = False
 	print("Running command: %s (env %s) " % ( cmdargs,env ))
 	try:
@@ -196,5 +196,5 @@ class countFile(stampFile):
 			return None
 
 if __name__ == "__main__":
-	spawn(["/tmp/test.sh"],os.environ, "/tmp/foo.out",tee=True)
+	spawn(["cat","/etc/passwd"],os.environ )
 # vim: ts=4 sw=4 noet
