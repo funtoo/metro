@@ -5,7 +5,8 @@ import os.path
 import sys
 import glob
 import datetime
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../modules"))
+os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append("../modules")
 
 from metro_support import lockFile, countFile
 from db import *
@@ -133,7 +134,7 @@ class RepositoryDatabase(Database):
 
 from subprocess import Popen, PIPE
 
-process = Popen(["%s/../metro" % os.path.dirname(os.path.realpath(__file__)), "-k", "path/mirror"], stdout=PIPE, stderr=PIPE)
+process = Popen(["../metro", "-k", "path/mirror"], stdout=PIPE, stderr=PIPE)
 out = process.stdout.read()
 ret = process.wait()
 if ret:
