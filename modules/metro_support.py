@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
-from subprocess import Popen
-import os, sys, time
+import os, sys, subprocess, time
 
 def ismount(path):
 	"enhanced to handle bind mounts"
@@ -25,14 +24,56 @@ class MetroError(Exception):
 		else:
 			return "(no message)"
 
-def spawn(cmd, env):
-	print("Spawn: ",cmd,env)
-	pid = Popen(cmd, env=env)
-	exitcode = pid.wait()
-	if exitcode != 0:
-		print("Errors!")
-		return exitcode
-	return 0
+def spawn(cmdargs, env, fname=None, tee=False, append=False):
+	"""Run command cmd, with environment variables env.
+		if fname != None, then it contains a filename to write output to.
+		if tee == False (default), no command output will appear on stdout.
+		if tee == True, then command output will also appear on stdout.
+		(In both cases above, stderr is redirected to stdout).
+
+		If append == False, then output file fname will be overwritten if it exists.
+		If append == True, then output file fname will be appended to if it exists.
+	"""
+	fout = None
+	if fname != None:
+		if append:
+			fout = open(fname,"ab")
+		else:
+			fout = open(fname,"rb")
+		if tee:
+			cmdout = subprocess.PIPE
+		else:
+			cmdout = fout
+	else:
+		cmdout = subprocess.STDOUT
+		tee = False
+	print("Running command: %s (env %s) " % ( cmdargs,env ))
+	try:
+		cmd = subprocess.Popen(cmdargs, env=env, stdout=cmdout, stderr=subprocess.STDOUT)
+		if tee:
+			if append:
+				teecmdargs = ['tee', '-a', fname]
+			else:
+				teecmdargs = ['tee', fname]
+			teecmd = subprocess.Popen(teecmdargs, stdin=cmd.stdout)
+			cmd.stdout.close()
+			exitcode = cmd.wait()
+		else:
+			exitcode = cmd.wait()
+	except KeyboardInterrupt:
+		cmd.terminate()
+		if tee:
+			teecmd.terminate()
+		print("Interrupted!")
+		return 1
+	else:
+		if exitcode != 0:
+			print("Command exited with return code %s" % exitcode)
+			return exitcode
+		return 0
+	finally:
+		if fname and fout:
+			fout.close()
 
 class stampFile(object):
 
@@ -155,10 +196,5 @@ class countFile(stampFile):
 			return None
 
 if __name__ == "__main__":
-	a = lockFile("/var/tmp/foo.ts")
-	print(a.exists())
-	print(a.create())
-	print(a.get())
-	print(a.age())
-
+	spawn(["/tmp/test.sh"],os.environ, "/tmp/foo.out",tee=True)
 # vim: ts=4 sw=4 noet
