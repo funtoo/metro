@@ -325,7 +325,7 @@ class Metro:
 		else:
 			sys.exit(0)
 
-	def find_target(self, settings):
+	def find_target(self, settings, cr):
 		"""
 
 		Use the "target/class" setting in our metadata to initialize the proper class defined in the modules/targets.py module.
@@ -339,10 +339,10 @@ class Metro:
 			raise NameError("target class "+cls+" not defined in modules/targets.py.")
 		if type(self.targets.__dict__[cls]) != type:
 			raise NameError("target class "+cls+" does not appear to be a class.")
-		return self.targets.__dict__[cls](settings)
+		return self.targets.__dict__[cls](settings, cr)
 
 m = Metro()
-from metro_support import lockFile, countFile, MetroError
+from metro_support import lockFile, countFile, MetroError, CommandRunner
 m.run()
 
 # vim: ts=4 sw=4 noet

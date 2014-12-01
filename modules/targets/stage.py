@@ -1,8 +1,8 @@
 from .chroot import ChrootTarget
 
 class StageTarget(ChrootTarget):
-	def __init__(self, settings):
-		ChrootTarget.__init__(self, settings)
+	def __init__(self, settings, cr):
+		ChrootTarget.__init__(self, settings, cr)
 
 		# stages need a snapshot to install packages
 		self.required_files.append("path/mirror/snapshot")

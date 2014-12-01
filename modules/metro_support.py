@@ -32,14 +32,15 @@ class CommandRunner(object):
 		self.settings = settings
 		self.logging = logging
 		if self.logging:
-			self.fname = self.settings["path/mirror/target"] + "/log" + self.settings["target"] + ".txt"
+			self.fname = self.settings["path/mirror/target/path"] + "/log/" + self.settings["target"] + ".txt"
 			if not os.path.exists(os.path.dirname(self.fname)):
 				# create output directory for logs
-				self.cmdout = sys.stdout
+				self.logging = False
 				self.run(["install", "-o", self.settings["path/mirror/owner"], "-g", self.settings["path/mirror/group"], "-m", self.settings["path/mirror/dirmode"], "-d", os.path.dirname(self.fname)], {})
-			self.cmdout = open(self.fname,"rb")
+				self.logging = True
+			self.cmdout = open(self.fname,"w")
 			# set logfile ownership:
-			os.chown(self.fname, pwd.getpwuid(self.settings["path/mirror/owner"]), pwd.getgrgid(self.settings["path/mirror/group"]))
+			os.chown(self.fname, pwd.getpwnam(self.settings["path/mirror/owner"]).pw_uid, grp.getgrnam(self.settings["path/mirror/group"]).gr_gid)
 			sys.stdout.write("Logging output to %s.\n" % self.fname)
 
 	def mesg(self, msg):
