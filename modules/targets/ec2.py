@@ -10,8 +10,8 @@ from metro_support import MetroError, ismount
 from .remote import RemoteTarget
 
 class Ec2Target(RemoteTarget):
-	def __init__(self, settings):
-		RemoteTarget.__init__(self, settings)
+	def __init__(self, settings, cr):
+		RemoteTarget.__init__(self, settings, cr)
 
 		# ec2 specifics
 		self.region = self.settings["ec2/region"]

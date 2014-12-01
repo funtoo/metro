@@ -6,8 +6,8 @@ from metro_support import MetroError
 from .remote import RemoteTarget
 
 class VirtualboxTarget(RemoteTarget):
-	def __init__(self, settings):
-		RemoteTarget.__init__(self, settings)
+	def __init__(self, settings, cr):
+		RemoteTarget.__init__(self, settings, cr)
 
 		# virtualbox specifics
 		self.required_files.append("path/mirror/generator")

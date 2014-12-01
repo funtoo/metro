@@ -5,8 +5,8 @@ from metro_support import MetroError, ismount
 from .base import BaseTarget
 
 class ChrootTarget(BaseTarget):
-	def __init__(self, settings):
-		BaseTarget.__init__(self, settings)
+	def __init__(self, settings, cr):
+		BaseTarget.__init__(self, settings, cr)
 
 		# we need a source archive
 		self.required_files.append("path/mirror/source")
@@ -39,7 +39,7 @@ class ChrootTarget(BaseTarget):
 					raise MetroError("Required setting %s not found (for %s option support)" % (key, name))
 				if self.settings[key] != None:
 					# package cache dir will not be defined for snapshot...
-					print("Enabling cache: %s" % key)
+					self.cr.mesg("Enabling cache: %s" % key)
 					self.mounts[dst] = self.settings[key]
 
 	def run(self):
@@ -115,7 +115,7 @@ class ChrootTarget(BaseTarget):
 			if not os.path.exists(wdst):
 				os.makedirs(wdst, 0o755)
 
-			print("Mounting %s to %s ..." % (src, dst))
+			self.cr.mesg("Mounting %s to %s ..." % (src, dst))
 			if os.system(self.cmds["mount"]+" -R "+src+" "+wdst) != 0:
 				self.unbind()
 				raise MetroError("Couldn't bind mount "+src)

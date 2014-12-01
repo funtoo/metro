@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, sys, subprocess, time
+import os, sys, subprocess, time, pw, grp
 
 def ismount(path):
 	"enhanced to handle bind mounts"
@@ -24,56 +24,46 @@ class MetroError(Exception):
 		else:
 			return "(no message)"
 
-def spawn(cmdargs, env, fname=None, tee=False, append=False):
-	"""Run command cmd, with environment variables env.
-		if fname != None, then it contains a filename to write output to.
-		if tee == False (default), no command output will appear on stdout.
-		if tee == True, then command output will also appear on stdout.
-		(In both cases above, stderr is redirected to stdout).
+class CommandRunner(object):
 
-		If append == False, then output file fname will be overwritten if it exists.
-		If append == True, then output file fname will be appended to if it exists.
-	"""
-	fout = None
-	if fname != None:
-		if append:
-			fout = open(fname,"ab")
-		else:
-			fout = open(fname,"rb")
-		if tee:
-			cmdout = subprocess.PIPE
-		else:
-			cmdout = fout
-	else:
-		cmdout = None
-		tee = False
-	print("Running command: %s (env %s) " % ( cmdargs,env ))
-	try:
-		cmd = subprocess.Popen(cmdargs, env=env, stdout=cmdout, stderr=subprocess.STDOUT)
-		if tee:
-			if append:
-				teecmdargs = ['tee', '-a', fname]
+	"CommandRunner is a class that allows commands to run, and messages to be displayed. By default, output will go to a log file. Messages will appear on stdout and in the logs."
+
+	def __init__(self, settings, logging=True):
+		self.settings = settings
+		self.logging = logging
+		if self.logging:
+			self.fname = self.settings["path/mirror/target"] + "/log" + self.settings["target"] + ".txt"
+			if not os.path.exists(os.path.dirname(self.fname)):
+				# create output directory for logs
+				self.cmdout = sys.stdout
+				self.run(["install", "-o", self.settings["path/mirror/owner"], "-g", self.settings["path/mirror/group"], "-m", self.settings["path/mirror/dirmode"], "-d", os.path.dirname(self.fname)], {})
+			self.cmdout = open(self.fname,"rb")
+			# set logfile ownership:
+			os.chown(self.fname, pwd.getpwuid(self.settings["path/mirror/owner"]), pwd.getgrgid(self.settings["path/mirror/group"]))
+			sys.stdout.write("Logging output to %s.\n" % self.fname)
+
+	def mesg(self, msg):
+		if self.logging:
+			self.cmdout.write(msg + "\n")
+		sys.stdout.write(msg + "\n")
+
+	def run(self, cmdargs, env):
+		self.mesg("Running command: %s (env %s) " % ( cmdargs,env ))
+		try:
+			if self.logging:
+				cmd = subprocess.Popen(cmdargs, env=env, stdout=self.cmdout, stderr=subprocess.STDOUT)
 			else:
-				teecmdargs = ['tee', fname]
-			teecmd = subprocess.Popen(teecmdargs, stdin=cmd.stdout)
-			cmd.stdout.close()
+				cmd = subprocess.Popen(cmdargs, env=env)
 			exitcode = cmd.wait()
+		except KeyboardInterrupt:
+			cmd.terminate()
+			self.mesg("Interrupted via keyboard!")
+			return 1
 		else:
-			exitcode = cmd.wait()
-	except KeyboardInterrupt:
-		cmd.terminate()
-		if tee:
-			teecmd.terminate()
-		print("Interrupted!")
-		return 1
-	else:
-		if exitcode != 0:
-			print("Command exited with return code %s" % exitcode)
-			return exitcode
-		return 0
-	finally:
-		if fname and fout:
-			fout.close()
+			if exitcode != 0:
+				self.mesg("Command exited with return code %s" % exitcode)
+				return exitcode
+			return 0
 
 class stampFile(object):
 
@@ -196,5 +186,5 @@ class countFile(stampFile):
 			return None
 
 if __name__ == "__main__":
-	spawn(["cat","/etc/passwd"],os.environ )
+	pass
 # vim: ts=4 sw=4 noet

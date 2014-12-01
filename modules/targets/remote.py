@@ -6,8 +6,8 @@ from metro_support import MetroError
 from .base import BaseTarget
 
 class RemoteTarget(BaseTarget):
-	def __init__(self, settings):
-		BaseTarget.__init__(self, settings)
+	def __init__(self, settings,cr):
+		BaseTarget.__init__(self, settings, cr)
 
 		self.required_files.append("path/mirror/source")
 		self.required_files.append("path/mirror/snapshot")

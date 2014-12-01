@@ -13,36 +13,35 @@ __license__ = """ Distributed under the terms of the GNU General Public License 
  redistribute it under certain conditions. See /usr/lib/metro/LICENSE for details.
 """
 __status__ = "Release"
-__version__ = "1.5.1"
+__version__ = "2.0.0"
 
 def usage():
 	version()
 	print(""" metro [OPTION]... [FILE]...
 
- -h, --help					Print this message
- -V, --version				Display version information
+ -h, --help                 Print this message
+ -V, --version              Display version information
 
- -d, --debug				Enable debug mode
- -f, --debug-flexdata		Resolve and print flexdata tree
- -v, --verbose				Verbose mode
- -l [dir], --libdir [dir]	Use alternate library dir (default /usr/lib/metro)
+ -d, --debug                Enable debug mode
+ -f, --debug-flexdata       Resolve and print flexdata tree
+ -v, --verbose              Verbose mode
+ -l [dir], --libdir [dir]   Use alternate library dir (default /usr/lib/metro)
 
- -N, --notrigger			Disable build triggers
+ -N, --notrigger            Disable build triggers
 
- -k [key], --key [key]		Print value of [key], ie. "distfiles"
+ -k [key], --key [key]      Print value of [key], ie. "distfiles"
 
- [FILE]						File(s) to parse and evaluate
+ [FILE]                     File(s) to parse and evaluate
 	""")
 
 def version():
 	print(" " + __app__, "version", __version__)
 	print()
-	print(" Copyright 2008-2014 Funtoo Technologies, LLC")
+	print(" Copyright 2008-2015 Funtoo Technologies, LLC")
 	print(" Maintainer:", __maintainer__)
 	print()
 	print(" Web: http://www.funtoo.org")
-	print(" Documentation: http://www.funtoo.org/wiki/Metro")
-	print(" Project: https://github.com/funtoo/metro")
+	print(" Documentation: http://www.funtoo.org/Metro")
 	print()
 	print(__license__)
 
@@ -217,28 +216,36 @@ class Metro:
 					sys.exit(1)
 
 		for targetname in targetlist:
-			settings = self.init_settings({"target": targetname})
-			target = self.find_target(settings)
 
-			print("Running target %s with class %s" % (targetname, settings["target/class"]))
+			# We start by grabbing settings for this target:
 			
-			#Initial setup to test if target exists, and if so, create an "in progress" timeStampFile:
+			settings = self.init_settings({"target": targetname})
+
+			# Now, we move to defining lockfiles, and logging setup:
 					
 			if targetname == "snapshot":
 				tsfn = targ = settings["path/mirror/snapshot"]
 				tsfn = os.path.join(os.path.dirname(tsfn), "." + os.path.basename(tsfn) + "_progress")
+				cr = CommandRunner(settings, logging=False)
 			else:
 				tsfn = os.path.join(settings["path/mirror/target/control"], "." + targetname + "_progress")
 				targ = settings["path/mirror/target"]
+				cr = CommandRunner(settings)
+
+			# Now, we find the target and initialize it:
+
+			target = self.find_target(settings,cr)
+
+			cr.mesg("Running target %s with class %s" % (targetname, settings["target/class"]))
 
 			#Let's see if our target exists. Should we replace it? Or should we just skip it?
 
 			if "metro/options" in settings and "replace" in settings["metro/options"].split():
 				if os.path.exists(targ):
-					print("Removing existing file %s..." % targ)
+					cr.mesg("Removing existing file %s..." % targ)
 					target.cmd(self.cmds["rm"] + " -f " + targ)
 			elif os.path.exists(targ):
-				print("File %s already exists - skipping..." % targ)
+				cr.mesg("File %s already exists - skipping..." % targ)
 				target.run_script("trigger/ok/run", optional=True)
 				continue
 
@@ -253,44 +260,45 @@ class Metro:
 			try:
 				if self.ts.exists():
 					if targetname == "snapshot":
-						print("Another snapshot is running... waiting for it to complete...")
+						cr.mesg("Another snapshot is running... waiting for it to complete...")
 						okay = self.ts.wait(60 * 15)
 						if not okay:
-							print("Other snapshot did not complete in time (15 minutes.) Aborting.")
+							cr.mesg("Other snapshot did not complete in time (15 minutes.) Aborting.")
 							abort = error = True
 							break
 						else:
 							# snapshot was done by someone else, so we don't need to do it:
 							continue
 					else:
-						print("Target already in progress -- %s exists. Aborting." % self.ts.path)
+						cr.mesg("Target already in progress -- %s exists. Aborting." % self.ts.path)
 						abort =  True
 				else:
 					if not self.ts.create():
-						print("Could not create lock file %s -- please ensure that %s directory exists." % ( self.ts.path, os.path.dirname(self.ts.path)))
+						cr.mesg("Could not create lock file %s -- please ensure that %s directory exists." % ( self.ts.path, os.path.dirname(self.ts.path)))
 						abort = error = True
 				if abort:
 					break
 				else:
 					try:
+						# This is where the target actually gets run
 						target.run()
 					except MetroError as m:
-						print("Metro encountered an error: %s" % m)	
+						cr.mesg("Metro encountered an error: %s" % m)
 						abort = error = True
 						break
 					except KeyboardInterrupt:
 						raise KeyboardInterrupt
 					except:
-						print("Metro encountered an unexpected error!")
+						cr.mesg("Metro encountered an unexpected error!")
 						if self.ts:
 							self.ts.unlink()
 						if self.multi_ts:
 							self.multi_ts.unlink()
 						raise
-					print("Target run complete")
+					cr.mesg("Target run complete")
 					self.ts.unlink()
 			except KeyboardInterrupt:
-				print("Target %s aborted due to user interrupt (ctrl-C)" % targetname)
+				cr.mesg("Target %s aborted due to user interrupt (ctrl-C)" % targetname)
 				abort = True
 				if self.ts != None:
 					self.ts.unlink()

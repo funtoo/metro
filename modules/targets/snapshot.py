@@ -1,8 +1,8 @@
 from .base import BaseTarget
 
 class SnapshotTarget(BaseTarget):
-	def __init__(self, settings):
-		BaseTarget.__init__(self, settings)
+	def __init__(self, settings, cr):
+		BaseTarget.__init__(self, settings, cr)
 
 	def run(self):
 		BaseTarget.run(self)

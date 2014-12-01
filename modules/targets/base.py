@@ -1,7 +1,7 @@
 import os, sys, types
 from glob import glob
 
-from metro_support import MetroError, spawn
+from metro_support import MetroError
 
 class BaseTarget:
 	cmds = {
@@ -14,8 +14,10 @@ class BaseTarget:
 		"rm": "/bin/rm",
 	}
 
-	def __init__(self, settings):
+	def __init__(self, settings, cr):
 		self.settings = settings
+		# new CommandRunner (logger) object:
+		self.cr = cr
 		self.env = {}
 		self.env["PATH"] = "/bin:/sbin:/usr/bin:/usr/sbin"
 		if "TERM" in os.environ:
@@ -37,7 +39,7 @@ class BaseTarget:
 		if type(self.settings[key]) != list:
 			raise MetroError("run_script: key '%s' is not a multi-line element." % (key, ))
 
-		print("run_script: running %s..." % key)
+		self.cr.mesg("run_script: running %s..." % key)
 
 		if chroot:
 			chrootfile = "/tmp/"+key+".metro"
@@ -64,7 +66,7 @@ class BaseTarget:
 		else:
 			cmds.append(outfile)
 
-		retval = spawn(cmds, env=self.env)
+		retval = self.cr.run(cmds, env=self.env)
 		if retval != 0:
 			raise MetroError("Command failure (key %s, return value %s) : %s" % (key, repr(retval), " ".join(cmds)))
 
@@ -99,10 +101,10 @@ class BaseTarget:
 			# inject arbitrary data/executables into a Metro build.
 
 	def cmd(self, mycmd, myexc="", badval=None):
-		print("Executing \""+mycmd+"\"...")
+		self.cr.mesg("Executing \""+mycmd+"\"...")
 		try:
 			sys.stdout.flush()
-			retval = spawn(mycmd.split(), self.env)
+			retval = self.cr.run(mycmd.split(), self.env)
 			if badval:
 				# This code is here because tar has a retval of 1 for non-fatal warnings
 				if retval == badval:
