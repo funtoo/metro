@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, sys, subprocess, time, pw, grp
+import os, sys, subprocess, time, pwd, grp
 
 def ismount(path):
 	"enhanced to handle bind mounts"
