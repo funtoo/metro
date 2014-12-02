@@ -310,11 +310,9 @@ elif len(sys.argv) ==2 and sys.argv[1] == "empties":
 	for x in empties:
 		print(x.path)
 elif len(sys.argv) == 2 and sys.argv[1] == "fails":
-	fails = session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.failcount > 0).order_by(SubArch.__table__.c.failcount.desc())
-	goods = session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.failcount == 0)
+	fails = session.query(SubArch).filter(SubArch.__table__.c.failcount > 0).order_by(SubArch.__table__.c.failcount.desc())
+	goods = session.query(SubArch).filter(SubArch.__table__.c.failcount == 0)
 	for x in fails:
 		print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
 	for x in goods:
 		print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
-
-	
