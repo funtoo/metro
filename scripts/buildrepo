@@ -316,5 +316,11 @@ elif len(sys.argv) == 2 and sys.argv[1] == "fails":
 		print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
 	for x in goods:
 		print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
+elif len(sys.argv) == 2 and sys.argv[1] == "zap":
+	for x in session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.failcount > 0):
+		failpath = "%s/.control/.failcount" % x.path
+		if os.path.exists(failpath):
+			print("Removing %s..." % failpath)
+			os.unlink(failpath)
 
 	
