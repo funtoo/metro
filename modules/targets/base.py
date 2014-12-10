@@ -23,6 +23,8 @@ class BaseTarget:
 		if "TERM" in os.environ:
 			self.env["TERM"] = os.environ["TERM"]
 		self.required_files = []
+		if not os.path.exists("/usr/bin/chroot"):
+			self.cmds["chroot"] = "/usr/sbin/chroot"
 
 	def run(self):
 		self.check_required_files()
