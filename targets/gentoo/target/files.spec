@@ -22,6 +22,7 @@ CFLAGS="$[portage/CFLAGS:zap]"
 CXXFLAGS="$[portage/CFLAGS:zap]"
 LDFLAGS="$[portage/LDFLAGS:zap]"
 USE="$[portage/USE:zap]"
+CHOST="$[portage/CHOST_OVERRIDE:zap]"
 ]
 
 locale.gen: [

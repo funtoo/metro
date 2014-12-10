@@ -7,4 +7,5 @@ arch_desc: arm-32bit
 
 CFLAGS: -O2 -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
 CHOST: armv7a-hardfloat-linux-gnueabi
+CHOST_OVERRIDE: $[:CHOST]
 HOSTUSE:
