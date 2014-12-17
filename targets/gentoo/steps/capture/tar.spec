@@ -15,7 +15,7 @@ then
 fi
 tarout="$[path/mirror/target]"
 tarout="${tarout%.*}"
-tar cpf $tarout -C $[path/chroot/stage] .
+tar cpf $tarout --xattrs --acls -C $[path/chroot/stage] .
 if [ $? -ge 2 ]
 then
 	rm -f "$tarout" "$[path/mirror/target]"
