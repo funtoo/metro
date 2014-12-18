@@ -5,6 +5,7 @@ import os.path
 import sys
 import glob
 import datetime
+import fnmatch
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append("../modules")
 
@@ -132,7 +133,7 @@ class RepositoryDatabase(Database):
 	def associate(self):
 		Database.associate(self,self.__database__)
 
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, call
 
 process = Popen(["../metro", "-k", "path/mirror"], stdout=PIPE, stderr=PIPE)
 out = process.stdout.read()
@@ -322,3 +323,44 @@ elif len(sys.argv) == 2 and sys.argv[1] == "zap":
 		if os.path.exists(failpath):
 			print("Removing %s..." % failpath)
 			os.unlink(failpath)
+elif len(sys.argv) > 1 and sys.argv[1] == "digestgen":
+	print("Generating hashes...")
+	links = []
+	for root, dirnames, filenames in os.walk(initial_path):
+		for filename in fnmatch.filter(filenames, '*.tar.*'):
+			if filename[-4:] == ".txt":
+				continue
+			p = os.path.join(root, filename)
+			if os.path.islink(p):
+				links.append(os.path.join(dirnames,p))
+				continue
+			if not os.path.exists(p+".hash.txt"):
+				sys.stdout.write('.')
+				sys.stdout.flush()
+				call("PATH=/bin/:/usr/bin echo sha256 $(sha256sum %s | cut -f1 -d' ') > %s.hash.txt" % ( p, p ), shell=True)
+			else:
+				sys.stdout.write('e')
+				sys.stdout.flush()
+	for link in links:
+		abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
+		if os.path.lexists(link + ".hash.txt"):
+			os.unlink(link + ".hash.txt")
+		if os.path.exists(abs_realpath + ".hash.txt"):
+			os.symlink(os.readlink(link) + ".hash.txt", link + ".hash.txt")
+		else:
+			print((link + " dead; cleaning up"))
+			os.unlink(link)
+
+	print()
+	print("Cleaning up old hashes...")
+	for root, dirnames, filenames in os.walk(initial_path):
+		for filename in fnmatch.filter(filenames, '*.hash.txt'):
+			p = os.path.join(root, filename)
+			ptar = p[:-9]
+			if not os.path.exists(ptar):
+				os.unlink(p)
+				sys.stdout.write('.')
+				sys.stdout.flush()
+
+	print()
+	print("Done!")
