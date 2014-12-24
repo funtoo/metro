@@ -350,8 +350,6 @@ elif len(sys.argv) == 2 and sys.argv[1] == "index.xml":
 		# we treat "hardened' and "pure64" as "variants" of the main build (current/stable/experimental) -- to make things clearer for users.
 		count = 1
 		for b in subarch_builds[s]:
-			if b.subarch == "amd64-bulldozer":
-				b.failcount = 3
 			# variant
 			v = []
 			if b.subarch[-7:] == "-pure64":
