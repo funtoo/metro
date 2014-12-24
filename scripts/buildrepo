@@ -317,6 +317,71 @@ elif len(sys.argv) == 2 and sys.argv[1] == "fails":
 		print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
 	for x in goods:
 		print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
+elif len(sys.argv) == 2 and sys.argv[1] == "index.xml":
+	from lxml import etree
+	from copy import deepcopy
+	"""
+	<subarches>
+		<subarch name="amd64-bulldozer" builds="1,2">
+			<build id="1" variant="pure64,hardened" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31"/>
+			<build id="2" variant="" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31"/>
+		</subarch>
+		<fails>
+			<build id="1" variant="pure64,hardened" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31" failcount="2"/>
+		</fails>
+	</subarches>
+"""
+	outxml = etree.Element("subarches")
+	fails = etree.Element("fails")
+	outxml.append(fails)
+	subarch_builds = {}
+	for x in session.query(SubArch):
+		s = x.subarch
+		if s[-7:] == "-pure64":
+			s = s[:-7]
+		if s not in subarch_builds:
+			subarch_builds[s] = []
+		subarch_builds[s].append(x)
+	numfails = 0
+	for s in subarch_builds:
+		subarch_xml = etree.Element("subarch")
+		subarch_xml.attrib["name"] = s
+		subarch_xml.attrib["builds"] = ",".join(map(str,range(1,len(subarch_builds[s])+1)))
+		# we treat "hardened' and "pure64" as "variants" of the main build (current/stable/experimental) -- to make things clearer for users.
+		count = 1
+		for b in subarch_builds[s]:
+			if b.subarch == "amd64-bulldozer":
+				b.failcount = 3
+			# variant
+			v = []
+			if b.subarch[-7:] == "-pure64":
+				# "variant"
+				v.append("pure64")
+			if b.build[-9:] == "-hardened":
+				v.append("hardened")
+				build = b.build[:-9]
+			else:
+				build = b.build
+			build_xml = etree.Element("build")
+			build_xml.attrib["id"] = str(count)
+			build_xml.attrib["variant"] = ','.join(v)
+			build_xml.attrib["build"] = build
+			build_xml.attrib["path"] = b.path[len(initial_path):]
+			build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
+			subarch_xml.append(build_xml)
+			if b.failcount > 0:
+				numfails += 1
+				fail_xml = deepcopy(build_xml)
+				fail_xml.attrib["id"] = str(numfails)
+				fail_xml.attrib["failcount"] = str(b.failcount)
+				fails.append(fail_xml)
+			count += 1
+		outxml.append(subarch_xml)
+	fails.attrib["builds"] = ",".join(map(str,range(1,numfails + 1)))
+ 
+	outf = open(os.path.join(initial_path,"index.xml"),"wb")
+	outf.write(etree.tostring(outxml, encoding="UTF-8", pretty_print=True, xml_declaration=True))
+
 elif len(sys.argv) == 2 and sys.argv[1] == "zap":
 	for x in session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.failcount > 0):
 		failpath = "%s/.control/.failcount" % x.path
