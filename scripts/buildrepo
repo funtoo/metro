@@ -367,7 +367,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "index.xml":
 			build_xml.attrib["path"] = b.path[len(initial_path):]
 			build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
 			if b.date:
-				build_xml.attrib["download"] = b.path[len(initial_path):] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
+				build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
 			subarch_xml.append(build_xml)
 			if b.failcount > 0:
 				numfails += 1
