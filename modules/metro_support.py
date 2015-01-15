@@ -28,10 +28,10 @@ class CommandRunner(object):
 
 	"CommandRunner is a class that allows commands to run, and messages to be displayed. By default, output will go to a log file. Messages will appear on stdout and in the logs."
 
-	def __init__(self, settings, logging=True):
+	def __init__(self, settings=None, logging=True):
 		self.settings = settings
 		self.logging = logging
-		if self.logging:
+		if self.settings and self.logging:
 			self.fname = self.settings["path/mirror/target/path"] + "/log/" + self.settings["target"] + ".txt"
 			if not os.path.exists(os.path.dirname(self.fname)):
 				# create output directory for logs

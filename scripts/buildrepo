@@ -9,7 +9,7 @@ import fnmatch
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append("../modules")
 
-from metro_support import lockFile, countFile
+from metro_support import lockFile, countFile, CommandRunner
 from db import *
 
 # these variables are used for building:
@@ -262,170 +262,192 @@ def find_build(q):
 		else:
 			print("extras=''")
 		sys.exit(0)
-
-if len(sys.argv) > 1 and sys.argv[1] == "clean":
-	for build in all_builds:
-		# first -- remove any more than 3 complete builds, starting with oldest, of course:
-		for arch in all_arches:
-			for subarch in all_subarches:
-				out = session.query(BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
-				for x in out[0:-3]:
-					print(("rm -rf %s" % x.path))
-				for x in out[-3:]:
-					print(("# keeping %s" % x.path))
-		# next, remove any more than 2 snapshots:
-		sna = session.query(Snapshot).filter_by(build=build).order_by(Snapshot.path).all()
-		for x in sna[0:-3]:
-			print(("rm %s*" % x.path))
-		for x in sna[-2:]:
-			print(("# keeping %s" % x.path))
-	# Now, look at incomplete builds. Clean them out when they're stale and not the most recent build.
-	for x in session.query(BuildDir).filter_by(complete=False):
-		# ignore non-stale builds for cleaning -- they could be in-progress...
-		y = session.query(SubArch).filter_by(subarch=x.subarch).filter_by(arch=x.arch).filter_by(build=x.build).first()
-		if x.date != None and now - x.date > datetime.timedelta(days=stale_days) and y.date != x.date:
-			# don't zap most recent...
-			print(("rm -rf %s* # not complete and stale, not most recent build" % x.path))
-		else:
-			print("# keeping %s" % x.path)
-
-elif len(sys.argv) > 1 and sys.argv[1] == "nextbuild":
-	sa = session.query(SubArch)
-	myfail = 0
-	while myfail < max_failcount:
-		# we start with failcount of zero, and prioritize not-yet-built stages:
-		empties = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail)
-		find_build(empties)
-		# if we can't find one, we look for a failcount of zero, but prioritize by date:
-		oldies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail).order_by(SubArch.__table__.c.date)
-		find_build(oldies)
-		myfail += 1
-		# if no builds are found, we increment failcount, and try again:
-	# THIS PART IS DISABLED. IF A BUILD IS BEYOND ITS FAILCOUNT, IT IS OUT OF ROTATION UNTIL SOMEONE MANUALLY INTERVENES:
-	# if our loop didn't present a build, we ignore date, look for all builds with failcount >= our max, and then order by failcount, and pick a build:
-	#baddies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.build.in_(builds)).filter(SubArch.__table__.c.failcount >= failcount).order_by(SubArch.__table__.c.failcount.asc())
-	#find_build(baddies)
-	sys.exit(1)
-elif len(sys.argv) ==2 and sys.argv[1] == "empties":
-	empties = session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
-	for x in empties:
-		print(x.path)
-elif len(sys.argv) == 2 and sys.argv[1] == "fails":
-	fails = session.query(SubArch).filter(SubArch.__table__.c.failcount > 0).order_by(SubArch.__table__.c.failcount.desc())
-	goods = session.query(SubArch).filter(SubArch.__table__.c.failcount == 0)
-	for x in fails:
-		print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
-	for x in goods:
-		print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
-elif len(sys.argv) == 2 and sys.argv[1] == "index.xml":
-	from lxml import etree
-	from copy import deepcopy
+while len(sys.argv) > 1:
+	if sys.argv[1] == "clean":
+		del sys.argv[1]
+		for build in all_builds:
+			# first -- remove any more than 3 complete builds, starting with oldest, of course:
+			for arch in all_arches:
+				for subarch in all_subarches:
+					out = session.query(BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
+					for x in out[0:-3]:
+						print(("rm -rf %s" % x.path))
+					for x in out[-3:]:
+						print(("# keeping %s" % x.path))
+			# next, remove any more than 2 snapshots:
+			sna = session.query(Snapshot).filter_by(build=build).order_by(Snapshot.path).all()
+			for x in sna[0:-3]:
+				print(("rm %s*" % x.path))
+			for x in sna[-2:]:
+				print(("# keeping %s" % x.path))
+		# Now, look at incomplete builds. Clean them out when they're stale and not the most recent build.
+		for x in session.query(BuildDir).filter_by(complete=False):
+			# ignore non-stale builds for cleaning -- they could be in-progress...
+			y = session.query(SubArch).filter_by(subarch=x.subarch).filter_by(arch=x.arch).filter_by(build=x.build).first()
+			if x.date != None and now - x.date > datetime.timedelta(days=stale_days) and y.date != x.date:
+				# don't zap most recent...
+				print(("rm -rf %s* # not complete and stale, not most recent build" % x.path))
+			else:
+				print("# keeping %s" % x.path)
+	elif sys.argv[1] == "nextbuild":
+		del sys.argv[1]
+		sa = session.query(SubArch)
+		myfail = 0
+		while myfail < max_failcount:
+			# we start with failcount of zero, and prioritize not-yet-built stages:
+			empties = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail)
+			find_build(empties)
+			# if we can't find one, we look for a failcount of zero, but prioritize by date:
+			oldies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail).order_by(SubArch.__table__.c.date)
+			find_build(oldies)
+			myfail += 1
+			# if no builds are found, we increment failcount, and try again:
+		# THIS PART IS DISABLED. IF A BUILD IS BEYOND ITS FAILCOUNT, IT IS OUT OF ROTATION UNTIL SOMEONE MANUALLY INTERVENES:
+		# if our loop didn't present a build, we ignore date, look for all builds with failcount >= our max, and then order by failcount, and pick a build:
+		#baddies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.build.in_(builds)).filter(SubArch.__table__.c.failcount >= failcount).order_by(SubArch.__table__.c.failcount.asc())
+		#find_build(baddies)
+		sys.exit(1)
+	elif sys.argv[1] == "empties":
+		del sys.argv[1]
+		empties = session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
+		for x in empties:
+			print(x.path)
+	elif sys.argv[1] == "fails":
+		del sys.argv[1]
+		fails = session.query(SubArch).filter(SubArch.__table__.c.failcount > 0).order_by(SubArch.__table__.c.failcount.desc())
+		goods = session.query(SubArch).filter(SubArch.__table__.c.failcount == 0)
+		for x in fails:
+			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
+		for x in goods:
+			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
+	elif sys.argv[1] == "index.xml":
+		del sys.argv[1]
+		from lxml import etree
+		from copy import deepcopy
+		"""
+		<subarches>
+			<subarch name="amd64-bulldozer" builds="1,2">
+				<build id="1" variant="pure64,hardened" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31"/>
+				<build id="2" variant="" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31"/>
+			</subarch>
+			<fails>
+				<build id="1" variant="pure64,hardened" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31" failcount="2"/>
+			</fails>
+		</subarches>
 	"""
-	<subarches>
-		<subarch name="amd64-bulldozer" builds="1,2">
-			<build id="1" variant="pure64,hardened" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31"/>
-			<build id="2" variant="" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31"/>
-		</subarch>
-		<fails>
-			<build id="1" variant="pure64,hardened" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31" failcount="2"/>
-		</fails>
-	</subarches>
-"""
-	outxml = etree.Element("subarches")
-	fails = etree.Element("fails")
-	outxml.append(fails)
-	subarch_builds = {}
-	for x in session.query(SubArch):
-		s = x.subarch
-		if s[-7:] == "-pure64":
-			s = s[:-7]
-		if s not in subarch_builds:
-			subarch_builds[s] = []
-		subarch_builds[s].append(x)
-	numfails = 0
-	for s in subarch_builds:
-		subarch_xml = etree.Element("subarch")
-		subarch_xml.attrib["name"] = s
-		subarch_xml.attrib["builds"] = ",".join(map(str,range(1,len(subarch_builds[s])+1)))
-		# we treat "hardened' and "pure64" as "variants" of the main build (current/stable/experimental) -- to make things clearer for users.
-		count = 1
-		for b in subarch_builds[s]:
-			# variant
-			v = []
-			if b.subarch[-7:] == "-pure64":
-				# "variant"
-				v.append("pure64")
-			if b.build[-9:] == "-hardened":
-				v.append("hardened")
-				build = b.build[:-9]
+		outxml = etree.Element("subarches")
+		fails = etree.Element("fails")
+		outxml.append(fails)
+		subarch_builds = {}
+		for x in session.query(SubArch):
+			s = x.subarch
+			if s[-7:] == "-pure64":
+				s = s[:-7]
+			if s not in subarch_builds:
+				subarch_builds[s] = []
+			subarch_builds[s].append(x)
+		numfails = 0
+		for s in subarch_builds:
+			subarch_xml = etree.Element("subarch")
+			subarch_xml.attrib["name"] = s
+			subarch_xml.attrib["builds"] = ",".join(map(str,range(1,len(subarch_builds[s])+1)))
+			# we treat "hardened' and "pure64" as "variants" of the main build (current/stable/experimental) -- to make things clearer for users.
+			count = 1
+			for b in subarch_builds[s]:
+				# variant
+				v = []
+				if b.subarch[-7:] == "-pure64":
+					# "variant"
+					v.append("pure64")
+				if b.build[-9:] == "-hardened":
+					v.append("hardened")
+					build = b.build[:-9]
+				else:
+					build = b.build
+				build_xml = etree.Element("build")
+				build_xml.attrib["id"] = str(count)
+				build_xml.attrib["variant"] = ','.join(v)
+				build_xml.attrib["build"] = build
+				build_xml.attrib["path"] = b.path[len(initial_path):]
+				build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
+				if b.date:
+					build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
+				subarch_xml.append(build_xml)
+				if b.failcount > 0:
+					numfails += 1
+					fail_xml = deepcopy(build_xml)
+					fail_xml.attrib["id"] = str(numfails)
+					fail_xml.attrib["failcount"] = str(b.failcount)
+					fails.append(fail_xml)
+				count += 1
+			outxml.append(subarch_xml)
+		fails.attrib["builds"] = ",".join(map(str,range(1,numfails + 1)))
+	 
+		outf = open(os.path.join(initial_path,"index.xml"),"wb")
+		outf.write(etree.tostring(outxml, encoding="UTF-8", pretty_print=True, xml_declaration=True))
+	elif sys.argv[1] == "zap":
+		del sys.argv[1]
+		for x in session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.failcount > 0):
+			failpath = "%s/.control/.failcount" % x.path
+			if os.path.exists(failpath):
+				print("Removing %s..." % failpath)
+				os.unlink(failpath)
+	elif sys.argv[1] == "cmd":
+		# this option exists to run an external script. The concept is that you can mirror all files by running a mirror script
+		# and then re-run index.xml, which updates the wiki with new stage3 metadata. Thus all download links -- even mirror links --
+		# should work
+		del sys.argv[1]
+		if len(sys.argv) <= 1:
+			print("Not enough arguments for 'cmd' option. Specify script to run.")
+			sys.exit(1)
+		cmd = sys.argv[1]
+		if not os.path.exists(cmd):
+			print("Cmd argument %s does not exist; exiting." % cmd)
+			sys.exit(1)
+		del sys.argv[1]
+		myc = CommandRunner(settings=None,logging=False)
+		retval = myc.run([cmd], env={})
+		if retval != 0:
+			print("Error running cmd... exiting.")
+			sys.exit(1)
+	elif sys.argv[1] == "digestgen":
+		del sys.argv[1]
+		print("Generating hashes...")
+		links = []
+		for root, dirnames, filenames in os.walk(initial_path):
+			for filename in fnmatch.filter(filenames, '*.tar.*'):
+				if filename[-4:] == ".txt":
+					continue
+				p = os.path.join(root, filename)
+				if os.path.islink(p):
+					links.append(os.path.join(dirnames,p))
+					continue
+				if not os.path.exists(p+".hash.txt"):
+					sys.stdout.write('.')
+					sys.stdout.flush()
+					call("PATH=/bin/:/usr/bin echo sha256 $(sha256sum %s | cut -f1 -d' ') > %s.hash.txt" % ( p, p ), shell=True)
+				else:
+					sys.stdout.write('e')
+					sys.stdout.flush()
+		for link in links:
+			abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
+			if os.path.lexists(link + ".hash.txt"):
+				os.unlink(link + ".hash.txt")
+			if os.path.exists(abs_realpath + ".hash.txt"):
+				os.symlink(os.readlink(link) + ".hash.txt", link + ".hash.txt")
 			else:
-				build = b.build
-			build_xml = etree.Element("build")
-			build_xml.attrib["id"] = str(count)
-			build_xml.attrib["variant"] = ','.join(v)
-			build_xml.attrib["build"] = build
-			build_xml.attrib["path"] = b.path[len(initial_path):]
-			build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
-			if b.date:
-				build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
-			subarch_xml.append(build_xml)
-			if b.failcount > 0:
-				numfails += 1
-				fail_xml = deepcopy(build_xml)
-				fail_xml.attrib["id"] = str(numfails)
-				fail_xml.attrib["failcount"] = str(b.failcount)
-				fails.append(fail_xml)
-			count += 1
-		outxml.append(subarch_xml)
-	fails.attrib["builds"] = ",".join(map(str,range(1,numfails + 1)))
- 
-	outf = open(os.path.join(initial_path,"index.xml"),"wb")
-	outf.write(etree.tostring(outxml, encoding="UTF-8", pretty_print=True, xml_declaration=True))
+				print((link + " dead; cleaning up"))
+				os.unlink(link)
 
-elif len(sys.argv) == 2 and sys.argv[1] == "zap":
-	for x in session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.failcount > 0):
-		failpath = "%s/.control/.failcount" % x.path
-		if os.path.exists(failpath):
-			print("Removing %s..." % failpath)
-			os.unlink(failpath)
-elif len(sys.argv) > 1 and sys.argv[1] == "digestgen":
-	print("Generating hashes...")
-	links = []
-	for root, dirnames, filenames in os.walk(initial_path):
-		for filename in fnmatch.filter(filenames, '*.tar.*'):
-			if filename[-4:] == ".txt":
-				continue
-			p = os.path.join(root, filename)
-			if os.path.islink(p):
-				links.append(os.path.join(dirnames,p))
-				continue
-			if not os.path.exists(p+".hash.txt"):
-				sys.stdout.write('.')
-				sys.stdout.flush()
-				call("PATH=/bin/:/usr/bin echo sha256 $(sha256sum %s | cut -f1 -d' ') > %s.hash.txt" % ( p, p ), shell=True)
-			else:
-				sys.stdout.write('e')
-				sys.stdout.flush()
-	for link in links:
-		abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
-		if os.path.lexists(link + ".hash.txt"):
-			os.unlink(link + ".hash.txt")
-		if os.path.exists(abs_realpath + ".hash.txt"):
-			os.symlink(os.readlink(link) + ".hash.txt", link + ".hash.txt")
-		else:
-			print((link + " dead; cleaning up"))
-			os.unlink(link)
-
-	print()
-	print("Cleaning up old hashes...")
-	for root, dirnames, filenames in os.walk(initial_path):
-		for filename in fnmatch.filter(filenames, '*.hash.txt'):
-			p = os.path.join(root, filename)
-			ptar = p[:-9]
-			if not os.path.exists(ptar):
-				os.unlink(p)
-				sys.stdout.write('.')
-				sys.stdout.flush()
-
-	print()
-	print("Done!")
+		print()
+		print("Cleaning up old hashes...")
+		for root, dirnames, filenames in os.walk(initial_path):
+			for filename in fnmatch.filter(filenames, '*.hash.txt'):
+				p = os.path.join(root, filename)
+				ptar = p[:-9]
+				if not os.path.exists(ptar):
+					os.unlink(p)
+					sys.stdout.write('.')
+					sys.stdout.flush()
+		print()
+		print("Done!")
