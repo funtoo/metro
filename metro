@@ -49,8 +49,6 @@ class Metro:
 		self.verbose = False
 		self.configfile = None
 		self.optdict = {}
-		self.flexdata = None
-		self.targets = None
 		self.ts = None
 		self.multi_ts = None
 		self.opts = None
@@ -119,37 +117,6 @@ class Metro:
 				result = value
 		return result
 
-	def init_settings(self, extraargs=None):
-		args = self.args
-		settings = self.flexdata.collection(self.debug)
-
-		# collect main configuration file
-		if os.path.exists(self.configfile):
-			settings.collect(self.configfile, None)
-			settings["path/config"] = os.path.dirname(self.configfile)
-		else:
-			raise RuntimeError("config file '%s' not found" % self.configfile)
-
-		# parse command-line supplied values
-		# such as: target/version: 2008.10.12
-		args = dict(list(zip(args[::2], args[1::2])))
-
-		for key, value in list(args.items()):
-			if key[-1] == ":":
-				settings[key[:-1]] = value
-			else:
-				raise RuntimeError("cmdline argument '%s' invalid - does not end in a colon" % key)
-
-		# add extra values
-		if extraargs:
-			for arg in list(extraargs.keys()):
-				settings[arg] = extraargs[arg]
-		settings.runCollector()
-		if settings["portage/MAKEOPTS"] == "auto":
-			settings["portage/MAKEOPTS"] = "-j%s" % (int(subprocess.getoutput("nproc --all")) + 1)
-
-		return settings
-
 	@staticmethod
 	def dump_settings(settings):
 		keys = list(settings.keys())
@@ -166,7 +133,7 @@ class Metro:
 					print(key+": "+str(settings[key]))
 
 	def run_targets(self, targetlist, args):
-
+		print("Running targetlist: %s" % targetlist)
 		temp_targets = targetlist[:]
 		try:
 			temp_targets.remove("snapshot")
@@ -316,11 +283,11 @@ class Metro:
 
 		"""
 		cls = settings["target/class"].capitalize()+"Target"
-		if cls not in self.targets.__dict__:
+		if cls not in self.setup.targets.__dict__:
 			raise NameError("target class "+cls+" not defined in modules/targets.py.")
-		if type(self.targets.__dict__[cls]) != type:
+		if type(self.setup.targets.__dict__[cls]) != type:
 			raise NameError("target class "+cls+" does not appear to be a class.")
-		return self.targets.__dict__[cls](settings, cr)
+		return self.setup.targets.__dict__[cls](settings, cr)
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "modules"))
 from metro_support import lockFile, countFile, MetroError, CommandRunner, MetroSetup
