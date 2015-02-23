@@ -440,7 +440,8 @@ while len(sys.argv) > 1:
 			else:
 				print((link + " dead; cleaning up"))
 				os.unlink(link)
-
+			if os.path.lexists(link + ".hash.txt"):
+				os.lchown(link + ".hash.txt" ,uid,gid)
 		print()
 		print("Cleaning up old hashes...")
 		for root, dirnames, filenames in os.walk(initial_path):
