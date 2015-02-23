@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os, sys, subprocess, time, pwd, grp
+from importlib import import_module
 
 def ismount(path):
 	"enhanced to handle bind mounts"
@@ -23,6 +24,50 @@ class MetroError(Exception):
 			return str(self.args[0])
 		else:
 			return "(no message)"
+
+class MetroSetup(object):
+
+	def __init__(self, verbose=False, debug=False):
+
+		self.debug = debug
+		self.verbose = verbose
+
+		self.flexdata = import_module("flexdata")
+		self.targets = import_module("targets")
+
+	def getSettings(self, args, extraargs=None):
+
+		self.configfile = os.path.expanduser("~/.metro")
+		# config settings setup
+
+		if not os.path.exists(self.configfile):
+			print("Please copy %s to ~/.metro and customize for your environment." % (libdir+"/metro.conf"))
+			return None
+		if self.verbose:
+				print("Using main configuration file %s.\n" % self.configfile)
+		settings = self.flexdata.collection(self.debug)
+
+		if os.path.exists(self.configfile):
+			settings.collect(self.configfile, None)
+			settings["path/config"] = os.path.dirname(self.configfile)
+		else:
+			raise RuntimeError("config file '%s' not found" % self.configfile)
+
+		for key, value in list(args.items()):
+			if key[-1] == ":":
+				settings[key[:-1]] = value
+			else:
+				raise RuntimeError("cmdline argument '%s' invalid - does not end in a colon" % key)
+
+		# add extra values
+		if extraargs:
+			for arg in list(extraargs.keys()):
+				settings[arg] = extraargs[arg]
+		settings.runCollector()
+		if settings["portage/MAKEOPTS"] == "auto":
+			settings["portage/MAKEOPTS"] = "-j%s" % (int(subprocess.getoutput("nproc --all")) + 1)
+
+		return settings
 
 class CommandRunner(object):
 

@@ -1,8 +1,6 @@
 #!/usr/bin/python3 -OO
 
 import os, sys, getopt, types, subprocess
-from importlib import import_module
-
 __app__ = os.path.basename(sys.argv[0])
 
 # we need this hard-coded path because we need a module here before we can parse our config file
@@ -25,7 +23,6 @@ def usage():
  -d, --debug                Enable debug mode
  -f, --debug-flexdata       Resolve and print flexdata tree
  -v, --verbose              Verbose mode
- -l [dir], --libdir [dir]   Use alternate library dir (default /usr/lib/metro)
 
  -N, --notrigger            Disable build triggers
 
@@ -65,10 +62,12 @@ class Metro:
 			sys.exit(1)
 
 		try:
-			self.opts, self.args = getopt.getopt(sys.argv[1:], "dfhvxVk:l:", ["debug", "debug-flexdata", "help", "verbose", "version", "key=", "libdir="])
+			self.opts, self.args = getopt.getopt(sys.argv[1:], "dfhvxVk:l:", ["debug", "debug-flexdata", "help", "verbose", "version", "key="])
 		except getopt.GetoptError:
 			usage()
 			sys.exit(1)
+		# command-line supplied values such as: target/version: 2008.10.12
+		self.metro_args = dict(list(zip(self.args[::2], self.args[1::2])))
 
 		self.optdict = dict(self.opts)
 
@@ -80,8 +79,11 @@ class Metro:
 		if os.getuid() != 0:
 			raise RuntimeError("this script requires root privileges to operate")
 
-		# Step 2: infer binpath and libdir and load modules
-		self.setup_paths()
+		# Step 2: set up metro modules and prepare to parse settings:
+		self.setup = MetroSetup(verbose=self.verbose,debug=self.debug)
+		if self.setup == None:
+			# setup object will handle printing any errors:
+			sys.exit(1)
 
 	def run(self):
 		# Step 3: check for "special" help/version options, handle them and exit:
@@ -93,7 +95,7 @@ class Metro:
 			sys.exit(0)
 
 		# Step 5: Initialize Metro data
-		settings = self.init_settings()
+		settings = self.setup.getSettings(self.metro_args)
 
 		if self.has_opts(["-k", "--key"]):
 			print(settings[self.get_opts(["-k", "--key"])])
@@ -163,27 +165,6 @@ class Metro:
 				else:
 					print(key+": "+str(settings[key]))
 
-	def setup_paths(self):
-		binpath = os.path.realpath(sys.argv[0])
-
-		libdir = os.path.dirname(binpath)
-		if self.has_opts(["-l", "--libdir"]):
-			libdir = self.get_opts(["-l", "--libdir"])
-
-		if self.verbose:
-			print("Using library directory of %s.\n" % libdir)
-		sys.path.append(libdir+"/modules")
-
-		self.configfile = os.path.expanduser("~/.metro")
-		if not os.path.exists(self.configfile):
-			print("Please copy %s to ~/.metro and customize for your environment." % (libdir+"/metro.conf"))
-			sys.exit(1)
-		if self.verbose:
-			print("Using main configuration file %s.\n" % self.configfile)
-
-		self.flexdata = import_module("flexdata")
-		self.targets = import_module("targets")
-
 	def run_targets(self, targetlist, args):
 
 		temp_targets = targetlist[:]
@@ -203,7 +184,7 @@ class Metro:
 			# skip over in-progress multi-targets so it can build the next multi-target (allowing parallel
 			# multi-target builds.
 
-			initial_settings = self.init_settings()
+			initial_settings = self.setup.getSettings(self.metro_args)
 
 			multi_tsfn = initial_settings["path/mirror/target/control"] + "/.multi_progress"
 			self.multi_ts = lockFile(multi_tsfn)
@@ -219,7 +200,7 @@ class Metro:
 
 			# We start by grabbing settings for this target:
 			
-			settings = self.init_settings({"target": targetname})
+			settings = self.setup.getSettings(self.metro_args,{"target": targetname})
 
 			# Now, we move to defining lockfiles, and logging setup:
 					
@@ -341,8 +322,9 @@ class Metro:
 			raise NameError("target class "+cls+" does not appear to be a class.")
 		return self.targets.__dict__[cls](settings, cr)
 
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "modules"))
+from metro_support import lockFile, countFile, MetroError, CommandRunner, MetroSetup
 m = Metro()
-from metro_support import lockFile, countFile, MetroError, CommandRunner
 m.run()
 
 # vim: ts=4 sw=4 noet

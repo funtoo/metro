@@ -18,7 +18,7 @@ try_cleaning() {
 try_cleaning
 /root/git/metro/scripts/buildrepo digestgen || exit 1
 opts="--delete --delete-excluded"
-rsync --exclude=stage2* --exclude=stage1* $opts -rtlve ssh /home/mirror/funtoo/ funtoo@ftp-osl.osuosl.org:/data/ftp/pub/funtoo/
+rsync --bwlimit=30m --exclude=stage2* --exclude=stage1* $opts -rtlve ssh /home/mirror/funtoo/ funtoo@ftp-osl.osuosl.org:/data/ftp/pub/funtoo/
 ssh funtoo@ftp-osl.osuosl.org chmod -R go+r /data/ftp/pub/funtoo/*
 rm -f $pidfile
 try_cleaning
