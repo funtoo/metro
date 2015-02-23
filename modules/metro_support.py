@@ -35,7 +35,7 @@ class MetroSetup(object):
 		self.flexdata = import_module("flexdata")
 		self.targets = import_module("targets")
 
-	def getSettings(self, args, extraargs=None):
+	def getSettings(self, args={}, extraargs=None):
 
 		self.configfile = os.path.expanduser("~/.metro")
 		# config settings setup

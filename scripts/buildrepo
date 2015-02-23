@@ -6,10 +6,13 @@ import sys
 import glob
 import datetime
 import fnmatch
+import pwd, grp
+from subprocess import call
+
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append("../modules")
 
-from metro_support import lockFile, countFile, CommandRunner
+from metro_support import lockFile, countFile, CommandRunner, MetroSetup
 from db import *
 
 # these variables are used for building:
@@ -133,15 +136,9 @@ class RepositoryDatabase(Database):
 	def associate(self):
 		Database.associate(self,self.__database__)
 
-from subprocess import Popen, PIPE, call
-
-process = Popen(["../metro", "-k", "path/mirror"], stdout=PIPE, stderr=PIPE)
-out = process.stdout.read()
-ret = process.wait()
-if ret:
-	print("Error calling metro for mirror path.")
-else:
-	initial_path = out.decode("ascii").strip()
+setup = MetroSetup()
+settings = setup.getSettings()
+initial_path = settings["path/mirror"]
 
 if __name__ == "__main__":
 	if os.path.exists("cleaner.db"):
@@ -412,6 +409,10 @@ while len(sys.argv) > 1:
 			sys.exit(1)
 	elif sys.argv[1] == "digestgen":
 		del sys.argv[1]
+		owner = settings["path/mirror/owner"]
+		group = settings["path/mirror/group"]
+		uid = pwd.getpwnam(owner)[2]
+		gid = grp.getgrnam(group)[2] 
 		print("Generating hashes...")
 		links = []
 		for root, dirnames, filenames in os.walk(initial_path):
@@ -429,6 +430,7 @@ while len(sys.argv) > 1:
 				else:
 					sys.stdout.write('e')
 					sys.stdout.flush()
+				os.lchown(p+".hash.txt",uid,gid)
 		for link in links:
 			abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
 			if os.path.lexists(link + ".hash.txt"):
