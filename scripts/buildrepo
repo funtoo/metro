@@ -451,3 +451,6 @@ while len(sys.argv) > 1:
 					sys.stdout.flush()
 		print()
 		print("Done!")
+	else:
+		print("Don't understand: %s" % sys.argv[1])
+		sys.exit(1)
