@@ -228,11 +228,16 @@ now = datetime.datetime.now()
 stale_days = 2
 # more than 3 fails and we remove the build from our rotation:
 max_failcount = 3
-def find_build(q):
+def find_build(q,min_age=stale_days,max_age=None):
 	for x in q:
-		# if something is newer than 4 days old, it is not considered stale, so we skip over it:
-		if x.date != None and now - x.date < datetime.timedelta(days=stale_days):
-			continue	
+		if min_age != None:
+			if x.date != None and now - x.date < datetime.timedelta(days=min_age):
+				continue	
+		if max_age != None:
+			if x.date == None:
+				continue
+			elif now - x.date > datetime.timedelta(days=max_age):
+				continue	
 		# skip it if it is currently being built....
 		tsfilepath = x.path+"/.control/.multi_progress"
 		if os.path.exists(tsfilepath):
@@ -294,6 +299,11 @@ while len(sys.argv) > 1:
 			# we start with failcount of zero, and prioritize not-yet-built stages:
 			empties = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail)
 			find_build(empties)
+			# next, we look for builds with a failcount of "myfail+1", but haven't been built in at least stale_days * 2. 
+			# This prevents them from being pushed out of the build rotation if we aren't building *every* stale stage (if we always have some builds queued at any given time.)
+			if myfail + 1 < max_failcount:
+				baddies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail+1).order_by(SubArch.__table__.c.date)
+				find_build(baddies,min_age=stale_days*2)
 			# if we can't find one, we look for a failcount of zero, but prioritize by date:
 			oldies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail).order_by(SubArch.__table__.c.date)
 			find_build(oldies)
