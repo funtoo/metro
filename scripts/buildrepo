@@ -26,6 +26,11 @@ subarches = ( )
 all_builds = ( )
 all_arches = ( )
 all_subarches = ( )
+stale_days = 3
+max_failcount = 3
+
+def map_build(build, subarch, full, full_date):
+	return "full"
 
 cfgfile = os.path.join(os.path.expanduser("~"),".buildbot")
 if os.path.exists(cfgfile):
@@ -225,9 +230,7 @@ if __name__ == "__main__":
 
 	session.commit()
 now = datetime.datetime.now()
-stale_days = 3
 # more than 3 fails and we remove the build from our rotation:
-max_failcount = 3
 def find_build(q,min_age=stale_days,max_age=None):
 	for x in q:
 		if min_age != None:
