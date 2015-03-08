@@ -225,7 +225,7 @@ if __name__ == "__main__":
 
 	session.commit()
 now = datetime.datetime.now()
-stale_days = 2
+stale_days = 3
 # more than 3 fails and we remove the build from our rotation:
 max_failcount = 3
 def find_build(q,min_age=stale_days,max_age=None):
