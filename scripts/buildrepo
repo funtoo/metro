@@ -53,6 +53,7 @@ arches = (
 	"pure64"
 )
 
+# all subarches that are built here:
 subarches = ( 
 	"atom_32",
 	"atom_64",
@@ -71,6 +72,21 @@ subarches = (
 	"generic_64-pure64",
 )
 
+# optional - how many days old it takes for a stage build to be considered "stale":
+# default = 3
+stale_days = 3
+
+# optional - how many consecutive failed builds of a subarch before it is pulled from
+# build rotation. default = 3
+max_failcount = 3
+
+# optional - all subarches that are built + uploaded here:
+all_subarches = subarches + (
+	"amd64-piledriver",
+	"amd64-steamroller"
+)
+
+# optional:
 def map_build(build, subarch, full, full_date):
 	# arguments refer to last build...
 	if full == True:
