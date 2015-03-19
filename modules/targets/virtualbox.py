@@ -19,13 +19,13 @@ class VirtualboxTarget(RemoteTarget):
 		self.ssh_uri = "root@10.99.99.2"
 		self.remote_upload_path = "/tmp"
 
-		if self.settings["target/arch"] == "amd64":
+		if self.settings["target/arch_desc"] == "x86-64bit":
 			self.ostype = "Gentoo_64"
 		else:
 			self.ostype = "Gentoo"
 
 	def prepare_remote(self):
-		if self.settings["target/arch"] not in ["amd64", "x86"]:
+		if self.settings["target/arch_desc"] not in ["x86-64bit", "x86-32bit"]:
 			raise MetroError("VirtualBox target class only supports x86 targets")
 
 		for mod in ["vboxdrv", "vboxpci", "vboxnetadp", "vboxnetflt"]:

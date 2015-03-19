@@ -39,6 +39,6 @@ else
 	else
 		echo
 	fi
-	$cmd -d multi: yes target/build: $build target/subarch: $subarch target/version: $nextdate multi/mode: $target $extras
+	$cmd -d multi: yes target/build: $build target/arch_desc: $arch_desc target/subarch: $subarch target/version: $nextdate multi/mode: $target $extras
 	exit $?
 fi

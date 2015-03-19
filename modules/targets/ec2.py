@@ -17,13 +17,13 @@ class Ec2Target(RemoteTarget):
 		self.region = self.settings["ec2/region"]
 		self.ec2 = boto.ec2.connect_to_region(self.region)
 
-		if self.settings["target/arch"] == "amd64":
+		if self.settings["target/arch_desc"] == "x86-64bit":
 			self.arch = "x86_64"
 		else:
 			self.arch = "i386"
 
 	def prepare_remote(self):
-		if self.settings["target/arch"] not in ["amd64", "x86"]:
+		if self.settings["target/arch_desc"] not in ["x86-64bit", "x86-32bit"]:
 			raise MetroError("EC2 target class only supports x86 targets")
 
 		self.clean_remote()

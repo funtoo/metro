@@ -60,7 +60,7 @@ class BaseTarget:
 
 		cmds = []
 		if chroot:
-			if self.settings["target/arch"] == "x86" and os.uname()[4] == "x86_64":
+			if self.settings["target/arch_desc"] == "x86-32bit" and os.uname()[4] == "x86_64":
 				cmds.append(self.cmds["linux32"])
 			cmds.append(self.cmds["chroot"])
 			cmds.append(chroot)

@@ -68,7 +68,11 @@ fi
 FEATURES="$FEATURES -sandbox"
 install -d /etc/portage
 # the quotes below prevent variable expansion of anything inside make.conf
-if [ "$[profile/format]" = "new" ]; then
+if [ -n "$[profile/subarch]" ]; then
+cat > /etc/portage/make.conf << "EOF"
+$[[files/make.conf.subarchprofile]]
+EOF
+elif [ "$[profile/format]" = "new" ]; then
 cat > /etc/portage/make.conf << "EOF"
 $[[files/make.conf.newprofile]]
 EOF
@@ -127,6 +131,7 @@ if [ "$pf" = "new" ]; then
 	install -d /etc/portage/make.profile
 	cat > /etc/portage/make.profile/parent << EOF
 $[profile/arch:zap]
+$[profile/subarch:zap]
 $[profile/build:zap]
 $[profile/flavor:zap]
 EOF

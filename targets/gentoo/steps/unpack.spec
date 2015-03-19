@@ -69,7 +69,11 @@ fi
 
 env: [
 install -d $[path/chroot]/etc/portage
-if [ "$[profile/format]" = "new" ]; then
+if [ -n "$[profile/subarch]" ]; then
+cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
+$[[files/make.conf.subarchprofile]]
+EOF
+elif [ "$[profile/format]" = "new" ]; then
 cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
 $[[files/make.conf.newprofile]]
 EOF
