@@ -72,6 +72,7 @@ class ChrootTarget(BaseTarget):
 			self.unbind()
 			raise
 		self.run_script("steps/clean", optional=True)
+		self.run_script("steps/precapture", optional=True)
 		self.run_script("steps/capture")
 		self.run_script("trigger/ok/run", optional=True)
 
