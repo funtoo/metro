@@ -30,6 +30,6 @@ then
 	git pull > /dev/null || die "Couldn't perform git pull"
 fi
 
-git checkout $[snapshot/source/branch/tar] || die "couldn't check out branch $[snapshot/source/branch/tar] for tarball"
+git checkout $[snapshot/branch/tar] || die "couldn't check out branch $[snapshot/branch/tar] for tarball"
 git gc || die "couldn't gc"
 ]
