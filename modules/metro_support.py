@@ -151,13 +151,30 @@ class stampFile(object):
 			return False
 		return True
 
-class lockFile(stampFile):
-
-	"Class to create lock files; used for tracking in-progress metro builds."
+class fakeLockFile(stampFile):
 
 	def __init__(self,path):
 		stampFile.__init__(self,path)
 		self.created = False
+
+	def unlink(self):
+		pass
+
+	def create(self):
+		self.created = True
+
+	def exists(self):
+		return False
+
+	def unlink(self):
+		pass
+
+	def getFileContents(self):
+		return ""
+
+class lockFile(stampFile):
+
+	"Class to create lock files; used for tracking in-progress metro builds."
 
 	def unlink(self):
 		"only unlink if *we* created the file. Otherwise leave alone."
@@ -205,6 +222,8 @@ class lockFile(stampFile):
 
 	def getFileContents(self):
 		return(str(os.getpid()))
+
+
 
 class countFile(stampFile):
 

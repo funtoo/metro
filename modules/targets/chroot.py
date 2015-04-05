@@ -72,9 +72,10 @@ class ChrootTarget(BaseTarget):
 			self.unbind()
 			raise
 		self.run_script("steps/clean", optional=True)
-		self.run_script("steps/precapture", optional=True)
-		self.run_script("steps/capture")
-		self.run_script("trigger/ok/run", optional=True)
+		if self.settings["release/type"] == "official":
+			self.run_script("steps/precapture", optional=True)
+			self.run_script("steps/capture")
+			self.run_script("trigger/ok/run", optional=True)
 
 		self.kill_chroot_pids()
 		self.unbind()

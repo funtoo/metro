@@ -5,7 +5,8 @@ class StageTarget(ChrootTarget):
 		ChrootTarget.__init__(self, settings, cr)
 
 		# stages need a snapshot to install packages
-		self.required_files.append("path/mirror/snapshot")
+		if self.settings["release/type"] == "official":
+			self.required_files.append("path/mirror/snapshot")
 
 		# define gentoo specific mounts
 		if "path/distfiles" in self.settings:

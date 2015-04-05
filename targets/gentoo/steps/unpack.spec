@@ -32,38 +32,46 @@ esac
 ]
 
 snapshot: [
-snap="$(ls $[path/mirror/snapshot] )"
+if [ "$[release/type]" == "official" ]; then
+	snap="$(ls $[path/mirror/snapshot] )"
 
-[ ! -e "$snap" ] && echo "Required file $snap not found. Exiting" && exit 3
+	[ ! -e "$snap" ] && echo "Required file $snap not found. Exiting" && exit 3
 
-scomp="${snap##*.}"
+	scomp="${snap##*.}"
 
-[ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
+	[ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
 
-echo "Extracting portage snapshot $snap..."
+	echo "Extracting portage snapshot $snap..."
 
-case "$scomp" in
-	bz2)
-		if [ -e /usr/bin/pbzip2 ]
-		then
-			pbzip2 -dc "$snap" | tar xpf - -C $[path/chroot]/usr || exit 4
-		else
-			tar xpf  "$snap" -C $[path/chroot]/usr || exit 4
-		fi
-		;;
-	gz|xz)
-		tar xpf "$snap" -C $[path/chroot]/usr || exit 4
-		;;
-	*)
-		echo "Unrecognized source compression for $snap"
-		exit 1
-		;;
-esac
-
-# support for "live" git snapshot tarballs:
-if [ -e $[path/chroot]/usr/portage/.git ]
-then
-	( cd $[path/chroot]/usr/portage; git checkout $[snapshot/source/branch:lax] || exit 50 )
+	case "$scomp" in
+		bz2)
+			if [ -e /usr/bin/pbzip2 ]
+			then
+				pbzip2 -dc "$snap" | tar xpf - -C $[path/chroot]/usr || exit 4
+			else
+				tar xpf  "$snap" -C $[path/chroot]/usr || exit 4
+			fi
+			;;
+		gz|xz)
+			tar xpf "$snap" -C $[path/chroot]/usr || exit 4
+			;;
+		*)
+			echo "Unrecognized source compression for $snap"
+			exit 1
+			;;
+	esac
+	# support for "live" git snapshot tarballs:
+	if [ -e $[path/chroot]/usr/portage/.git ]
+	then
+		cd $[path/chroot]/usr/portage 
+		git checkout $[snapshot/source/branch:lax] || exit 50
+	fi
+else
+	cd $[path/cache/git]/$[snapshot/source/name]
+	git pull
+	git clone $[path/cache/git]/$[snapshot/source/name] $[path/chroot]/usr/portage || exit 5
+	cd $[path/chroot]/usr/portage
+	git checkout $[snapshot/source/branch:lax] || exit 6
 fi
 ]
 

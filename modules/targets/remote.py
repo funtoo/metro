@@ -10,7 +10,8 @@ class RemoteTarget(BaseTarget):
 		BaseTarget.__init__(self, settings, cr)
 
 		self.required_files.append("path/mirror/source")
-		self.required_files.append("path/mirror/snapshot")
+		if self.settings["release/type"] == "official":
+			self.required_files.append("path/mirror/snapshot")
 
 		# vm config
 		self.name = self.settings["target/name"]
@@ -26,7 +27,8 @@ class RemoteTarget(BaseTarget):
 		try:
 			self.start_remote()
 			self.upload_file(glob.glob(self.settings["path/mirror/source"])[0])
-			self.upload_file(glob.glob(self.settings["path/mirror/snapshot"])[0])
+			if self.settings["release/type"] == "official":
+				self.upload_file(glob.glob(self.settings["path/mirror/snapshot"])[0])
 			self.run_script_at_remote("steps/remote/run")
 		except:
 			self.destroy_remote()

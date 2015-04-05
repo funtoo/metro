@@ -1,4 +1,4 @@
-[collect ./source/stage3.spec]
+[collect ./source/seed.spec]
 [collect ./target/stage3.spec]
 [collect ./steps/capture/tar.spec]
 

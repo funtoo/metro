@@ -170,8 +170,9 @@ class Metro:
 			settings = self.setup.getSettings(self.metro_args,{"target": targetname})
 
 			# Now, we move to defining lockfiles, and logging setup:
-					
 			if targetname == "snapshot":
+				if settings["release/type"] != "official":
+					continue
 				tsfn = targ = settings["path/mirror/snapshot"]
 				tsfn = os.path.join(os.path.dirname(tsfn), "." + os.path.basename(tsfn) + "_progress")
 				cr = CommandRunner(settings, logging=False)
@@ -186,16 +187,22 @@ class Metro:
 
 			cr.mesg("Running target %s with class %s" % (targetname, settings["target/class"]))
 
-			#Let's see if our target exists. Should we replace it? Or should we just skip it?
-
-			if "metro/options" in settings and "replace" in settings["metro/options"].split():
-				if os.path.exists(targ):
-					cr.mesg("Removing existing file %s..." % targ)
-					target.cmd(self.cmds["rm"] + " -f " + targ)
-			elif os.path.exists(targ):
-				cr.mesg("File %s already exists - skipping..." % targ)
-				target.run_script("trigger/ok/run", optional=True)
-				continue
+			if "release/type" == "official":
+				#Let's see if our target exists. Should we replace it? Or should we just skip it?
+				if "metro/options" in settings and "replace" in settings["metro/options"].split():
+					if os.path.exists(targ):
+						cr.mesg("Removing existing file %s..." % targ)
+						target.cmd(self.cmds["rm"] + " -f " + targ)
+				elif os.path.exists(targ):
+					cr.mesg("File %s already exists - skipping..." % targ)
+					target.run_script("trigger/ok/run", optional=True)
+					continue
+			else:
+				# for QA builds, if a "status" file exists in the target path, this means we've already run.
+				# Don't run again.
+				if os.path.exists(settings["path/mirror/target/path"]+"/status"):
+					cr.mesg("Status file already exists for target - skipping...")
+					continue
 
 			# Okay, we need to build our target. Let's create an "in progress" lock file:
 
@@ -257,17 +264,27 @@ class Metro:
 		if self.ts != None:
 			self.ts.unlink()
 
+		official = initial_settings["release/type"] == "official"
 		failcnt_fn = initial_settings["path/mirror/target/control"] + "/.failcount"
+		status_fn  = initial_settings["path/mirror/target/path"] + "/status" 
 		failcnt = countFile(failcnt_fn)
 
 		if error:
-			print("Incrementing failcount.")
-			# increment failcount - we record consecutive fails
-			failcnt.increment()
+			if official:
+				print("Incrementing failcount.")
+				# increment failcount - we record consecutive fails
+				failcnt.increment()
+			sf = open(status_fn,"w")
+			sf.write("fail")
+			sf.close()
 		else:
-			print("Removing failcount.")
-			# we didn't fail - remove the fail counter if it exists:
-			failcnt.unlink()
+			if official:
+				print("Removing failcount.")
+				# we didn't fail - remove the fail counter if it exists:
+				failcnt.unlink()
+			sf = open(status_fn,"w")
+			sf.write("ok")
+			sf.close()
 		if abort or error:
 			sys.exit(1)
 		else:
