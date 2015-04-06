@@ -100,7 +100,7 @@ class Metro:
 			sys.exit(0)
 
 		# Step 6: Create list of targets to run, checking whether "multi" mode is enabled
-		if settings["multi"] == "yes":
+		if "multi" in settings and settings["multi"] == "yes":
 			targetlist = settings["multi/targets"].split()
 		else:
 			targetlist = [settings["target"]]

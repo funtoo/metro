@@ -60,7 +60,12 @@ else
 	if [ -n "$extras" ]; then
 		extras="multi/extras: $extras"
 	fi
-	run ../metro -d multi: yes target/build: $BUILD target/arch_desc: $ARCH target/subarch: $SUBARCH target/version: $VERS multi/mode: $MODE $extras || die "build failure"
+	if [ "$MODE" == "test" ]; then
+		extras="$extras target: stage3-test"
+	else
+		extras="$extras multi: yes multi/mode: $MODE"
+	fi
+	run ../metro -d target/build: $BUILD target/arch_desc: $ARCH target/subarch: $SUBARCH target/version: $VERS $extras || die "build failure"
 	exit $?
 fi
 
