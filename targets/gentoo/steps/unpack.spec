@@ -67,6 +67,11 @@ if [ "$[release/type]" == "official" ]; then
 		git checkout $[snapshot/source/branch:lax] || exit 50
 	fi
 else
+	if ! [ -e "$[path/cache/git]/$[snapshot/source/name]" ]
+	then
+		# create repo if it doesn't exist
+		git clone $[snapshot/source/remote] $[path/cache/git]/$[snapshot/source/name] || exit 45
+	fi
 	cd $[path/cache/git]/$[snapshot/source/name]
 	git pull
 	git clone $[path/cache/git]/$[snapshot/source/name] $[path/chroot]/usr/portage || exit 5
