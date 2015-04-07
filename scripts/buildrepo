@@ -210,7 +210,6 @@ if __name__ == "__main__":
 					except ValueError:
 						#otherwise, likely a QA build, with a SHA1 directory name
 						spath = "%s/%s/status" % ( path, instance )
-						print(spath)
 						if os.path.exists(spath):
 							complete = True
 							date = datetime.datetime.utcfromtimestamp(os.path.getmtime(spath))
