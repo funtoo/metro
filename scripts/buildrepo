@@ -197,17 +197,25 @@ if __name__ == "__main__":
 					fc = countFile(failpath)
 					failcount = fc.count
 				for instance in os.listdir(path):
-					try:
-						date = datetime.datetime.strptime(instance,"%Y-%m-%d")
-					except ValueError:
-						continue
 					ipath = "%s/%s" % ( path, instance )
 					if not os.path.isdir(ipath):
 						continue
 					complete = False
-					for match in glob.glob("%s/stage3*.tar.*" % ipath):
-						complete = True
-						break
+					try:
+						# if this date call succeeds, we're dealing with a timestamped build dir:
+						date = datetime.datetime.strptime(instance,"%Y-%m-%d")
+						for match in glob.glob("%s/stage3*.tar.*" % ipath):
+							complete = True
+							break
+					except ValueError:
+						#otherwise, likely a QA build, with a SHA1 directory name
+						spath = "%s/%s/status" % ( path, instance )
+						print(spath)
+						if os.path.exists(spath):
+							complete = True
+							date = datetime.datetime.utcfromtimestamp(os.path.getmtime(spath))
+						else:
+							date = None
 					bdir = BuildDir()
 					bdir.path = ipath
 					bdir.date = date
