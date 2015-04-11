@@ -28,7 +28,7 @@ all_arches = ( )
 all_subarches = ( )
 stale_days = 3
 max_failcount = 3
-keep_num = 3
+keep_num = 2
 
 def map_build(build, subarch, full, full_date):
 	return "full"
