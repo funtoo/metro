@@ -28,6 +28,7 @@ all_arches = ( )
 all_subarches = ( )
 stale_days = 3
 max_failcount = 3
+keep_num = 3
 
 def map_build(build, subarch, full, full_date):
 	return "full"
@@ -79,6 +80,9 @@ stale_days = 3
 # optional - how many consecutive failed builds of a subarch before it is pulled from
 # build rotation. default = 3
 max_failcount = 3
+
+# optional - number of builds to keep, default = 3
+keep_num = 3
 
 # optional - all subarches that are built + uploaded here:
 all_subarches = subarches + (
@@ -298,15 +302,15 @@ while len(sys.argv) > 1:
 			for arch in all_arches:
 				for subarch in all_subarches:
 					out = session.query(BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
-					for x in out[0:-3]:
+					for x in out[0:-keep_num]:
 						print(("rm -rf %s" % x.path))
-					for x in out[-3:]:
+					for x in out[-keep_num:]:
 						print(("# keeping %s" % x.path))
 			# next, remove any more than 2 snapshots:
 			sna = session.query(Snapshot).filter_by(build=build).order_by(Snapshot.path).all()
-			for x in sna[0:-3]:
+			for x in sna[0:-keep_num]:
 				print(("rm %s*" % x.path))
-			for x in sna[-2:]:
+			for x in sna[-(keep_num-1):]:
 				print(("# keeping %s" % x.path))
 		# Now, look at incomplete builds. Clean them out when they're stale and not the most recent build.
 		for x in session.query(BuildDir).filter_by(complete=False):
