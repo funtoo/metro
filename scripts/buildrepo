@@ -7,6 +7,7 @@ import glob
 import datetime
 import fnmatch
 import pwd, grp
+import json
 from subprocess import call
 
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__))))
@@ -390,6 +391,7 @@ while len(sys.argv) > 1:
 			subarch_xml.attrib["builds"] = ",".join(map(str,range(1,len(subarch_builds[s])+1)))
 			# we treat "hardened' and "pure64" as "variants" of the main build (current/stable/experimental) -- to make things clearer for users.
 			count = 1
+			info_json_path = None
 			for b in subarch_builds[s]:
 				# variant
 				v = []
@@ -409,6 +411,10 @@ while len(sys.argv) > 1:
 				build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
 				if b.date:
 					build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
+					if not info_json_path:
+						bifn = os.path.join(b.path,b.date_str,"build-info.json")
+						if os.path.exists(bifn):
+							info_json_path = bifn
 				subarch_xml.append(build_xml)
 				if b.failcount > 0:
 					numfails += 1
@@ -417,6 +423,15 @@ while len(sys.argv) > 1:
 					fail_xml.attrib["failcount"] = str(b.failcount)
 					fails.append(fail_xml)
 				count += 1
+			# We found extracted CFLAGS, etc from most recent build -- grab this info and add it to our XML:
+			if info_json_path:
+				print(s,info_json_path)
+				with open(info_json_path,"r") as bif:
+					bif_json = json.loads(bif.read())
+					print(bif_json)
+					print()
+					for x in bif_json:
+						subarch_xml.attrib[x] = bif_json[x]
 			outxml.append(subarch_xml)
 		fails.attrib["builds"] = ",".join(map(str,range(1,numfails + 1)))
 	 

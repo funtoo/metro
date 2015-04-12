@@ -60,10 +60,14 @@ class ChrootTarget(BaseTarget):
 
 			self.run_script_in_chroot("steps/chroot/prerun", optional=True)
 			self.run_script_in_chroot("steps/chroot/run")
+			# capture info about built stage, prior to cleaning. Two part-process,
+			# one part in chroot, and the other part outside the chroot.
+			if self.settings["release/type"] == "official":
+				self.run_script_in_chroot("steps/chroot/grabinfo", optional=True)
+				self.run_script("steps/precapture", optional=True)
+			# postrun is for cleaning with bind-mounts still active:
 			self.run_script_in_chroot("steps/chroot/postrun", optional=True)
-
 			self.unbind()
-
 			self.run_script_in_chroot("steps/chroot/clean", optional=True)
 			self.run_script_in_chroot("steps/chroot/test", optional=True)
 			self.run_script_in_chroot("steps/chroot/postclean", optional=True)
@@ -73,7 +77,6 @@ class ChrootTarget(BaseTarget):
 			raise
 		self.run_script("steps/clean", optional=True)
 		if self.settings["release/type"] == "official":
-			self.run_script("steps/precapture", optional=True)
 			self.run_script("steps/capture")
 			self.run_script("trigger/ok/run", optional=True)
 
