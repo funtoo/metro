@@ -8,7 +8,7 @@ try_cleaning() {
 	if [ ! -n "$(ls /home/drobbins/.sync-* 2>/dev/null)" ] && [ "$ran_clean" == "no" ]; then
 		echo "Cleaning local stage repository..."
 		# don't clean while other sync jobs are running.
-		/root/git/metro/scripts/buildrepo clean > clean.sh || exit 1
+		/root/metro/scripts/buildrepo clean > clean.sh || exit 1
 		sh clean.sh || exit 1
 		ran_clean="yes"
 	else
@@ -16,7 +16,7 @@ try_cleaning() {
 	fi
 }
 try_cleaning
-/root/git/metro/scripts/buildrepo digestgen || exit 1
+/root/metro/scripts/buildrepo digestgen || exit 1
 opts="--delete --delete-excluded"
 rsync --bwlimit=30m --exclude=stage2* --exclude=funtoo-*-next --exclude=stage1* $opts -rtlve ssh /home/mirror/funtoo/ funtoo@ftp-osl.osuosl.org:/data/ftp/pub/funtoo/
 ssh funtoo@ftp-osl.osuosl.org chmod -R go+r /data/ftp/pub/funtoo/*

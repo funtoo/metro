@@ -187,7 +187,7 @@ class Metro:
 
 			cr.mesg("Running target %s with class %s" % (targetname, settings["target/class"]))
 
-			if "release/type" == "official":
+			if settings["release/type"] == "official":
 				#Let's see if our target exists. Should we replace it? Or should we just skip it?
 				if "metro/options" in settings and "replace" in settings["metro/options"].split():
 					if os.path.exists(targ):
