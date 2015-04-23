@@ -93,7 +93,7 @@ class CommandRunner(object):
 			self.cmdout.write(msg + "\n")
 		sys.stdout.write(msg + "\n")
 
-	def run(self, cmdargs, env):
+	def run(self, cmdargs, env, error_scan=False):
 		self.mesg("Running command: %s (env %s) " % ( cmdargs,env ))
 		try:
 			if self.logging:
@@ -108,6 +108,26 @@ class CommandRunner(object):
 		else:
 			if exitcode != 0:
 				self.mesg("Command exited with return code %s" % exitcode)
+				if error_scan and self.logging:
+					# scan log for errors -- and extract them!
+					self.mesg("Attempting to extract failed ebuild information...")
+					s, out = subprocess.getstatusoutput("cat %s | grep '^ \* ERROR: ' | uniq | sed -e 's/^ \* ERROR: \(.*\) failed (\(.*\) phase).*/\1 \2/g'" % self.fname)
+					if s == 0:
+						errors = []
+						for line in out.split('\n'):
+							parts = line.split()
+							if len(parts) != 2:
+								# not what we're looking for
+								continue
+							if len(parts[0].split("/")) != 2:
+								continue
+							errors.append({"ebuild" : parts[0], "phase" : parts[1]})
+						if len(errors):
+							fname = self.settings["path/mirror/target/path"] + "/log/errors.json"
+							self.mesg("Detected failed ebuilds... writing to %s." % fname)
+							a = open(fname,"w")
+							a.write(json.dumps(errors, indent=4))
+							a.close()
 				return exitcode
 			return 0
 

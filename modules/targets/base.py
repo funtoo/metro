@@ -32,7 +32,7 @@ class BaseTarget:
 		self.run_script("steps/run")
 		self.clean_path()
 
-	def run_script(self, key, chroot=None, optional=False):
+	def run_script(self, key, chroot=None, optional=False, error_scan=False):
 		if key not in self.settings:
 			if optional:
 				return
@@ -68,7 +68,7 @@ class BaseTarget:
 		else:
 			cmds.append(outfile)
 
-		retval = self.cr.run(cmds, env=self.env)
+		retval = self.cr.run(cmds, env=self.env, error_scan=self.error_scan)
 		if retval != 0:
 			raise MetroError("Command failure (key %s, return value %s) : %s" % (key, repr(retval), " ".join(cmds)))
 

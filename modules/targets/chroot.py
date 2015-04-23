@@ -59,7 +59,7 @@ class ChrootTarget(BaseTarget):
 			self.bind()
 
 			self.run_script_in_chroot("steps/chroot/prerun", optional=True)
-			self.run_script_in_chroot("steps/chroot/run")
+			self.run_script_in_chroot("steps/chroot/run", error_scan=True)
 			# capture info about built stage, prior to cleaning. Two part-process,
 			# one part in chroot, and the other part outside the chroot.
 			if self.settings["release/type"] == "official":
@@ -104,11 +104,8 @@ class ChrootTarget(BaseTarget):
 			print("Killing process "+pid+" ("+mylink+")")
 			self.cmd(self.cmds["kill"]+" -9 "+pid)
 
-	def run_script_in_chroot(self, key, chroot=None, optional=False):
-		if chroot == None:
-			return self.run_script(key, chroot=self.settings["path/work"], optional=optional)
-		else:
-			return self.run_script(key, chroot=chroot, optional=optional)
+	def run_script_in_chroot(self, key, optional=False, error_scan=False):
+		return self.run_script(key, chroot=self.settings["path/work"], optional=optional, error_scan=error_scan)
 
 	def bind(self):
 		""" Perform bind mounts """
