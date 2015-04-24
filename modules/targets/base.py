@@ -68,7 +68,7 @@ class BaseTarget:
 		else:
 			cmds.append(outfile)
 
-		retval = self.cr.run(cmds, env=self.env, error_scan=self.error_scan)
+		retval = self.cr.run(cmds, env=self.env, error_scan=error_scan)
 		if retval != 0:
 			raise MetroError("Command failure (key %s, return value %s) : %s" % (key, repr(retval), " ".join(cmds)))
 
