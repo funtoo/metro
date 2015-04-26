@@ -381,6 +381,9 @@ while len(sys.argv) > 1:
 			s = x.subarch
 			if s[-7:] == "-pure64":
 				s = s[:-7]
+			if s[-5:] == "-next":
+				# tweak to skip -next QA builds...
+				continue
 			if s not in subarch_builds:
 				subarch_builds[s] = []
 			subarch_builds[s].append(x)
