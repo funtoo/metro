@@ -166,7 +166,7 @@ class Metro:
 		for targetname in targetlist:
 
 			# We start by grabbing settings for this target:
-			
+
 			settings = self.setup.getSettings(self.metro_args,{"target": targetname})
 
 			# Now, we move to defining lockfiles, and logging setup:
@@ -266,7 +266,7 @@ class Metro:
 
 		official = initial_settings["release/type"] == "official"
 		failcnt_fn = initial_settings["path/mirror/target/control"] + "/.failcount"
-		status_fn  = initial_settings["path/mirror/target/path"] + "/status" 
+		status_fn  = initial_settings["path/mirror/target/path"] + "/status"
 		failcnt = countFile(failcnt_fn)
 
 		if error:

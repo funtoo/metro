@@ -1,4 +1,4 @@
-# ChangeLog for metro 
+# ChangeLog for metro
 # Copyright 2008-2014 Funtoo Technologies, LLC; Distributed under the GPL v2
 
 *metro-1.5.1 (19 Mar 2010)
@@ -68,7 +68,7 @@
   "lastdate" and "subarch" control files. scripts/build.sh has been simplified
   as it no longer has to manually update the control files.
 
-  Linux vserver target: Thanks to a contribution by Benedikt Bohm, 
+  Linux vserver target: Thanks to a contribution by Benedikt Bohm,
   Metro can now build Linux vserver templates in addition to OpenVZ
   templates.
 
@@ -91,13 +91,13 @@
   you want to build an unstable funtoo amd64 build, set metro/build: to
   ~funtoo and target/subarch: to amd64 (not ~amd64). This is a more logical
   and normalized path structure.
-  
+
   scripts/build.sh has been updated so that it works the same way it always
   did -- "scripts/build.sh ~amd64 freshen" still does the same thing, for
   example, even though Metro no longer uses "~amd64" internally.
 
-  SECURITY: 
-  
+  SECURITY:
+
   Local perms: Metro enforces stricter permissions on its work directories in
   order to prevent malicious injecting of files and/or binaries into builds.
 
@@ -106,7 +106,7 @@
   security baseline check has been added to all Gentoo targets which ensures
   that /etc/shadow and other critical files have proper permissions and
   ownership.
-  
+
   PARSER:
 
   Parser now supports relative paths in collect annotations, such as
@@ -165,7 +165,7 @@
 *metro-1.2 (15 Dec 2008)
 
   15 Dec 2008; Daniel Robbins <drobbins@funtoo.org>: New release:
-  The 1.2 release contains quite a few 
+  The 1.2 release contains quite a few
   * NEW target: "stage3-freshen" uses emerge -up world to update stage
   * NEW target: "stage3-quick" builds stage3->stage3, skipping stage1 and 2.
   * NEW target: "git-snapshot" creates a full .tar.bz2 snapshot of git repo
@@ -226,7 +226,7 @@
     now in a single file for convenience.
   * NEW: "FSLayouts" defined in /etc/metro/fslayouts/ - all mirror-related
     file names and path structures now in a single file.
-  * NEW: OpenVZ template support for Funtoo stages, enabled in 
+  * NEW: OpenVZ template support for Funtoo stages, enabled in
     scripts/build.sh
   * NEW: Reorganized file paths inside /usr/lib/metro.
   * NEW: Working gentoo/emerge target, when you just want to take a stage3
@@ -248,7 +248,7 @@
     expanded to "yes" if defined and "no" if not defined, providing
     easy integration with scripts so you don't throw a parser exception
     by referencing an undefined variable.
-  * NEW: "zap" expansion - in a multi-line element, a variable such 
+  * NEW: "zap" expansion - in a multi-line element, a variable such
     as $[foo:zap] will get expanded to the name of the variable if it is
     defined. If it is not defined, however, then the entire line will
     be deleted from the output. This allows very compact conditional
