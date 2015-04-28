@@ -388,7 +388,6 @@ while len(sys.argv) > 1:
 		for s in subarch_builds:
 			subarch_xml = etree.Element("subarch")
 			subarch_xml.attrib["name"] = s
-			subarch_xml.attrib["builds"] = ",".join(map(str,range(1,len(subarch_builds[s])+1)))
 			# we treat "hardened' and "pure64" as "variants" of the main build (current/stable/experimental) -- to make things clearer for users.
 			count = 1
 			info_json_path = None
@@ -398,7 +397,9 @@ while len(sys.argv) > 1:
 				if b.subarch[-7:] == "-pure64":
 					# "variant"
 					v.append("pure64")
-				if b.build[-9:] == "-hardened":
+				if b.build[-5:] == "-next":
+				    continue
+				elif b.build[-9:] == "-hardened":
 					v.append("hardened")
 					build = b.build[:-9]
 				else:
@@ -423,13 +424,12 @@ while len(sys.argv) > 1:
 					fail_xml.attrib["failcount"] = str(b.failcount)
 					fails.append(fail_xml)
 				count += 1
+			subarch_xml.attrib["builds"] = ",".join(map(str,range(1,count)))
+
 			# We found extracted CFLAGS, etc from most recent build -- grab this info and add it to our XML:
 			if info_json_path:
-				print(s,info_json_path)
 				with open(info_json_path,"r") as bif:
 					bif_json = json.loads(bif.read())
-					print(bif_json)
-					print()
 					for x in bif_json:
 						subarch_xml.attrib[x] = bif_json[x]
 			outxml.append(subarch_xml)
