@@ -117,6 +117,15 @@ class Metro:
 				result = value
 		return result
 
+	def qa_hook(self,success,settings):
+		if not "qa/type" in initial_settings or not initial_settings["qa/type"] == "jira":
+			return
+		jira_url = initial_settings["qa/url"]
+		jira_user = initial_settings["qa/username"]
+		jira_pass = initial_settings["qa/password"]
+		myhook = JIRAHook(jira_url,jira_user,jira_pass,settings)
+		myhook.run(success=success)
+
 	@staticmethod
 	def dump_settings(settings):
 		keys = list(settings.keys())
@@ -162,9 +171,9 @@ class Metro:
 				if not self.multi_ts.create():
 					print("Could not create multi-target lock file %s" % self.multi_ts.path)
 					sys.exit(1)
-
+		current_target = None
 		for targetname in targetlist:
-
+			current_target = targetname
 			# We start by grabbing settings for this target:
 
 			settings = self.setup.getSettings(self.metro_args,{"target": targetname})
@@ -268,6 +277,10 @@ class Metro:
 		failcnt_fn = initial_settings["path/mirror/target/control"] + "/.failcount"
 		status_fn  = initial_settings["path/mirror/target/path"] + "/status"
 		failcnt = countFile(failcnt_fn)
+			
+		# So we can grab this in the qa_hook:
+		initial_settings["target"] = current_target
+		initial_settings["success"] = not error
 
 		if error:
 			if official:
@@ -277,6 +290,7 @@ class Metro:
 			sf = open(status_fn,"w")
 			sf.write("fail")
 			sf.close()
+			self.qa_hook(initial_settings)
 		else:
 			if official:
 				print("Removing failcount.")
@@ -285,6 +299,7 @@ class Metro:
 			sf = open(status_fn,"w")
 			sf.write("ok")
 			sf.close()
+			self.qa_hook(initial_settings)
 		if abort or error:
 			sys.exit(1)
 		else:
@@ -308,6 +323,7 @@ class Metro:
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "modules"))
 from metro_support import lockFile, countFile, MetroError, CommandRunner, MetroSetup
+from JIRA_bug import JIRAHook
 m = Metro()
 m.run()
 
