@@ -117,14 +117,14 @@ class Metro:
 				result = value
 		return result
 
-	def qa_hook(self,success,settings):
+	def qa_hook(self,settings):
 		if not "qa/type" in initial_settings or not initial_settings["qa/type"] == "jira":
 			return
 		jira_url = initial_settings["qa/url"]
 		jira_user = initial_settings["qa/username"]
 		jira_pass = initial_settings["qa/password"]
 		myhook = JIRAHook(jira_url,jira_user,jira_pass,settings)
-		myhook.run(success=success)
+		myhook.run()
 
 	@staticmethod
 	def dump_settings(settings):

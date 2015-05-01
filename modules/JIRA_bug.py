@@ -72,7 +72,7 @@ class JIRAHook(object):
 			print("Closing matching issue %s" % i['key'])	
 			self.jira.closeIssue(i)
 
-	def run(self,success):
+	def run(self):
 		if self.settings["success"]:
 			return self.onSuccess()
 		else:
