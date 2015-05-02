@@ -112,10 +112,13 @@ class CommandRunner(object):
 				if error_scan and self.logging:
 					# scan log for errors -- and extract them!
 					self.mesg("Attempting to extract failed ebuild information...")
+					if self.cmdout:
+						self.cmdout.flush()
 					s, out = subprocess.getstatusoutput("cat %s | grep '^ \* ERROR: ' | uniq | sed -e 's/^ \* ERROR: \(.*\) failed (\(.*\) phase).*/\1 \2/g'" % self.fname)
 					if s == 0:
 						errors = []
 						for line in out.split('\n'):
+							print("Processing line",line)
 							parts = line.split()
 							if len(parts) != 2:
 								# not what we're looking for
