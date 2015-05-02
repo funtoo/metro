@@ -21,7 +21,7 @@ class JIRAHook(object):
 		out = {}
 		for x in [ "build", "arch_desc", "subarch", "version" ]:
 			k = "target/" + x
-			if self.settings.has_key[k]:
+			if self.settings.has_key(k):
 				out[x] = self.settings[k]
 		if "target" in self.settings:
 			out["target"] = self.settings["target"]
