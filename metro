@@ -118,7 +118,7 @@ class Metro:
 		return result
 
 	def qa_hook(self,settings):
-		if not "qa/type" in settings or not initial_settings["qa/type"] == "jira":
+		if not "qa/type" in settings or not settings["qa/type"] == "jira":
 			return
 		jira_url = settings["qa/url"]
 		jira_user = settings["qa/username"]
