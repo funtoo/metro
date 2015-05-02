@@ -223,7 +223,8 @@ if __name__ == "__main__":
 					bdir = BuildDir()
 					bdir.path = ipath
 					bdir.date = date
-					bdir.date_str = instance
+                                        # grab first 10 chars of build directory as date_str
+                                        bdir.date_str = instance[:10]
 					bdir.build = build
 					bdir.arch = arch
 					bdir.subarch = subarch
