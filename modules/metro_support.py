@@ -83,7 +83,7 @@ class CommandRunner(object):
 				self.logging = False
 				self.run(["install", "-o", self.settings["path/mirror/owner"], "-g", self.settings["path/mirror/group"], "-m", self.settings["path/mirror/dirmode"], "-d", os.path.dirname(self.fname)], {})
 				self.logging = True
-			self.cmdout = open(self.fname,"w")
+			self.cmdout = open(self.fname,"w+")
 			# set logfile ownership:
 			os.chown(self.fname, pwd.getpwnam(self.settings["path/mirror/owner"]).pw_uid, grp.getgrnam(self.settings["path/mirror/group"]).gr_gid)
 			sys.stdout.write("Logging output to %s.\n" % self.fname)
