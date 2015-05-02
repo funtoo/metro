@@ -114,7 +114,7 @@ class CommandRunner(object):
 					self.mesg("Attempting to extract failed ebuild information...")
 					if self.cmdout:
 						self.cmdout.flush()
-					s, out = subprocess.getstatusoutput("cat %s | grep '^ \* ERROR: ' | uniq | sed -e 's/^ \* ERROR: \(.*\) failed (\(.*\) phase).*/\1 \2/g'" % self.fname)
+					s, out = subprocess.getstatusoutput('cat %s | grep "^ \* ERROR: " | sort -u | sed -e \'s/^ \\* ERROR: \\(.*\\) failed (\\(.*\\) phase).*/\\1 \\2/g\'' % self.fname)
 					if s == 0:
 						errors = []
 						for line in out.split('\n'):
