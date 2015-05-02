@@ -36,9 +36,9 @@ def map_build(build, subarch, full, full_date):
 
 cfgfile = os.path.join(os.path.expanduser("~"),".buildbot")
 if os.path.exists(cfgfile):
-    exec(open(cfgfile, "rb").read())
+	exec(open(cfgfile, "rb").read())
 else:
-    print("""
+	print("""
 Create a ~/.buildbot file that contains something like this (python syntax):
 
 builds = (
@@ -102,7 +102,7 @@ def map_build(build, subarch, full, full_date):
 		buildtype = buildtype + "+openvz"
 	return buildtype
 """)
-    sys.exit(1)
+	sys.exit(1)
 
 if len(all_builds) == 0:
 	# if the all_variables are not defined, inherit values from the non-all vars:
@@ -201,32 +201,38 @@ if __name__ == "__main__":
 				else:
 					fc = countFile(failpath)
 					failcount = fc.count
-				for instance in os.listdir(path):
-					if instance == ".control":
-					    continue
-					sha1 = instance[10:]
-					instance = instance[:10]
-					ipath = "%s/%s" % ( path, instance )
+				for dirname in os.listdir(path):
+					if dirname == ".control":
+						continue
+					sha1 = dirname[10:]
+					instance = dirname[:10]
+					ipath = "%s/%s" % ( path, dirname )
 					if not os.path.isdir(ipath):
 						continue
 					complete = False
 					bdir = BuildDir()
-					try:
-						# if this date call succeeds, we're dealing with a timestamped build dir:
-						bdir.date = datetime.datetime.strptime(instance,"%Y-%m-%d")
-						bdir.date_str = instance
-						for match in glob.glob("%s/stage3*.tar.*" % ipath):
-							complete = True
-							break
-					except ValueError:
-						#otherwise, likely a QA build, with a SHA1 directory name
-						spath = "%s/%s/status" % ( path, instance )
+					if sha1:
+						# QA build -- use this special method for getting datestamp of directory.
+						spath = ipath + "/status"
 						if os.path.exists(spath):
 							complete = True
+							# grab mtime of status file:
 							bdir.date = datetime.datetime.utcfromtimestamp(os.path.getmtime(spath))
+							# use that to generate date string:
 							bdir.date_str = bdir.date.strftime("%Y-%m-%d")
 						else:
-							# use old date
+							# build is in progress, so skip cleaning:
+							continue
+					else:
+						# datestamped build dir -- let's try to parse it:
+						try:
+							bdir.date = datetime.datetime.strptime(instance,"%Y-%m-%d")
+							bdir.date_str = instance
+							for match in glob.glob("%s/stage3*.tar.*" % ipath):
+								complete = True
+								break
+						except ValueError:
+							# didn't work? Use old date on purpose to force cleaning:
 							bdir.date = datetime.datetime(1980,1,1)
 							bdir.date_str = "1980-01-01"
 					bdir.path = ipath
@@ -404,7 +410,7 @@ while len(sys.argv) > 1:
 					# "variant"
 					v.append("pure64")
 				if b.build[-5:] == "-next":
-				    continue
+					continue
 				elif b.build[-9:] == "-hardened":
 					v.append("hardened")
 					build = b.build[:-9]
@@ -518,3 +524,5 @@ while len(sys.argv) > 1:
 	else:
 		print("Don't understand: %s" % sys.argv[1])
 		sys.exit(1)
+
+# vim: ts=4 sw=4 noet
