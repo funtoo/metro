@@ -91,6 +91,7 @@ class CommandRunner(object):
 	def mesg(self, msg):
 		if self.logging:
 			self.cmdout.write(msg + "\n")
+			self.cmdout.flush()
 		sys.stdout.write(msg + "\n")
 
 	def run(self, cmdargs, env, error_scan=False):
