@@ -280,7 +280,7 @@ class Metro:
 			
 		# So we can grab this in the qa_hook:
 		initial_settings["target"] = current_target
-		initial_settings["success"] = not error
+		initial_settings["success"] = "no" if error else "yes"
 
 		if error:
 			if official:

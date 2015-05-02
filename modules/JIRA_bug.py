@@ -73,7 +73,7 @@ class JIRAHook(object):
 			self.jira.closeIssue(i)
 
 	def run(self):
-		if self.settings["success"]:
+		if self.settings["success"] == "yes":
 			return self.onSuccess()
 		else:
 			return self.onFailure()
