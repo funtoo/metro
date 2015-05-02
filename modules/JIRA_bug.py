@@ -28,9 +28,10 @@ class JIRAHook(object):
 		if "path/mirror/target/path" in self.settings:
 			out["path"] = self.settings["path/mirror/target/path"]
 			err_fn = out["path"] + "/log/errors.json"
-			a = open(err_fn,"r")
-			out["failed_ebuilds"] = json.loads(a.read())
-			a.close()
+			if os.path.exists(err_fn):
+				a = open(err_fn,"r")
+				out["failed_ebuilds"] = json.loads(a.read())
+				a.close()
 		if "success" in self.settings:
 			out["success"] = self.settings["success"]
 		return out
