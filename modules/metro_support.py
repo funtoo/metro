@@ -197,7 +197,7 @@ class fakeLockFile(stampFile):
 	def getFileContents(self):
 		return ""
 
-class lockFile(stampFile):
+class lockFile(fakeLockFile):
 
 	"Class to create lock files; used for tracking in-progress metro builds."
 
@@ -247,7 +247,6 @@ class lockFile(stampFile):
 
 	def getFileContents(self):
 		return(str(os.getpid()))
-
 
 
 class countFile(stampFile):
