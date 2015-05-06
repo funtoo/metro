@@ -37,7 +37,7 @@ class JIRAHook(object):
 		return out
 
 	def _allMatching(self):
-		i = self.jira.getAllIssues({'jql' : 'Summary ~ "%s" and project = QA and status != closed' % self._bugSubject(), 'maxresults' : 1000 })
+		i = self.jira.getAllIssues({'jql' : 'Summary ~ "\\"%s\\"" and project = QA and status != closed' % self._bugSubject(), 'maxresults' : 1000 })
 		if i != None and "issues" in i:
 			return i["issues"]
 		else:
@@ -71,6 +71,9 @@ class JIRAHook(object):
 	def onSuccess(self):
 		for i in self._allMatching():
 			print("Closing matching issue %s" % i['key'])	
+			self.jira.commentOnIssue(match,"Build completed successfully. Closing. Details below:\n{code}\n" +
+				json.dumps(self.info(), indent=4, sort_keys=True) + "\n{code}\n"
+			)
 			self.jira.closeIssue(i)
 
 	def run(self):

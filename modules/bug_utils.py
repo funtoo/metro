@@ -49,10 +49,13 @@ class JIRA(object):
 		issue["fields"].update(extrafields)
 		print("Posting new bug.")
 		r = requests.post(url, data=json.dumps(issue), headers=headers)
-		j = r.json()
+		try:
+			j = r.json()
+		except ValueError:
+			print("createIssue: Error decoding JSON from POST. Possible connection error.")
+			return None
 		if 'key' in j:
 			return j['key']
-		print(r.text)
 		return None
 
 	def createSubTask(self,parentkey,project,title,description):
