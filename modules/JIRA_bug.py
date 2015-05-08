@@ -71,7 +71,7 @@ class JIRAHook(object):
 	def onSuccess(self):
 		for i in self._allMatching():
 			print("Closing matching issue %s" % i['key'])	
-			self.jira.commentOnIssue(match,"Build completed successfully. Closing. Details below:\n{code}\n" +
+			self.jira.commentOnIssue(i,"Build completed successfully. Closing. Details below:\n{code}\n" +
 				json.dumps(self.info(), indent=4, sort_keys=True) + "\n{code}\n"
 			)
 			self.jira.closeIssue(i)
