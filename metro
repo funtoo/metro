@@ -290,7 +290,9 @@ class Metro:
 			sf = open(status_fn,"w")
 			sf.write("fail")
 			sf.close()
-			self.qa_hook(initial_settings)
+			if not abort:
+				# don't run failure QA hook if user aborted it.
+				self.qa_hook(initial_settings)
 		else:
 			if official:
 				print("Removing failcount.")
