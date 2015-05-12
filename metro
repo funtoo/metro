@@ -221,6 +221,7 @@ class Metro:
 			self.ts = lockFile(tsfn)
 			abort = False
 			error = False
+			user_abort = False
 			try:
 				if self.ts.exists():
 					if targetname == "snapshot":
@@ -263,7 +264,7 @@ class Metro:
 					self.ts.unlink()
 			except KeyboardInterrupt:
 				cr.mesg("Target %s aborted due to user interrupt (ctrl-C)" % targetname)
-				abort = True
+				abort = user_abort = True
 				if self.ts != None:
 					self.ts.unlink()
 				# break out of multi-target loop so we can exit:
@@ -290,7 +291,7 @@ class Metro:
 			sf = open(status_fn,"w")
 			sf.write("fail")
 			sf.close()
-			if not abort:
+			if error and not user_abort:
 				# don't run failure QA hook if user aborted it.
 				self.qa_hook(initial_settings)
 		else:
