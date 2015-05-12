@@ -43,6 +43,7 @@ if [ -e /usr/share/eselect/modules/vi.eselect ] && [ -e /bin/busybox ]
 then
 	eselect vi set busybox
 fi
+$[[steps/chroot/run/extra:lax]]
 ]
 
 [section portage]
