@@ -294,7 +294,7 @@ class Metro:
 			if error and not user_abort:
 				# don't run failure QA hook if user aborted it.
 				self.qa_hook(initial_settings)
-		else:
+		elif not user_abort:
 			if official:
 				print("Removing failcount.")
 				# we didn't fail - remove the fail counter if it exists:
