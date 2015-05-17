@@ -106,7 +106,7 @@ class CommandRunner(object):
 		except KeyboardInterrupt:
 			cmd.terminate()
 			self.mesg("Interrupted via keyboard!")
-			return 1
+			raise
 		else:
 			if exitcode != 0:
 				self.mesg("Command exited with return code %s" % exitcode)
