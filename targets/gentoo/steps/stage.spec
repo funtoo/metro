@@ -1,3 +1,24 @@
+[section files]
+
+epro_getarch: [
+#!/usr/bin/python3
+
+import sys
+import json
+
+lines = sys.stdin.readlines()
+try:
+    j = json.loads("".join(lines))
+except ValueError:
+    sys.exit(1)
+if "arch" in j and len(j["arch"]):
+    a = j["arch"][0]
+    if "path" in a:
+        print(a["path"])
+        sys.exit(0)
+sys.exit(1)
+]
+
 [section steps]
 
 #[option parse/lax]
@@ -56,9 +77,25 @@ then
 		fi
 	fi
 fi
+# make sure we have the latest ego.
+emerge -u --oneshot ego
+cat > /tmp/epro_getarch.py << "EOF"
+$[[files/epro_getarch]]
+EOF
+archdir="$(python3 /tmp/epro_getarch.py)"
+if [ -n "$archdir" ] && [ -e "$archdir/toolchain-version" ]; then
+	# We will use toolchain_version to set a sub-directory for binary packages. This way, bumping the
+	# toolchain version in the profile forces metro to rebuild all binary packages -- which is what we
+	# want when we have a new toolchain, to flush out old, now stable .tbz2 files.
+	toolchain_version="$(cat $archdir/toolchain-version)"
+fi
+
 if [ -e /var/tmp/cache/package ]
 then
 	export PKGDIR=/var/tmp/cache/package
+	if [ -n "$toolchain_version" ]; then
+		export PKGDIR="$PKGDIR/$toolchain_version"
+	fi
 	eopts="$[emerge/options] --usepkg"
 	export FEATURES="$FEATURES buildpkg"
 else
