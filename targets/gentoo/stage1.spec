@@ -68,9 +68,15 @@ $[[files/pythonjunk]]
 EOF
 
 export buildpkgs="$(python /tmp/build.py)"
-export BOOTSTRAP_USE="$(portageq envvar BOOTSTRAP_USE)"
-# Set at least one PYTHON_ABIS flag to satisfy REQUIRED_USE of sys-apps/portage.
-export PYTHON_ABIS="$(portageq envvar PYTHON_ABIS | sed -e "s/.* //")"
+
+
+# Gentoo hard-codes the intended python targets into a base profile. Funtoo extracts it from variables
+export BOOTSTRAP_USE="$(portageq envvar BOOTSTRAP_USE | sed -e 's/python_targets_?_?//g')"
+# The following code should also be used in targets/gentoo/stage2.spec
+export PYTHON_ABIS="$(portageq envvar PYTHON_ABIS)"
+export PYTHON_TARGETS="$(portageq envvar PYTHON_TARGETS)"
+export PYTHON_SINGLE_TARGET="$(portageq envvar PYTHON_SINGLE_TARGET)"
+
 export USE="-* bindist build xml ${BOOTSTRAP_USE} ssl threads"
 export FEATURES="$FEATURES nodoc noman noinfo"
 
