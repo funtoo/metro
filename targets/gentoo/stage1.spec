@@ -94,7 +94,9 @@ then
 else
 	echo "WE ARE BUILDING: ${buildpkgs}"
 fi
-
+if [ "$[target/build]" == "funtoo-current" ] || [ "$[target/build]" == "funtoo-current-hardened"]; then
+	buildpkgs="=sys-libs/ncurses-6* $buildpkgs"
+fi
 export ROOT="$[portage/ROOT]"
 export PKGDIR=$ORIG_PKGDIR/new_root
 install -d ${ROOT}
