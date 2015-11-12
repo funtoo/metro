@@ -227,6 +227,7 @@ else
 		cp -a /etc/make.profile $ROOT/etc || exit 4
 	fi
 	cp $mkconf $ROOT/etc/portage/make.conf || exit 4
+	ln -s portage/make.conf $ROOT/etc/make.conf
 fi
 # clean up temporary locations. Note that this also ends up removing our scripts, which
 # exist in /tmp inside the chroot. So after this cleanup, any execution inside the chroot
