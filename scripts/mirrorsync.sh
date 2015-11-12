@@ -20,5 +20,6 @@ try_cleaning
 opts="--delete --delete-excluded"
 rsync --bwlimit=30m --exclude=stage2* --exclude=funtoo-*-next --exclude=stage1* $opts -rtlve ssh /home/mirror/funtoo/ funtoo@ftp-osl.osuosl.org:/data/ftp/pub/funtoo/
 ssh funtoo@ftp-osl.osuosl.org chmod -R go+r /data/ftp/pub/funtoo/*
+ssh funtoo@ftp-osl.osuosl.org ./trigger-funtoo
 rm -f $pidfile
 try_cleaning
