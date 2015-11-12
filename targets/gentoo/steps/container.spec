@@ -52,11 +52,6 @@ ln -s /usr/share/zoneinfo/UTC /etc/localtime || exit 4
 echo "Adding sshd to default runlevel..."
 rc-update add sshd default
 
-echo "Removing unnecessary udev stuff from default runlevel..."
-rc-update del udev-mount sysinit
-rc-update del udevd sysinit
-rc-update del udev sysinit
-
 # hostname - change periods from target/name into dashes
 echo "Setting hostname..."
 myhost=$(echo $[target/name] | tr . -)
