@@ -58,6 +58,11 @@ then
 		fi
 	fi
 fi
+if [ -e /etc/make.conf ]; then
+	mkconf=/etc/make.conf
+else
+	mkconf=/etc/portage/make.conf
+fi
 $[[steps/epro_setup]]
 if [ -e /var/tmp/cache/package ]
 then
@@ -75,15 +80,15 @@ FEATURES="$FEATURES -sandbox"
 install -d /etc/portage
 # the quotes below prevent variable expansion of anything inside make.conf
 if [ -n "$[profile/subarch]" ]; then
-cat > /etc/portage/make.conf << "EOF"
+cat > $mkconf << "EOF"
 $[[files/make.conf.subarchprofile]]
 EOF
 elif [ "$[profile/format]" = "new" ]; then
-cat > /etc/portage/make.conf << "EOF"
+cat > $mkconf << "EOF"
 $[[files/make.conf.newprofile]]
 EOF
 else
-cat > /etc/portage/make.conf << "EOF"
+cat > $mkconf << "EOF"
 $[[files/make.conf.oldprofile]]
 EOF
 fi
@@ -213,11 +218,6 @@ else
 	pf="$[profile/format:zap]"
 	rm -f $ROOT/etc/make.conf $ROOT/etc/portage/make.conf
 	install -d $ROOT/etc/portage
-	if [ -e /etc/make.conf ]; then
-		mkconf=/etc/make.conf
-	else
-		mkconf=/etc/portage/make.conf
-	fi
 	if [ "$pf" = "new" ]; then
 		rm -f $ROOT/etc/portage/make.profile/parent || exit 3
 		install -d $ROOT/etc/portage/make.profile
