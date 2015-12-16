@@ -195,6 +195,11 @@ clean: [
 # We only do this cleanup if ROOT = / - in other words, if we are going to be packing up /,
 # then we need to remove the custom configuration we've done to /. If we are building a
 # stage1, then everything is in /tmp/stage1root so we don't need to do this.
+if [ -e /etc/make.conf ]; then
+	mkconf=/etc/make.conf
+else
+	mkconf=/etc/portage/make.conf
+fi
 export ROOT=$[portage/ROOT]
 if [ "${ROOT}" = "/" ]
 then
