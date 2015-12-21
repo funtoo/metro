@@ -9,6 +9,12 @@ for x in $(ls /var/db/pkg/sys-kernel | grep -v linux-headers); do
 	emerge -C =sys-kernel/$x
 done
 
+# Remove more leftover ebuilds that merged with debian-sources and which make no sense to have inside containers. This fixes lvm2 auto-start in OpenVZ. #FL-2484
+
+for y in mdadm lvm2 cryptsetup; do
+    emerge -C sys-fs/$y
+done
+
 if [ -e $TMPDIR/etc/conf.d/rc ]
 then
 	echo "You appear to be using a Gentoo (non-OpenRC) stage. This target only supports"
