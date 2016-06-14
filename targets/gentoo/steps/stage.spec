@@ -174,13 +174,14 @@ emerge -C $[emerge/packages/clean:zap] || exit 2
 
 # systemd compatible os-release file
 cat <<EOF > /etc/os-release
-ID=$[release/name/id:zap]
-NAME="$[release/name:zap]"
-PRETTY_NAME="$[release/name/pretty:zap]"
-CPE_NAME="$[release/name/cpe:zap]"
-VERSION="$[release/version:zap]"
-VERSION_ID=$[release/version/id:zap]
-ANSI_COLOR="$[release/color:zap]"
+ID="funtoo"
+NAME="Funtoo GNU/Linux"
+PRETTY_NAME="Linux"
+VERSION="$[target/version:zap]"
+VERSION_ID="$[target/subarch:zap]-$[target/version:zap]"
+ANSI_COLOR="0;34"
+HOME_URL="www.funtoo.org"
+BUG_REPORT_URL="bugs.funtoo.org"
 EOF
 
 # motd
