@@ -34,7 +34,7 @@ case "$[target/compression]" in
 		if [ -e /usr/bin/pxz ]; then
 			pxz $tarout
 		else
-			xz $tarout
+			xz --threads=0 $tarout
 		fi
 		;;
 	gz)
