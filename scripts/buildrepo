@@ -486,18 +486,22 @@ while len(sys.argv) > 1:
 			for filename in fnmatch.filter(filenames, '*.tar.*'):
 				if filename[-4:] == ".txt":
 					continue
+				if filename[-4:] == ".gpg":
+					continue
 				p = os.path.join(root, filename)
 				if os.path.islink(p):
 					links.append(os.path.join(dirnames,p))
 					continue
 				if not os.path.exists(p+".hash.txt"):
-					sys.stdout.write('.')
+					sys.stdout.write('h')
 					sys.stdout.flush()
 					call("PATH=/bin/:/usr/bin echo sha256 $(sha256sum %s | cut -f1 -d' ') > %s.hash.txt" % ( p, p ), shell=True)
-				else:
-					sys.stdout.write('e')
-					sys.stdout.flush()
 				os.lchown(p+".hash.txt",uid,gid)
+				if not os.path.exists(p+".gpg"):
+					sys.stdout.write('g')
+					sys.stdout.flush()
+					call("PATH=/bin/:/usr/bin gpg --use-agent --output %s.gpg --detach-sig %s" % (p, p), env=os.environ, shell=True) 
+				os.lchown(p+".gpg",uid,gid)
 		for link in links:
 			abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
 			if os.path.lexists(link + ".hash.txt"):
@@ -515,6 +519,13 @@ while len(sys.argv) > 1:
 			for filename in fnmatch.filter(filenames, '*.hash.txt'):
 				p = os.path.join(root, filename)
 				ptar = p[:-9]
+				if not os.path.exists(ptar):
+					os.unlink(p)
+					sys.stdout.write('.')
+					sys.stdout.flush()
+			for filename in fnmatch.filter(filenames, '*.gpg'):
+				p = os.path.join(root, filename)
+				ptar = p[:-4]
 				if not os.path.exists(ptar):
 					os.unlink(p)
 					sys.stdout.write('.')
