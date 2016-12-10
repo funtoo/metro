@@ -508,6 +508,10 @@ while len(sys.argv) > 1:
 				os.unlink(link + ".hash.txt")
 			if os.path.exists(abs_realpath + ".hash.txt"):
 				os.symlink(os.readlink(link) + ".hash.txt", link + ".hash.txt")
+			if os.path.exists(abs_realpath + ".gpg"):
+				if os.path.exists(link + ".gpg"):
+					os.unlink(link + ".gpg")
+				os.symlink(os.readlink(link) + ".gpg", link + ".gpg")
 			else:
 				print((link + " dead; cleaning up"))
 				os.unlink(link)
