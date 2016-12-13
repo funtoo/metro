@@ -502,38 +502,47 @@ while len(sys.argv) > 1:
 					sys.stdout.flush()
 					call("PATH=/bin/:/usr/bin gpg --use-agent --output %s.gpg --detach-sig %s" % (p, p), env=os.environ, shell=True) 
 				os.lchown(p+".gpg",uid,gid)
-		for link in links:
-			abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
-			if os.path.lexists(link + ".hash.txt"):
-				os.unlink(link + ".hash.txt")
-			if os.path.exists(abs_realpath + ".hash.txt"):
-				os.symlink(os.readlink(link) + ".hash.txt", link + ".hash.txt")
-			if os.path.exists(abs_realpath + ".gpg"):
-				if os.path.exists(link + ".gpg"):
-					os.unlink(link + ".gpg")
-				os.symlink(os.readlink(link) + ".gpg", link + ".gpg")
-			else:
-				print((link + " dead; cleaning up"))
-				os.unlink(link)
-			if os.path.lexists(link + ".hash.txt"):
-				os.lchown(link + ".hash.txt" ,uid,gid)
+				# CLEANUP LOOP START:
+				# for every link to a tarball, make sure that links to hashes are in place.
+				# also clean up dead tarball links:
+				for link in links:
+					# link = link to a TARBALL
+					abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
+					if os.path.exists(link):
+						dead = False
+					else:
+						# tarball link is stale, doesn't exist at all
+						dead = True
+						print(link + " dead; cleaning up")
+					for ext in [ '.hash.txt', '.gpg' ]:
+						extlink = link + ext
+						# if link to hash or gpg exists...
+						if dead or os.path.lexists(extlink):
+							# remove it!
+							if dead:
+								print(extlink + " dead; cleaning up")
+							os.unlink(extlink)
+						# if the real hash file exists...
+						if not dead and os.path.exists(abs_realpath + ext):
+							# create link to hash!
+							os.symlink(os.readlink(link) + ext, extlink)
+						if os.path.lexists(extlink):
+							# we found a link, let's make sure it has correct perms
+							os.lchown(extlink, uid, gid)
+				# CLEANUP LOOP START
 		print()
 		print("Cleaning up old hashes...")
+		# This check goes the other way -- find all hashes, and make sure that the corresponding tarball exists. Otherwise,
+		# remove.
 		for root, dirnames, filenames in os.walk(initial_path):
-			for filename in fnmatch.filter(filenames, '*.hash.txt'):
-				p = os.path.join(root, filename)
-				ptar = p[:-9]
-				if not os.path.exists(ptar):
-					os.unlink(p)
-					sys.stdout.write('.')
-					sys.stdout.flush()
-			for filename in fnmatch.filter(filenames, '*.gpg'):
-				p = os.path.join(root, filename)
-				ptar = p[:-4]
-				if not os.path.exists(ptar):
-					os.unlink(p)
-					sys.stdout.write('.')
-					sys.stdout.flush()
+			for ext in [ '.hash.txt', '.gpg' ]:
+				for filename in fnmatch.filter(filenames, '*' + ext):
+					p = os.path.join(root, filename)
+					ptar = p[:-len(ext)]
+					if not os.path.exists(ptar):
+						os.unlink(p)
+						sys.stdout.write('.')
+						sys.stdout.flush()
 		print()
 		print("Done!")
 	else:
