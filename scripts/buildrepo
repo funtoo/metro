@@ -494,13 +494,14 @@ while len(sys.argv) > 1:
 				if os.path.islink(p):
 					links.append(os.path.join(dirnames,p))
 					continue
+				print(p)
 				if not os.path.exists(p+".hash.txt"):
 					sys.stdout.write('h')
 					sys.stdout.flush()
 					call("PATH=/bin/:/usr/bin echo sha256 $(sha256sum %s | cut -f1 -d' ') > %s.hash.txt" % ( p, p ), shell=True)
 				os.lchown(p+".hash.txt",uid,gid)
 				if not os.path.exists(p+".gpg"):
-					sys.stdout.write('g')
+					print(p+".gpg")
 					sys.stdout.flush()
 					call("PATH=/bin/:/usr/bin gpg --use-agent --output %s.gpg --detach-sig %s" % (p, p), env=os.environ, shell=True) 
 				if os.path.exists(p+".gpg"):
@@ -508,31 +509,34 @@ while len(sys.argv) > 1:
 				# CLEANUP LOOP START:
 				# for every link to a tarball, make sure that links to hashes are in place.
 				# also clean up dead tarball links:
-				for link in links:
-					# link = link to a TARBALL
-					abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
-					if os.path.exists(link):
-						dead = False
-					else:
-						# tarball link is stale, doesn't exist at all
-						dead = True
-						print(link + " dead; cleaning up")
-					for ext in [ '.hash.txt', '.gpg' ]:
-						extlink = link + ext
-						# if link to hash or gpg exists...
-						if dead or os.path.lexists(extlink):
-							# remove it!
-							if dead:
-								print(extlink + " dead; cleaning up")
-							os.unlink(extlink)
-						# if the real hash file exists...
-						if not dead and os.path.exists(abs_realpath + ext):
-							# create link to hash!
-							os.symlink(os.readlink(link) + ext, extlink)
-						if os.path.lexists(extlink):
-							# we found a link, let's make sure it has correct perms
-							os.lchown(extlink, uid, gid)
-				# CLEANUP LOOP START
+		for link in links:
+			# link = link to a TARBALL
+			abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
+			if os.path.exists(abs_realpath):
+				dead = False
+			else:
+				# tarball link is stale, doesn't exist at all
+				dead = True
+				print(link + " dead; cleaning up")
+			if dead:
+				os.unlink(link)
+			for ext in [ '.hash.txt', '.gpg' ]:
+				extlink = link + ext
+				# if link to hash or gpg exists...
+				if dead and os.path.lexists(extlink):
+					# remove it!
+					print(extlink + " dead; cleaning up")
+					os.unlink(extlink)
+				# if the real hash file exists...
+				if not dead and os.path.exists(abs_realpath + ext):
+					# create link to hash!
+					if os.path.lexists(extlink):
+						os.unlink(extlink)
+					os.symlink(os.readlink(link) + ext, extlink)
+				if os.path.lexists(extlink):
+					# we found a link, let's make sure it has correct perms
+					os.lchown(extlink, uid, gid)
+			# CLEANUP LOOP START
 		print()
 		print("Cleaning up old hashes...")
 		# This check goes the other way -- find all hashes, and make sure that the corresponding tarball exists. Otherwise,
