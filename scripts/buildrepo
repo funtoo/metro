@@ -125,7 +125,8 @@ class SubArch(dbobject):
 			Column('failcount', Integer, index=True),
 			Column('full_date', DateTime, index=True),
 			Column('full_date_str', String, index=True),
-			Column('do_build', Boolean, index=True)
+			Column('do_build', Boolean, index=True),
+			Column('containers', String),
 		)
 
 class BuildDir(dbobject):
@@ -254,6 +255,7 @@ if __name__ == "__main__":
 					if complete and ( most_recent == None or most_recent < bdir.date ):
 						most_recent = bdir.date
 						most_recent_str = bdir.date_str
+						containers = bdir.containers
 						if bdir.full:
 							most_recent_full = bdir.date
 							most_recent_full_str = bdir.date_str
@@ -265,6 +267,7 @@ if __name__ == "__main__":
 				sa.date_str = most_recent_str
 				sa.full_date = most_recent_full
 				sa.full_date_str = most_recent_full_str
+				sa.containers = containers
 				sa.failcount = failcount
 				sa.path = path
 				# is subarch in our list of things to build, or just to maintain (ie. clean, for main repo)?
@@ -430,6 +433,8 @@ while len(sys.argv) > 1:
 				build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
 				if b.date:
 					build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
+					if b.containers == "openvz":
+						build_xml.attrib["openvz"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/" + b.build + "-" + b.subarch + "-openvz-" + build_xml.attrib["latest"] + ".tar.xz"
 					if not info_json_path:
 						bifn = os.path.join(b.path,b.date_str,"build-info.json")
 						if os.path.exists(bifn):
