@@ -141,6 +141,7 @@ class BuildDir(dbobject):
 			Column('subarch', String, index=True),
 			Column('date_str', String, index=True),
 			Column('complete', Boolean, index=True),
+			Column('containers', String),
 			Column('full', Boolean, index=True)
 		)
 
@@ -210,6 +211,7 @@ if __name__ == "__main__":
 					if not os.path.isdir(ipath):
 						continue
 					complete = False
+					openvz = False
 					bdir = BuildDir()
 					if sha1:
 						# QA build -- use this special method for getting datestamp of directory.
@@ -231,6 +233,9 @@ if __name__ == "__main__":
 							for match in glob.glob("%s/stage3*.tar.*" % ipath):
 								complete = True
 								break
+							for match in glob.glob("%s/funtoo-.*openvz.*.tar.*" % ipath):
+								openvz = True
+								break
 						except ValueError:
 							# didn't work? Use old date on purpose to force cleaning:
 							bdir.date = datetime.datetime(1980,1,1)
@@ -240,6 +245,7 @@ if __name__ == "__main__":
 					bdir.arch = arch
 					bdir.subarch = subarch
 					bdir.complete = complete
+					bdir.containers = "openvz" if openvz else None
 					if complete:
 						for match in glob.glob("%s/stage1*.tar.*" % ipath):
 							bdir.full = True
