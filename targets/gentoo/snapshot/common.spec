@@ -62,7 +62,7 @@ xz)
 	if [ -e /usr/bin/pxz ]; then
 		/usr/bin/pxz $tarout || die "Snapshot pxz failure"
 	else
-		xz $tarout || die "Snapshot xz failure"
+		xz --threads=0 $tarout || die "Snapshot xz failure"
 	fi
 	;;
 *)
