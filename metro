@@ -244,9 +244,8 @@ class Metro:
 				if abort:
 					break
 				else:
-
 					# TODO: do clean up of previous work directory:
-					if 'target/subpath' in settings:
+					if 'target/name/prefix' in settings:
 						workpath = settings['path/work']
 						# subpath = match for directories in path/work that match our build and may need cleaning up
 						subpath = settings['target/name/prefix']
@@ -255,7 +254,8 @@ class Metro:
 						worksplit.append(subpath)
 						cleanglob = '/'.join(worksplit) + '*'
 						for path in glob.glob(cleanglob):
-							print("Need to clean %s", path)
+							print("Cleaning", path)
+							subprocess.call(["rm","-rf",path])
 					try:
 						# This is where the target actually gets run
 						target.run()

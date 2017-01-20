@@ -167,7 +167,6 @@ class RepositoryDatabase(Database):
 setup = MetroSetup()
 settings = setup.getSettings()
 initial_path = settings["path/mirror"]
-cleanup_path = settings["path/foo"]
 
 if __name__ == "__main__":
 	if os.path.exists("cleaner.db"):
