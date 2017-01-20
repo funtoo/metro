@@ -234,7 +234,7 @@ if __name__ == "__main__":
 							for match in glob.glob("%s/stage3*.tar.*" % ipath):
 								complete = True
 								break
-							for match in glob.glob("%s/funtoo-.*openvz.*.tar.*" % ipath):
+							for match in glob.glob("%s/funtoo-*-openvz-*.tar.*" % ipath):
 								openvz = True
 								break
 						except ValueError:
