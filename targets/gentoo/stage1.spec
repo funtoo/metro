@@ -48,6 +48,12 @@ for b in buildpkgs: print(b)
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
+
+die() {
+	echo $*
+	exit 1
+}
+
 export ORIG_PKGDIR=$PKGDIR
 export PKGDIR=$ORIG_PKGDIR/initial_root
 # upgrade portage, if necessary, before we begin:
