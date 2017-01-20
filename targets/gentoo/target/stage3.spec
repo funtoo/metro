@@ -4,6 +4,7 @@
 [section target]
 
 name: stage3-$[:subarch]-$[:build]-$[:version]
+name/prefix: stage3-$[:subarch]-
 name/latest: stage3-$[path/mirror/link/suffix]
 name/full_latest: stage3-$[:subarch]-$[:build]-$[path/mirror/link/suffix]
 pkgcache: stage3

@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -OO
 
-import os, sys, getopt, types, subprocess
+import os, sys, getopt, types, subprocess, glob
 __app__ = os.path.basename(sys.argv[0])
 
 # we need this hard-coded path because we need a module here before we can parse our config file
@@ -244,6 +244,18 @@ class Metro:
 				if abort:
 					break
 				else:
+
+					# TODO: do clean up of previous work directory:
+					if 'target/subpath' in settings:
+						workpath = settings['path/work']
+						# subpath = match for directories in path/work that match our build and may need cleaning up
+						subpath = settings['target/name/prefix']
+
+						worksplit = workpath.split('/')[:-1]
+						worksplit.append(subpath)
+						cleanglob = '/'.join(worksplit) + '*'
+						for path in glob.glob(cleanglob):
+							print("Need to clean %s", path)
 					try:
 						# This is where the target actually gets run
 						target.run()
