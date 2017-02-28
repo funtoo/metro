@@ -514,7 +514,7 @@ while len(sys.argv) > 1:
 				if not os.path.exists(p+".gpg"):
 					print(p+".gpg")
 					sys.stdout.flush()
-					call("PATH=/bin/:/usr/bin gpg --use-agent --output %s.gpg --detach-sig %s" % (p, p), env=os.environ, shell=True) 
+					call("PATH=/bin/:/usr/bin gpg --batch --homedir /root/.gnupg --use-agent --output %s.gpg --detach-sig %s" % (p, p), env=os.environ, shell=True) 
 				if os.path.exists(p+".gpg"):
 					os.lchown(p+".gpg",uid,gid)
 				# CLEANUP LOOP START:
