@@ -38,9 +38,9 @@ if [ "$[release/type]" == "official" ]; then
 	[ ! -e "$snap" ] && echo "Required file $snap not found. Exiting" && exit 3
 
 	scomp="${snap##*.}"
-	if [ "$[snapshot/source/type]" == "meta-repo"]; then
+	if [ "$[snapshot/source/type]" == "meta-repo" ]; then
 		outdir=/var/git
-		[ ! -d $[path/chroot]/var/git] && install -d $[path/chroot]/var/git --mode=0755
+		[ ! -d $[path/chroot]/var/git ] && install -d $[path/chroot]/var/git --mode=0755
 	else
 		outdir=/usr
 		[ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
@@ -65,7 +65,7 @@ if [ "$[release/type]" == "official" ]; then
 			exit 1
 			;;
 	esac
-	if "$[snapshot/source/type]" == "git" ]; then
+	if [ "$[snapshot/source/type]" == "git" ]; then
 		# support for "live" git snapshot tarballs:
 		if [ -e $[path/chroot]/usr/portage/.git ]
 		then

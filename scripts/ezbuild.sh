@@ -30,7 +30,7 @@ do_help() {
 EOF
 }
 
-if [ $# -lt 3 ] || [ $# -gt 5 ]
+if [ $# -lt 2 ] || [ $# -gt 5 ]
 then
 	do_help
 	die "This script requires three, four or five arguments"

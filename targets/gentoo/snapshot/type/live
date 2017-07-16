@@ -16,7 +16,7 @@ then
 	( cd $[path/work]/portage; git gc --aggressive )
 	
 	tar -c -C $[path/work] portage > $tarout || die "Couldn't create tar archive"
-elif [ "$[snapshot/source/type]" = "meta-repo" ]
+elif [ "$[snapshot/source/type]" = "meta-repo" ]; then
 	cp -a $[path/cache/git]/$[snapshot/source/name] $[path/work]/meta-repo
 	( cd $[path/work]/meta-repo; rm -rf kits/* )
 	tar -c -C $[path/work] meta-repo > $tarout || die "Couldn't create tar archive"

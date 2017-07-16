@@ -15,6 +15,7 @@ export CLEAN_DELAY=0
 export EBEEP_IGNORE=0
 export EPAUSE_IGNORE=0
 export CONFIG_PROTECT="-* /etc/locale.gen"
+export UNINSTALL_IGNORE="/etc/portage/*"
 if [ -d /var/tmp/cache/compiler ]
 then
 	if ! [ -e /usr/bin/ccache ] 
@@ -159,6 +160,14 @@ else
 	ln -sf ../usr/portage/profiles/$[portage/profile:zap] /etc/make.profile || exit 1
 	echo "Set Portage profile to $[portage/profile:zap]."
 fi
+	if [ "$[snapshot/source/type]" == "meta-repo" ]; then
+		# make sure meta-repo is enabled correctly
+		rm -rf /usr/share/portage/config/repos.conf
+		rm -rf /etc/portage/repos.conf
+		ln -s /var/git/meta-repo/repos.conf /etc/portage/repos.conf
+		cd /var/git/meta-repo
+		git submodule update --no-fetch || exit 500
+	fi
 ]
 
 # do any cleanup that you need with things bind mounted here:

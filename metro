@@ -150,6 +150,8 @@ class Metro:
 			pass
 
 		abort = error = False
+		
+		initial_settings = self.setup.getSettings(self.metro_args)
 
 		if len(temp_targets):
 
@@ -160,7 +162,6 @@ class Metro:
 			# skip over in-progress multi-targets so it can build the next multi-target (allowing parallel
 			# multi-target builds.
 
-			initial_settings = self.setup.getSettings(self.metro_args)
 
 			multi_tsfn = initial_settings["path/mirror/target/control"] + "/.multi_progress"
 			self.multi_ts = lockFile(multi_tsfn)
