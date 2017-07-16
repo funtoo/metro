@@ -16,7 +16,11 @@ then
 	( cd $[path/work]/portage; git gc --aggressive )
 	
 	tar -c -C $[path/work] portage > $tarout || die "Couldn't create tar archive"
+elif [ "$[snapshot/source/type]" = "meta-repo" ]
+	cp -a $[path/cache/git]/$[snapshot/source/name] $[path/work]/meta-repo
+	( cd $[path/work]/meta-repo; rm -rf kits/* )
+	tar -c -C $[path/work] meta-repo > $tarout || die "Couldn't create tar archive"
 else
-	die "snapshot/type: live is only supported for snapshot/source/type: git"
+	die "snapshot/type: live is only supported for snapshot/source/type: git or meta-repo"
 fi
 ]

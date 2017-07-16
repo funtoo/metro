@@ -38,8 +38,13 @@ if [ "$[release/type]" == "official" ]; then
 	[ ! -e "$snap" ] && echo "Required file $snap not found. Exiting" && exit 3
 
 	scomp="${snap##*.}"
-
-	[ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
+	if [ "$[snapshot/source/type]" == "meta-repo"]; then
+		outdir=/var/git
+		[ ! -d $[path/chroot]/var/git] && install -d $[path/chroot]/var/git --mode=0755
+	else
+		outdir=/usr
+		[ ! -d $[path/chroot]/usr/portage ] && install -d $[path/chroot]/usr/portage --mode=0755
+	fi
 
 	echo "Extracting portage snapshot $snap..."
 
@@ -47,36 +52,27 @@ if [ "$[release/type]" == "official" ]; then
 		bz2)
 			if [ -e /usr/bin/pbzip2 ]
 			then
-				pbzip2 -dc "$snap" | tar xpf - -C $[path/chroot]/usr || exit 4
+				pbzip2 -dc "$snap" | tar xpf - -C $[path/chroot]$outdir || exit 4
 			else
-				tar xpf  "$snap" -C $[path/chroot]/usr || exit 4
+				tar xpf  "$snap" -C $[path/chroot]$outdir || exit 4
 			fi
 			;;
 		gz|xz)
-			tar xpf "$snap" -C $[path/chroot]/usr || exit 4
+			tar xpf "$snap" -C $[path/chroot]$outdir || exit 4
 			;;
 		*)
 			echo "Unrecognized source compression for $snap"
 			exit 1
 			;;
 	esac
-	# support for "live" git snapshot tarballs:
-	if [ -e $[path/chroot]/usr/portage/.git ]
-	then
-		cd $[path/chroot]/usr/portage 
-		git checkout $[snapshot/source/branch:lax] || exit 50
+	if "$[snapshot/source/type]" == "git" ]; then
+		# support for "live" git snapshot tarballs:
+		if [ -e $[path/chroot]/usr/portage/.git ]
+		then
+			cd $[path/chroot]/usr/portage 
+			git checkout $[snapshot/source/branch:lax] || exit 50
+		fi
 	fi
-else
-	if ! [ -e "$[path/cache/git]/$[snapshot/source/name]" ]
-	then
-		# create repo if it doesn't exist
-		git clone $[snapshot/source/remote] $[path/cache/git]/$[snapshot/source/name] || exit 45
-	fi
-	cd $[path/cache/git]/$[snapshot/source/name]
-	git pull
-	git clone $[path/cache/git]/$[snapshot/source/name] $[path/chroot]/usr/portage || exit 5
-	cd $[path/chroot]/usr/portage
-	git checkout $[snapshot/source/branch:lax] || exit 6
 fi
 ]
 

@@ -239,7 +239,7 @@ fi
 # exist in /tmp inside the chroot. So after this cleanup, any execution inside the chroot
 # won't work. This is normally okay.
 
-rm -rf $ROOT/tmp/* $ROOT/root/* $ROOT/usr/portage $ROOT/var/log/* || exit 5
+rm -rf $ROOT/tmp/* $ROOT/root/* $ROOT/var/git $ROOT/usr/portage $ROOT/var/log/* || exit 5
 rm -rf $ROOT/var/cache/*
 rm -f $ROOT/etc/.pwd.lock
 for x in passwd group shadow
