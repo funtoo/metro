@@ -72,6 +72,13 @@ if [ "$[release/type]" == "official" ]; then
 			cd $[path/chroot]/usr/portage 
 			git checkout $[snapshot/source/branch:lax] || exit 50
 		fi
+	elif [ "$[snapshot/source/type]" == "meta-repo" ]; then
+		# make sure meta-repo is enabled correctly
+		rm -rf $[path/chroot]/usr/share/portage/config/repos.conf
+		rm -rf $[path/chroot]/etc/portage/repos.conf
+		ln -s /var/git/meta-repo/repos.conf $[path/chroot]/etc/portage/repos.conf
+		cd $[path/chroot]/var/git/meta-repo
+		git submodule update --no-fetch || exit 500
 	fi
 fi
 ]
