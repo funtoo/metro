@@ -1,0 +1,8 @@
+[section steps]
+
+sync: [
+
+! [ -d "$[path/cache/git]" ] && install -d "$[path/cache/git]"
+
+ego sync --dest=$[path/cache/git] || die "couldn't do ego sync"
+]
