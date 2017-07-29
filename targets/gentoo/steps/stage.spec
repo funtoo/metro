@@ -105,6 +105,12 @@ cat > /etc/portage/package.keywords << "EOF"
 $[[portage/files/package.keywords:lax]]
 EOF
 fi
+if [ "$[portage/files/package.accept_keywords?]" = "yes" ]
+then
+cat > /etc/portage/package.accept_keywords << "EOF"
+$[[portage/files/package.accept_keywords:lax]]
+EOF
+fi
 if [ "$[portage/files/package.unmask?]" = "yes" ]
 then
 cat > /etc/portage/package.unmask << "EOF"
