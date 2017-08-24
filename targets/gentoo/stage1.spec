@@ -66,8 +66,8 @@ eselect python set python$[version/python] || die
 
 # FL-1398 update perl before we begin and try to update perl modules, if any installed/or will be installed.
 emerge -u --nodeps $eopts perl || die
+perl-cleaner --allmodules -- $eopts || die
 emerge $eopts -uDN world || die
-perl-cleaner --all -- $eopts || die
 
 cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]

@@ -503,7 +503,7 @@ while len(sys.argv) > 1:
 					continue
 				p = os.path.join(root, filename)
 				if os.path.islink(p):
-					links.append(os.path.join(dirnames,p))
+					links.append(p)
 					continue
 				print(p)
 				if not os.path.exists(p+".hash.txt"):
