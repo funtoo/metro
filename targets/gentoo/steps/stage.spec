@@ -160,6 +160,15 @@ EOF
 	for mixin in $mixins; do
 		echo $mixin >> /etc/portage/make.profile/parent
 	done
+	if [ -d /var/git/meta-repo ]; then
+		cd /var/git/meta-repo/kits/python-kit
+		pykit="$(git branch --remote --verbose --no-abbrev --contains | sed -rne 's/^[^\/]*\/([^\ ]+).*$/\1/p' | grep -v HEAD)"
+		cd /var/git/meta-repo/kits
+		for kit in $(ls -d *kit); do
+			ppath="/var/git/meta-repo/kits/$kit/profiles/funtoo/kits/python-kit/$pykit"
+			[ -d "$ppath" ] && echo "$kit:funtoo/kits/python-kit/$pykit" >> /etc/portage/make.profile/parent
+		done
+	fi
 	echo "New-style profile settings:"
 	cat /etc/portage/make.profile/parent
 else
