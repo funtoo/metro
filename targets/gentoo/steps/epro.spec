@@ -24,6 +24,8 @@ sys.exit(1)
 epro_setup: [
 # make sure we have the latest ego.
 emerge -u --oneshot ego
+# regen profiles
+epro update
 cat > /tmp/epro_getarch.py << "EOF"
 $[[files/epro_getarch]]
 EOF

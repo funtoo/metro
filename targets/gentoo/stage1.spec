@@ -73,7 +73,7 @@ cat > /tmp/build.py << "EOF"
 $[[files/pythonjunk]]
 EOF
 
-export buildpkgs="$(python /tmp/build.py)"
+export buildpkgs="$(python /tmp/build.py) dev-vcs/git"
 
 
 # Gentoo hard-codes the intended python targets into a base profile. Funtoo extracts it from variables

@@ -10,7 +10,7 @@ class StageTarget(ChrootTarget):
 
 		# define gentoo specific mounts
 		if "path/distfiles" in self.settings:
-			self.mounts["/usr/portage/distfiles"] = self.settings["path/distfiles"]
+			self.mounts["/var/cache/portage/distfiles"] = self.settings["path/distfiles"]
 
 	def run(self):
 		ChrootTarget.run(self)

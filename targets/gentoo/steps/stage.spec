@@ -5,6 +5,8 @@
 #[option parse/lax]
 
 setup: [
+# fix for bogus stages with buggy ego
+sed -i -e /%s/d /etc/portage/make.profile/parent
 /usr/sbin/env-update
 gcc-config 1
 source /etc/profile
