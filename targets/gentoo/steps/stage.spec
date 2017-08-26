@@ -18,6 +18,7 @@ export EBEEP_IGNORE=0
 export EPAUSE_IGNORE=0
 export CONFIG_PROTECT="-* /etc/locale.gen"
 export UNINSTALL_IGNORE="/etc/portage/*"
+export DISTDIR="/var/cache/portage/distfiles"
 if [ -d /var/tmp/cache/compiler ]
 then
 	if ! [ -e /usr/bin/ccache ] 
