@@ -5,8 +5,6 @@
 #[option parse/lax]
 
 setup: [
-# fix for bogus stages with buggy ego
-sed -i -e /%s/d /etc/portage/make.profile/parent
 /usr/sbin/env-update
 gcc-config 1
 source /etc/profile
@@ -160,6 +158,8 @@ EOF
 	for mixin in $mixins; do
 		echo $mixin >> /etc/portage/make.profile/parent
 	done
+	# fix for bogus stages with buggy ego
+	sed -i -e /%s/d /etc/portage/make.profile/parent
 	if [ -d /var/git/meta-repo ]; then
 		cd /var/git/meta-repo/kits/python-kit
 		pykit="$(git branch --remote --verbose --no-abbrev --contains | sed -rne 's/^[^\/]*\/([^\ ]+).*$/\1/p' | grep -v HEAD)"
