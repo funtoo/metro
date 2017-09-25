@@ -1,7 +1,7 @@
 [collect ./source/stage3.spec]
 [collect ./target/stage4.spec]
 [collect ./steps/container.spec]
-[collect ./steps/capture/tar.spec]
+[collect ./steps/capture/lxc-tar.spec]
 
 [section stage4]
 
@@ -10,6 +10,10 @@ target/name: lxc
 [section target]
 
 sys: lxc
+
+[section path]
+
+lxc: $[path/tmp]/work/lxc
 
 [section steps]
 
