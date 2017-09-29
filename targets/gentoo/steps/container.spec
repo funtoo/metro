@@ -73,7 +73,7 @@ rm -rf /etc/ssh/ssh_host* /var/tmp/* /var/log/* /tmp/* /root/.bash_history /etc/
 
 # openrc system id
 echo "Setting system type to $[target/sys]..."
-echo 'rc_sys="$[target/sys]"' >> /etc/rc.conf
+sed -i 's/^#rc_sys=""/rc_sys="$[target/sys]"/' /etc/rc.conf
 
 # TESTS
 echo "Performing QA checks..."
