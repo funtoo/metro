@@ -45,7 +45,6 @@ builds = (
 	"funtoo-experimental",
 	"funtoo-current",
 	"funtoo-current-hardened",
-	"funtoo-stable",
 )
 
 arches = (
@@ -409,7 +408,7 @@ while len(sys.argv) > 1:
 		for s in subarch_builds:
 			subarch_xml = etree.Element("subarch")
 			subarch_xml.attrib["name"] = s
-			# we treat "hardened' and "pure64" as "variants" of the main build (current/stable/experimental) -- to make things clearer for users.
+			# we treat "hardened' and "pure64" as "variants" of the main build (current/experimental) -- to make things clearer for users.
 			count = 1
 			info_json_path = None
 			for b in subarch_builds[s]:
