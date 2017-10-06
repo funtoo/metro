@@ -78,13 +78,13 @@ cat > ${metadata_yaml} << EOF
 architecture: ${my_arch}
 creation_date: $(date +%s)
 name: $[target/build]-$[target/arch_desc]-$[target/subarch]
-desciption : ${os_name} ${type_name} ${subarch_name} ${my_arch_desc} ${variety_name} $(date +%F)
+description : ${os_name} ${type_name} ${subarch_name} ${my_arch_desc} ${variety_name} $(date +%F)
 templates:
-	/etc/conf.d/hostname:
-		when:
-			- create
-			- copy
-		template: hostname.tpl
+  /etc/conf.d/hostname:
+    when:
+	  - create
+	  - copy
+	template: hostname.tpl
 EOF
 
 cd $[path/lxd] && tar cpf $tarout --xattrs --acls *
