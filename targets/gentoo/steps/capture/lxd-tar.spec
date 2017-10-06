@@ -77,14 +77,15 @@ subarch_name="${first_letter}${subarch_name:1}"
 cat > ${metadata_yaml} << EOF
 architecture: ${my_arch}
 creation_date: $(date +%s)
-name: $[target/build]-$[target/arch_desc]-$[target/subarch]
-description : ${os_name} ${type_name} ${subarch_name} ${my_arch_desc} ${variety_name} $(date +%F)
+properties:
+  name: $[target/build]-$[target/arch_desc]-$[target/subarch]
+  description: ${os_name} ${type_name} ${subarch_name} ${my_arch_desc} ${variety_name} $(date +%F)
 templates:
   /etc/conf.d/hostname:
     when:
-	  - create
-	  - copy
-	template: hostname.tpl
+      - create
+      - copy
+    template: hostname.tpl
 EOF
 
 cd $[path/lxd] && tar cpf $tarout --xattrs --acls *
