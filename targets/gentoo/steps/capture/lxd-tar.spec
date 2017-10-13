@@ -17,15 +17,14 @@ fi
 tarout="$[path/mirror/target]"
 tarout="${tarout%.*}"
 
-if [ ! -d $[path/lxd] ]
+if [ -d $[path/lxd] ]
 then
-	install -d $[path/lxd]
+	rm -rf $[path/lxd]
 fi
-
+install -d $[path/lxd]
 mv $[path/chroot/stage] $[path/lxd]/rootfs
-if [ ! -d $[path/lxd]/templates ] ; then
-	install -d $[path/lxd]/templates
-fi
+
+install -d $[path/lxd]/templates
 echo 'hostname="{{ container.name }}"' > $[path/lxd]/templates/hostname.tpl
 
 metadata_yaml="$[path/lxd]/metadata.yaml"
