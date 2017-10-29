@@ -41,18 +41,16 @@ class MetroSetup(object):
 		self.configfile = os.path.expanduser("~/.metro")
 		# config settings setup
 
-		if not os.path.exists(self.configfile):
-			print("Please copy %s to ~/.metro and customize for your environment." % (libdir+"/metro.conf"))
-			return None
 		if self.verbose:
-				print("Using main configuration file %s.\n" % self.configfile)
+			print("Using main configuration file %s.\n" % self.configfile)
 		settings = self.flexdata.collection(self.debug)
 
 		if os.path.exists(self.configfile):
 			settings.collect(self.configfile, None)
 			settings["path/config"] = os.path.dirname(self.configfile)
 		else:
-			raise RuntimeError("config file '%s' not found" % self.configfile)
+			raise RuntimeError("config file '%s' not found\nPlease copy %s to ~/.metro and customize for your environment." %
+				(self.configfile, (os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + "/metro.conf")))
 
 		for key, value in list(args.items()):
 			if key[-1] == ":":
