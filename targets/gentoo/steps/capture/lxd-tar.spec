@@ -17,10 +17,7 @@ fi
 tarout="$[path/mirror/target]"
 tarout="${tarout%.*}"
 
-if [ -d $[path/lxd] ]
-then
-	rm -rf $[path/lxd]
-fi
+rm -rf $[path/lxd]
 install -d $[path/lxd]
 mv $[path/chroot/stage] $[path/lxd]/rootfs
 
@@ -123,4 +120,6 @@ then
 fi
 
 chown $[path/mirror/owner]:$[path/mirror/group] $[path/mirror/target]
+
+rm -rf $[path/lxd]
 ]
