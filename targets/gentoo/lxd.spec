@@ -29,4 +29,5 @@ none /lxc/funtoo/sys sysfs defaults 0 0
 none /lxc/funtoo/dev/shm tmpfs defaults 0 0
 none /lxc/funtoo/libexec/rc/init.d tmpfs defaults 0 0
 EOF
+sed -i -E -e '/^[*]\s+soft/d' -e '/^[*]\s+hard/d' /etc/security/limits.conf
 ]
