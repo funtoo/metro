@@ -1,0 +1,379 @@
+#!/usr/bin/python3
+
+
+import curses
+import os
+import re
+import requests
+import subprocess
+import sys
+
+from datetime import date
+from lxml import html
+from pathlib import Path
+
+os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append("../modules")
+
+from metro_support import MetroSetup
+
+class AutomatedSetup:
+
+
+	def __init__(self):
+		try:
+			self.settings = MetroSetup().getSettings()
+		except RuntimeError as e:
+			# TODO Code this to create ~/.metro
+			print(e)
+			sys.exit(1)
+
+
+	def createMirrorDirectory(self):
+		"""Creates the mirror directory, does nothing if it already exists"""
+		mirror_dir = Path(self.settings["path/mirror"])
+		try:
+			mirror_dir.mkdir(parents=True, exist_ok=True)
+		except FileExistsError as err:
+			print(f"{mirror_dir} does not appear to be a directory. Aborting.")
+			sys.exit(1)
+
+
+	def _generateSubarchList(self, path, arch):
+		"""Returns a list of subarches. [subarch1, subarch2, ...]"""
+
+		subarch_path = path.joinpath(arch, "subarch")
+		if not subarch_path.exists():
+			return []
+		subarches = [subarch.name for subarch in subarch_path.iterdir() if subarch.is_dir()]
+		subarches.sort()
+		return subarches
+
+
+	def getAllAvailableBuildTypes(self):
+		"""Parses core-kit/profiles/funtoo/1.0/linux-gnu/arch/<arch> for available subarches
+		Returns a map of arches and subarches in the form of:
+		{arch : [subarch1, subarch2, ...], {arch2 : [subarch1, subarch2, ...], ...}"""
+
+		comp_proc = subprocess.run(["/usr/bin/portageq", "get_repo_path", "/", "core-kit"], stdout=subprocess.PIPE, encoding="utf-8")
+		if comp_proc.returncode != 0:
+			# TODO Code this section.
+			return []
+
+		# It's usually a bad practice but I'm going to hard code some values in here to make code simpler
+		# Currently there are 5 main build arches , x86-64bit, x86-32bit, pure64, arm-64bit and arm-32bit
+		# We need to parse the subarch directory of each of them to create our lists.
+		# These directories are currently located inside of the core-kit module at profiles/funtoo/1.0/linux-gnu/arch
+		core_kit_dir = comp_proc.stdout.strip()
+		arch_dir = Path(core_kit_dir).joinpath("profiles", "funtoo", "1.0", "linux-gnu", "arch")
+		arches = ("x86-64bit", "x86-32bit", "pure64", "arm-64bit", "arm-32bit")
+		arch_map = {}
+		for arch in arches:
+			arch_map[arch] = self._generateSubarchList(arch_dir, arch)
+		return arch_map
+
+
+	def parseMirrorDirectory(self, possible_builds):
+		"""Parses mirror directory for available builds and returns a map in the form of:
+		{build_type: {arch: [subarches...] , arch2: [subarches...]}, build_type2: {arch: [subarches...], ...}, ...}
+		Note: currently supported build types are either funtoo-current or funtoo-current-hardened"""
+
+		# Let's get a list of stage3s in mirror directory.
+		# We'll strip off 'stage3-' and the 'date-tar.*' strings before adding to list.
+		# Only add if not in list already
+		stage3s = []
+		for dirpath, dirs, files in os.walk(self.settings["path/mirror"]):
+			for file in files:
+				if file.startswith("stage3-")\
+					and file.endswith(("tar.bz2", "tar.gz", "tar.xz"))\
+					and not Path(dirpath, file).is_symlink():
+						name = file[7:].rsplit("-", 3)[0]
+						if name not in stage3s:
+							stage3s.append(name)
+
+		# We'll assume if there is a stage3, it's already set up correctly for that build.
+		builds = {}
+		hardened = "funtoo-current-hardened"
+		current = "funtoo-current"
+		for stage in stage3s:
+			# Lets first decide if it's a hardened build or regular build
+			# if it's not funtoo-current or funtoo-current-hardened then we just ignore it
+			build = ""
+			if stage.find("-" + hardened) != -1:
+				build = hardened
+				stage = stage[:stage.find("-" + hardened)]
+			elif stage.find("-" + current) != -1:
+				build = current
+				stage = stage[:stage.find("-" + current)]
+			else:
+				continue
+			for arch, subarches in possible_builds.items():
+				for subarch in subarches:
+					if stage == subarch:
+						if build in builds.keys():
+							if arch in builds[build].keys():
+								if subarch not in builds[build][arch]:
+									builds[build][arch].append(subarch)
+							else:
+								builds[build][arch] = [subarch]
+						else:
+							builds[build] = {arch: [subarch]}
+
+		return builds
+
+
+	def setupNewBuild(self, build_object):
+		"""Sets up a new build based on the information in build_object. This method will
+		also download a new stage3 via the 'wget' command"""
+
+		# We need to parse the subarch directory on the build mirror so we can compare dates and
+		# get the most recent stage3. We also need the date to set up our mirror properly
+		# Convert date to string when we're done. Easier than converting every time we use it
+		url = f"https://build.funtoo.org/{build_object.build}/{build_object.arch}/{build_object.subarch}"
+		response = requests.get(url)
+		tree = html.fromstring(response.content)
+		links = tree.xpath("//a/text()")
+		pattern = re.compile(r"^\d{4}-\d{2}-\d{2}/")
+		most_recent = None
+		for link in links:
+			match = pattern.fullmatch(link)
+			if match is not None:
+				date_split = link.rstrip("/").split("-", 2)
+				next_date = date(int(date_split[0]), int(date_split[1]), int(date_split[2]))
+				if most_recent is None:
+					most_recent = next_date
+				elif next_date > most_recent:
+					most_recent = next_date
+		most_recent = str(most_recent)
+
+		# Now that we got the date we can set everything up. See metro wiki for info
+		# on what we are creating here
+		build = Path(self.settings["path/mirror"]).joinpath(build_object.build)
+		build.joinpath("snapshots").mkdir(parents=True, exist_ok=True)
+
+		subarch_dir = build.joinpath(build_object.arch, build_object.subarch)
+		subarch_dir.mkdir(parents=True, exist_ok=True)
+
+		stage_dir = subarch_dir.joinpath(most_recent)
+		stage_dir.mkdir(parents=True, exist_ok=True)
+
+		control = subarch_dir.joinpath(".control")
+		control.mkdir(parents=True, exist_ok=True)
+
+		strategy = control.joinpath("strategy")
+		strategy.mkdir(parents=True, exist_ok=True)
+
+		version = control.joinpath("version")
+		version.mkdir(parents=True, exist_ok=True)
+
+		with open(strategy.joinpath("build"), mode='w', encoding="utf-8") as f:
+			print("local", file=f)
+
+		with open(strategy.joinpath("seed"), mode='w', encoding="utf-8") as f:
+			print("stage3", file=f)
+
+		with open(version.joinpath("stage3"), mode='w', encoding="utf-8") as f:
+			print(most_recent, file=f)
+
+		stage3 = f"stage3-{build_object.subarch}-{build_object.build}-{most_recent}.tar.xz"
+		stage3_url = f"{url}/{most_recent}/{stage3}"
+
+		# We need to remove the stage3 on the rare chance it exists, otherwise wget will download it
+		# with a modified name.
+		s3_path = Path(f"{stage_dir}/{stage3}")
+		if (s3_path.exists()):
+			s3_path.unlink()
+
+		result = None
+		try:
+			result = subprocess.run(f"wget {stage3_url} || rm -f {stage3}", shell=True, cwd=stage_dir)
+		except:
+			# Catch all exceptions so we can delete any partially downloaded files
+			s3_path.unlink()
+			print("Something went wrong downloading stage3")
+			exit(1)
+
+		if result.returncode != 0:
+			print("Something went wrong downloading stage3")
+			exit(result.returncode)
+
+
+	def setupRemoteBuild(self, build_object):
+		"""Sets up a remote build based on the information in build_object."""
+
+		build = Path(self.settings["path/mirror"]).joinpath(build_object.build)
+		build.joinpath("snapshots").mkdir(parents=True, exist_ok=True)
+		control = build.joinpath(build_object.arch, build_object.subarch, ".control")
+		control.mkdir(parents=True, exist_ok=True)
+		strategy = control.joinpath("strategy")
+		strategy.mkdir(parents=True, exist_ok=True)
+		remote = control.joinpath("remote")
+		remote.mkdir(parents=True, exist_ok=True)
+
+		with open(strategy.joinpath("build"), mode='w', encoding="utf-8") as f:
+			print("remote", file=f)
+
+		with open(strategy.joinpath("seed"), mode='w', encoding="utf-8") as f:
+			print("stage3", file=f)
+
+		with open(remote.joinpath("build"), mode='w', encoding="utf-8") as f:
+			print(build_object.build, file=f)
+
+		with open(remote.joinpath("arch_desc"), mode='w', encoding="utf-8") as f:
+			print(build_object.arch, file=f)
+
+		with open(remote.joinpath("subarch"), mode='w', encoding="utf-8") as f:
+			print(build_object.remote_subarch, file=f)
+
+
+class BuildObject:
+
+	def __init__(self, build, arch, subarch, build_type, stages, remote_subarch, run_build):
+		self.build = build
+		self.arch = arch
+		self.subarch = subarch
+		self.build_type = build_type
+		self.stages = stages
+		self.remote_subarch = remote_subarch
+		self.run_build = run_build
+
+
+class CursesBuildSelector:
+
+
+	def __init__(self, possible_builds, available_builds):
+		self.possible_builds = possible_builds
+		self.available_builds = available_builds
+
+
+	def _checkKey(self, key, range):
+		if not key.isdigit():
+			return False
+		if int(key) not in range:
+			return False
+		return True
+
+
+	def _displayChooser(self, stdscr, values, heading):
+		stdscr.clear()
+		start_x = 2
+		start_y = 2
+		stdscr.addstr(start_y, start_x, f"{heading}:")
+		start_y += 1
+		index = 1
+		for value in values:
+			stdscr.addstr(start_y, start_x, f"{index}. {value}")
+			index += 1
+			start_y += 1
+		stdscr.addstr(start_y, start_x, "Enter a number(q to quit):")
+		num = 0
+		curses.echo()
+		key = stdscr.getstr().decode(encoding="utf-8")
+		while key != 'q' and not self._checkKey(key, range(1, len(values) + 1)):
+			stdscr.addstr(start_y, start_x, f"Invalid entry '{key}'. Enter a number(q to quit): ")
+			stdscr.refresh()
+			stdscr.clrtoeol()
+			key = stdscr.getstr().decode(encoding="utf-8")
+		if key == 'q':
+			curses.endwin()
+			exit(0)
+		curses.noecho()
+		return values[int(key) - 1]
+
+
+	def getBuild(self, stdscr):
+		build = self._displayChooser(stdscr, ["funtoo-current", "funtoo-current-hardened"], "Pick a type to build")
+		arch = self._displayChooser(stdscr, list(possible_builds.keys()), "Pick an arch to build")
+		subarch = self._displayChooser(stdscr, possible_builds[arch], "Pick a subarch to build")
+
+		# We have basically three types of builds we can do:
+		# 1. Local build if it already exists on system
+		# 2. Remote build if there are other builds of the same build type and arch on the system
+		# 3. New local build via downloading a fresh stage3 from build.funtoo.org
+		source = {"local": f"Local build (Build from existing stage3 for {subarch} on system)",
+			  "remote": "Remote build (Build from another subarch on system)",
+			  "new": f"New build (Download a new stage3 for {subarch} from build.funtoo.org and build)"
+			  }
+		type_of_build = ["new"]
+		if len(available_builds) != 0:
+			if build in available_builds:
+				if arch in available_builds[build]:
+					if subarch in available_builds[build][arch]:
+						type_of_build.append("local")
+					for sa in available_builds[build][arch]:
+						if sa != subarch:
+							type_of_build.append("remote")
+							break
+
+		option_display = []
+		for opt in type_of_build:
+			option_display.append(source[opt])
+		build_type = self._displayChooser(stdscr, option_display, "Pick a build option to use")
+		for s in source:
+			if build_type == source[s]:
+				build_type = s
+				break
+
+		# We need to know what to build. Freshen is only available for a local or new build
+		stages_to_build = ["full", "full+openvz", "full+lxd"]
+		if build_type != "remote" :
+			stages_to_build.append("freshen")
+			stages_to_build.append("freshen+openvz")
+			stages_to_build.append("freshen+lxd")
+		stages = self._displayChooser(stdscr, stages_to_build, "Pick what to build")
+
+		# If we are asked for a remote build then we need to ask which subarch to build from
+		# in case there is more than one choice. Remove the subarch we are building from list
+		# of choices since that would fall under a local build.
+		remote_subarch = ""
+		if build_type == "remote":
+			sub_list = list(available_builds[build][arch])
+			try:
+				sub_list.remove(subarch)
+			except ValueError as e:
+				pass
+			remote_subarch = self._displayChooser(stdscr, sub_list, "Pick a remote subarch to use for building")
+
+		# Ask if we should run the build
+		start = self._displayChooser(stdscr, ["Yes", "No"], "Do you want to start the build now? (If 'No' setup will still run")
+		run_build = False
+		if start == "Yes":
+			run_build = True
+		return BuildObject(build, arch, subarch, build_type, stages, remote_subarch, run_build)
+
+
+if __name__ == "__main__":
+
+	# 1. Create AutomatedSetup class which will get metro settings
+	auto_setup = AutomatedSetup()
+
+	# 2. Lets create a collection of all currently possible builds
+	possible_builds = auto_setup.getAllAvailableBuildTypes()
+
+	# 3. Check / create mirror directory
+	auto_setup.createMirrorDirectory()
+
+	# 4. Parse available builds from mirror directory
+	available_builds = auto_setup.parseMirrorDirectory(possible_builds)
+
+	# 5. Find out what user wants to build.
+	curses_chooser = CursesBuildSelector(possible_builds, available_builds)
+	build_obj = curses.wrapper(curses_chooser.getBuild)
+
+	# 6. Setup build.
+	if build_obj.build_type == "remote":
+		auto_setup.setupRemoteBuild(build_obj)
+
+	elif build_obj.build_type == "new":
+		auto_setup.setupNewBuild(build_obj)
+
+	# 7. Run build
+	if build_obj.run_build:
+		ezbuild_sh = Path(__file__).resolve().parents[1].joinpath("scripts/ezbuild.sh")
+		build_cmd = f"{ezbuild_sh} {build_obj.build} {build_obj.arch} {build_obj.subarch} {build_obj.stages}"
+		result = subprocess.run(build_cmd, shell=True)
+		if result.returncode != 0:
+			print("Something went wrong during building. See log for details")
+			exit(result.returncode)
+
+
