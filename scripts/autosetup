@@ -17,14 +17,17 @@ sys.path.append("../modules")
 
 from metro_support import MetroSetup
 
+
 class AutomatedSetup:
 
 
 	def __init__(self):
+
 		try:
 			self.settings = MetroSetup().getSettings()
 		except RuntimeError as e:
 			# TODO Code this to create ~/.metro
+
 			print(e)
 			sys.exit(1)
 
@@ -181,7 +184,7 @@ class AutomatedSetup:
 		# We need to remove the stage3 on the rare chance it exists, otherwise wget will download it
 		# with a modified name.
 		s3_path = Path(f"{stage_dir}/{stage3}")
-		if (s3_path.exists()):
+		if s3_path.exists():
 			s3_path.unlink()
 
 		result = None
@@ -227,15 +230,27 @@ class AutomatedSetup:
 
 
 class BuildObject:
+	build = None
+	arch = None
+	subarch = None
+	build_type = None
+	stages = None
+	remote_subarch = None
+	run_build = None
 
-	def __init__(self, build, arch, subarch, build_type, stages, remote_subarch, run_build):
-		self.build = build
-		self.arch = arch
-		self.subarch = subarch
-		self.build_type = build_type
-		self.stages = stages
-		self.remote_subarch = remote_subarch
-		self.run_build = run_build
+	def displayCurrentOptions(self):
+		option_list = [self.build, self.arch, self.subarch, self.build_type, self.stages, self.remote_subarch, self.run_build]
+		ret_str = ""
+		for option in option_list:
+			if option is None:
+				break
+			if option == "":
+				continue
+			if len(ret_str) == 0:
+				ret_str = f"Current menu: {option}"
+			else:
+				ret_str = f"{ret_str} / {option}"
+		return ret_str
 
 
 class CursesBuildSelector:
@@ -254,10 +269,12 @@ class CursesBuildSelector:
 		return True
 
 
-	def _displayChooser(self, stdscr, values, heading):
+	def _displayChooser(self, stdscr, build_object, values, heading):
 		stdscr.clear()
 		start_x = 2
 		start_y = 2
+		stdscr.addstr(start_y, start_x, build_object.displayCurrentOptions())
+		start_y += 1
 		stdscr.addstr(start_y, start_x, f"{heading}:")
 		start_y += 1
 		index = 1
@@ -265,12 +282,12 @@ class CursesBuildSelector:
 			stdscr.addstr(start_y, start_x, f"{index}. {value}")
 			index += 1
 			start_y += 1
-		stdscr.addstr(start_y, start_x, "Enter a number(q to quit):")
+		stdscr.addstr(start_y, start_x, "Enter a number (or 'p' for previous menu, 'q' to quit): ")
 		num = 0
 		curses.echo()
 		key = stdscr.getstr().decode(encoding="utf-8")
-		while key != 'q' and not self._checkKey(key, range(1, len(values) + 1)):
-			stdscr.addstr(start_y, start_x, f"Invalid entry '{key}'. Enter a number(q to quit): ")
+		while key != 'q' and key != 'p' and not self._checkKey(key, range(1, len(values) + 1)):
+			stdscr.addstr(start_y, start_x, f"Invalid entry '{key}'. Enter a number (or 'p' for previous menu, 'q' to quit): ")
 			stdscr.refresh()
 			stdscr.clrtoeol()
 			key = stdscr.getstr().decode(encoding="utf-8")
@@ -278,13 +295,28 @@ class CursesBuildSelector:
 			curses.endwin()
 			exit(0)
 		curses.noecho()
+		if key == 'p':
+			return None
 		return values[int(key) - 1]
 
 
-	def getBuild(self, stdscr):
-		build = self._displayChooser(stdscr, ["funtoo-current", "funtoo-current-hardened"], "Pick a type to build")
-		arch = self._displayChooser(stdscr, list(possible_builds.keys()), "Pick an arch to build")
-		subarch = self._displayChooser(stdscr, possible_builds[arch], "Pick a subarch to build")
+	def setBuild(self, stdscr, build_object):
+		build_object.build = self._displayChooser(stdscr, build_object, ["funtoo-current", "funtoo-current-hardened"], "Pick a type to build")
+
+
+	def setArch(self, stdscr, build_object):
+		build_object.arch = self._displayChooser(stdscr, build_object, list(possible_builds.keys()), "Pick an arch to build")
+
+
+	def setSubarch(self, stdscr, build_object):
+		build_object.subarch = self._displayChooser(stdscr, build_object, possible_builds[build_object.arch], "Pick a subarch to build")
+
+
+	def setBuildType(self, stdscr, build_object):
+
+		build = build_object.build
+		arch = build_object.arch
+		subarch = build_object.subarch
 
 		# We have basically three types of builds we can do:
 		# 1. Local build if it already exists on system
@@ -308,66 +340,163 @@ class CursesBuildSelector:
 		option_display = []
 		for opt in type_of_build:
 			option_display.append(source[opt])
-		build_type = self._displayChooser(stdscr, option_display, "Pick a build option to use")
+		build_type = self._displayChooser(stdscr, build_object, option_display, "Pick a build option to use")
 		for s in source:
 			if build_type == source[s]:
 				build_type = s
 				break
 
+		build_object.build_type = build_type
+
+
+	def setStages(self, stdscr, build_object):
 		# We need to know what to build. Freshen is only available for a local or new build
 		stages_to_build = ["full", "full+openvz", "full+lxd"]
-		if build_type != "remote" :
+		if build_object.build_type != "remote" :
 			stages_to_build.append("freshen")
 			stages_to_build.append("freshen+openvz")
 			stages_to_build.append("freshen+lxd")
-		stages = self._displayChooser(stdscr, stages_to_build, "Pick what to build")
+		build_object.stages = self._displayChooser(stdscr, build_object, stages_to_build, "Pick what to build")
 
+
+	def setRemoteSubarch(self, stdscr, build_object):
 		# If we are asked for a remote build then we need to ask which subarch to build from
 		# in case there is more than one choice. Remove the subarch we are building from list
 		# of choices since that would fall under a local build.
 		remote_subarch = ""
-		if build_type == "remote":
-			sub_list = list(available_builds[build][arch])
+		if build_object.build_type == "remote":
+			sub_list = list(available_builds[build_object.build][build_object.arch])
 			try:
-				sub_list.remove(subarch)
+				sub_list.remove(build_object.subarch)
 			except ValueError as e:
 				pass
-			remote_subarch = self._displayChooser(stdscr, sub_list, "Pick a remote subarch to use for building")
+			remote_subarch = self._displayChooser(stdscr, build_object, sub_list, "Pick a remote subarch to use for building")
+		build_object.remote_subarch = remote_subarch
 
+
+	def setRunBuild(self, stdscr, build_object):
 		# Ask if we should run the build
-		start = self._displayChooser(stdscr, ["Yes", "No"], "Do you want to start the build now? (If 'No' setup will still run")
-		run_build = False
-		if start == "Yes":
-			run_build = True
-		return BuildObject(build, arch, subarch, build_type, stages, remote_subarch, run_build)
+		start = self._displayChooser(stdscr, build_object, ["Yes", "No"], "Do you want to start the build now? (If 'No' setup will still run)")
+		if start is None:
+			build_object.run_build = None
+		elif start == "Yes":
+			build_object.run_build = True
+		else:
+			build_object.run_build = False
+
+
+	def getBuildOptions(self, stdscr):
+
+		build_object = BuildObject()
+		# Set options for build. If the option being set comes back as 'None' then
+		# we assume user requested we backup so we set the previous option to 'None'
+		# and then loop back around to reset it.
+		while True:
+			# Set build
+			if build_object.build is None:
+				self.setBuild(stdscr, build_object)
+				if build_object.build is None:
+					# No previous option so just loop back around
+					continue
+
+			# Set arch
+			if build_object.arch is None:
+				self.setArch(stdscr, build_object)
+				if build_object.arch is None:
+					build_object.build = None
+					continue
+
+			# Set subarch
+			if build_object.subarch is None:
+				self.setSubarch(stdscr, build_object)
+				if build_object.subarch is None:
+					build_object.arch = None
+					continue
+
+			# Set build_type
+			if build_object.build_type is None:
+				self.setBuildType(stdscr, build_object)
+				if build_object.build_type is None:
+					build_object.subarch = None
+					continue
+
+			# Set stages
+			if build_object.stages is None:
+				self.setStages(stdscr, build_object)
+				if build_object.stages is None:
+					build_object.build_type = None
+					continue
+
+			# Set remote_subarch
+			if build_object.remote_subarch is None:
+				self.setRemoteSubarch(stdscr, build_object)
+				if build_object.remote_subarch is None:
+					build_object.stages = None
+					continue
+
+			# Set run_build
+			if build_object.run_build is None:
+				self.setRunBuild(stdscr, build_object)
+				if build_object.run_build is None:
+					# If build_type is not "remote" then we need to set both stages and
+					# remote_subarch to None since remote_subarch choice isn't displayed
+					if build_object.build_type != "remote":
+						build_object.stages = None
+						build_object.remote_subarch = None
+						continue
+					build_object.remote_subarch = None
+					continue
+
+			# If we make it here then everything is set, just return build_object
+			return build_object
+
+
+def createMetroConf(user_metro_conf):
+
+	metro_conf = Path(os.path.realpath(os.path.basename(__file__))).parent.parent.joinpath("metro.conf")
+	with open(metro_conf, mode = 'r', encoding="utf-8") as mc:
+		with open(user_metro_conf, mode = 'w', encoding="utf-8") as umc:
+			mc_lines = mc.read().splitlines()
+			for line in mc_lines:
+				if line.startswith("install:"):
+					print(f"install: {metro_conf.parent}", file=umc)
+				else:
+					print(line, file=umc)
 
 
 if __name__ == "__main__":
 
-	# 1. Create AutomatedSetup class which will get metro settings
+	# 1. Check for "~/.metro". We need to create it if it doesn't exist
+	user_conf = Path(os.path.expanduser("~/.metro"))
+	if not user_conf.exists():
+		print(f"{user_conf} does not exist. Creating one for you.")
+		createMetroConf(user_conf)
+		print(f"{user_conf} created using default values.")
+
+	# 2. Create AutomatedSetup class which will get metro settings
 	auto_setup = AutomatedSetup()
 
-	# 2. Lets create a collection of all currently possible builds
+	# 3. Lets create a collection of all currently possible builds
 	possible_builds = auto_setup.getAllAvailableBuildTypes()
 
-	# 3. Check / create mirror directory
+	# 4. Check / create mirror directory
 	auto_setup.createMirrorDirectory()
 
-	# 4. Parse available builds from mirror directory
+	# 5. Parse available builds from mirror directory
 	available_builds = auto_setup.parseMirrorDirectory(possible_builds)
 
-	# 5. Find out what user wants to build.
+	# 6. Find out what user wants to build.
 	curses_chooser = CursesBuildSelector(possible_builds, available_builds)
-	build_obj = curses.wrapper(curses_chooser.getBuild)
+	build_obj = curses.wrapper(curses_chooser.getBuildOptions)
 
-	# 6. Setup build.
+	# 7. Setup build.
 	if build_obj.build_type == "remote":
 		auto_setup.setupRemoteBuild(build_obj)
 
 	elif build_obj.build_type == "new":
 		auto_setup.setupNewBuild(build_obj)
 
-	# 7. Run build
+	# 8. Run build
 	if build_obj.run_build:
 		ezbuild_sh = Path(__file__).resolve().parents[1].joinpath("scripts/ezbuild.sh")
 		build_cmd = f"{ezbuild_sh} {build_obj.build} {build_obj.arch} {build_obj.subarch} {build_obj.stages}"
