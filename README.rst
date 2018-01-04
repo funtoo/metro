@@ -6,6 +6,7 @@ used to build install and LiveCD media for Gentoo Linux and its derivatives
 (like Funtoo Linux).
 
 TL;DR:
+
 - `Quick Start Tutorial <http://www.funtoo.org/wiki/Metro_Quick_Start_Tutorial>`_
 - `Metro AutoSetup <https://www.funtoo.org/Metro_AutoSetup>`_
 
