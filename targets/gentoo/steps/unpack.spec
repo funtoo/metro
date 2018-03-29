@@ -79,6 +79,14 @@ if [ "$[release/type]" == "official" ]; then
 $[[snapshot/source/ego.conf]]
 EOF
         fi
+        if grep "[global]" /etc/ego.conf > /dev/null; then
+            sed -i -e '/^\[global]/a sync_base_url = $[snapshot/source/sync_base_url]' /etc/ego.conf
+	    else
+            cat << /etc/ego.conf << EOF
+[global]
+sync_base_url = $[snapshot/source/sync_base_url]
+EOF
+	    fi
 	    ego sync --kits-only
 	fi
 fi
