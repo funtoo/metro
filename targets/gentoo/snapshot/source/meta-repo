@@ -16,3 +16,4 @@ run_ego() {
 if ! [ -e "$[path/cache/git]/$[snapshot/source/name]" ]; then
     run_ego sync --dest=$[path/cache/git]/$[snapshot/source/name] --meta-repo-only
 fi
+]
