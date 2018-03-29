@@ -1,19 +1,4 @@
 [section steps]
 
 sync: [
-
-! [ -d "$[path/cache/git]" ] && install -d "$[path/cache/git]"
-
-run_ego() {
-    if [ -e /root/ego/ego ]; then
-        echo "Using /root/ego/ego, since it's there."
-        (cd /root/ego; ./ego "$*")
-    else
-        ego "$*"
-    fi
-}
-
-if ! [ -e "$[path/cache/git]/$[snapshot/source/name]" ]; then
-    run_ego sync --dest=$[path/cache/git]/$[snapshot/source/name] --meta-repo-only
-fi
 ]
