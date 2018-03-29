@@ -35,7 +35,7 @@ then
 
 	# It's a weird problem but the next few ccache-config lines takes care of it by removing bogus ccache symlinks and installing
 	# valid ones that reflect the compiler that is actually installed on the system - so if ncurses sees an "i686-pc-linux-gnu-gcc"
-	# in /usr/lib/ccache/bin, it looks for (and finds)  a real i686-pc-linux-gnu-gcc installed in /usr/bin.
+	# in /usr/lib/ccache/bin, it looks for (and finds)	a real i686-pc-linux-gnu-gcc installed in /usr/bin.
 
 	# I am including these detailed notes so that people are aware of the issue and so we can look for a more elegant solution to
 	# this problem in the future. This problem crops up when you are using an i486-pc-linux-gnu CHOST stage3 to create an
@@ -169,7 +169,23 @@ else
 	ln -sf ../usr/portage/profiles/$[portage/profile:zap] /etc/make.profile || exit 1
 	echo "Set Portage profile to $[portage/profile:zap]."
 fi
-ego sync --kits-only || exit 2
+	if [ "$[snapshot/source/type]" == "meta-repo" ]; then
+		if [ "$[snapshot/source/ego.conf?]" = "yes" ]
+		then
+			cat > /etc/ego.conf << EOF
+$[[snapshot/source/ego.conf]]
+EOF
+		fi
+		if grep "[global]" /etc/ego.conf > /dev/null; then
+			sed -i -e '/^\[global]/a sync_base_url = $[snapshot/source/sync_base_url]' /etc/ego.conf
+		else
+			cat > /etc/ego.conf << EOF
+[global]
+sync_base_url = $[snapshot/source/sync_base_url]
+EOF
+		fi
+		ego sync --kits-only
+	fi
 ]
 
 # do any cleanup that you need with things bind mounted here:

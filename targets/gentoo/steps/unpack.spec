@@ -72,22 +72,6 @@ if [ "$[release/type]" == "official" ]; then
 			cd $[path/chroot]/usr/portage 
 			git checkout $[snapshot/source/branch:lax] || exit 50
 		fi
-	elif [ "$[snapshot/source/type]" == "meta-repo" ]; then
-        if [ "$[snapshot/source/ego.conf?]" = "yes" ]
-        then
-            cat > /etc/ego.conf << EOF
-$[[snapshot/source/ego.conf]]
-EOF
-        fi
-        if grep "[global]" /etc/ego.conf > /dev/null; then
-            sed -i -e '/^\[global]/a sync_base_url = $[snapshot/source/sync_base_url]' /etc/ego.conf
-	    else
-            cat << /etc/ego.conf << EOF
-[global]
-sync_base_url = $[snapshot/source/sync_base_url]
-EOF
-	    fi
-	    ego sync --kits-only
 	fi
 fi
 ]
