@@ -75,7 +75,7 @@ if [ "$[release/type]" == "official" ]; then
 	elif [ "$[snapshot/source/type]" == "meta-repo" ]; then
         if [ "$[snapshot/source/ego.conf?]" = "yes" ]
         then
-            cat > /etc/ego.conf << "EOF"
+            cat > /etc/ego.conf << EOF
 $[[snapshot/source/ego.conf]]
 EOF
         fi
