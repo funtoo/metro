@@ -79,7 +79,6 @@ if [ "$[release/type]" == "official" ]; then
 $[[snapshot/source/ego.conf]]
 EOF
         fi
-	    ego sync --kits-only
 	fi
 fi
 ]
