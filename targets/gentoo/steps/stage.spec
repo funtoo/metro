@@ -161,17 +161,6 @@ EOF
 	for mixin in $mixins; do
 		echo $mixin >> /etc/portage/make.profile/parent
 	done
-	# fix for bogus stages with buggy ego
-	sed -i -e /%s/d /etc/portage/make.profile/parent
-	if [ -d /var/git/meta-repo ]; then
-		cd /var/git/meta-repo/kits/python-kit
-		pykit="$(git branch --remote --verbose --no-abbrev --contains | sed -rne 's/^[^\/]*\/([^\ ]+).*$/\1/p' | grep -v HEAD)"
-		cd /var/git/meta-repo/kits
-		for kit in $(ls -d *kit); do
-			ppath="/var/git/meta-repo/kits/$kit/profiles/funtoo/kits/python-kit/$pykit"
-			[ -d "$ppath" ] && echo "$kit:funtoo/kits/python-kit/$pykit" >> /etc/portage/make.profile/parent
-		done
-	fi
 	echo "New-style profile settings:"
 	cat /etc/portage/make.profile/parent
 else
@@ -180,6 +169,7 @@ else
 	ln -sf ../usr/portage/profiles/$[portage/profile:zap] /etc/make.profile || exit 1
 	echo "Set Portage profile to $[portage/profile:zap]."
 fi
+ego sync --kits-only || exit 2
 ]
 
 # do any cleanup that you need with things bind mounted here:
