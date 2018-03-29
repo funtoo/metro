@@ -124,6 +124,8 @@ cat > /etc/portage/package.mask << "EOF"
 $[[portage/files/package.mask:lax]]
 EOF
 fi
+
+
 if [ -d /var/tmp/cache/probe ]
 then
 $[[probe/setup:lax]]

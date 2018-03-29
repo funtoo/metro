@@ -73,12 +73,13 @@ if [ "$[release/type]" == "official" ]; then
 			git checkout $[snapshot/source/branch:lax] || exit 50
 		fi
 	elif [ "$[snapshot/source/type]" == "meta-repo" ]; then
-		# make sure meta-repo is enabled correctly
-		rm -rf $[path/chroot]/usr/share/portage/config/repos.conf
-		rm -rf $[path/chroot]/etc/portage/repos.conf
-		ln -s /var/git/meta-repo/repos.conf $[path/chroot]/etc/portage/repos.conf
-		cd $[path/chroot]/var/git/meta-repo
-		git submodule update --no-fetch || exit 500
+        if [ "$[snapshot/source/ego.conf?]" = "yes" ]
+        then
+            cat > /etc/ego.conf << "EOF"
+$[[snapshot/source/ego.conf]]
+EOF
+        fi
+	    ego sync --kits-only
 	fi
 fi
 ]

@@ -3,21 +3,16 @@
 sync: [
 
 ! [ -d "$[path/cache/git]" ] && install -d "$[path/cache/git]"
-if [ -e /usr/sbin/ego ]; then 
-	ego sync --dest=$[path/cache/git] || die "couldn't do ego sync"
-else
-	if [ ! -d $[path/cache/git]/meta-repo ]; then
-		cd $[path/cache/git]
-		git clone https://github.com/funtoo/meta-repo
-		cd meta-repo
-		git submodule init
-		git submodule update
-	else
-		cd $[path/cache/git]/meta-repo
-		git reset --hard
-		git clean -fd
-		git pull
-		git submodule update
-	fi
+
+run_ego() {
+    if [ -e /root/ego/ego ]; then
+        echo "Using /root/ego/ego, since it's there."
+        (cd /root/ego; ./ego "$*")
+    else
+        ego "$*"
+    fi
+}
+
+if ! [ -e "$[path/cache/git]/$[snapshot/source/name]" ]; then
+    run_ego sync --dest=$[path/cache/git]/$[snapshot/source/name] --meta-repo-only
 fi
-]
