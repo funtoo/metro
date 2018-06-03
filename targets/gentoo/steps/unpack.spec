@@ -74,23 +74,41 @@ if [ "$[release/type]" == "official" ]; then
 		fi
 	fi
 fi
+install -d $[path/chroot]/etc/portage/make.profile
+cat > $[path/chroot]/etc/portage/make.profile/parent << EOF
+$[profile/arch:zap]
+$[profile/subarch:zap]
+$[profile/build:zap]
+$[profile/flavor:zap]
+EOF
+	mixins=""
+	mixins=$[profile/mix-ins:zap]
+	for mixin in $mixins; do
+		echo $mixin >> $[path/chroot]/etc/portage/make.profile/parent
+	done
+	cat > $[path/chroot]/etc/ego.conf << EOF
+[global]
+sync_base_url = $[snapshot/source/sync_base_url]
+EOF
+	if [ "$[snapshot/source/ego.conf?]" = "yes" ]
+	then
+		echo "Installing /etc/ego.conf..."
+		cat >> $[path/chroot]/etc/ego.conf << EOF
+$[[snapshot/source/ego.conf]]
+EOF
+	fi
+
+
+		cat $[path/chroot]/etc/ego.conf
+		ROOT=$[path/chroot] /root/ego/ego sync --kits-only || exit 8
+		ROOT=$[path/chroot] /root/ego/ego sync --config-only || exit 9
 ]
 
 env: [
 install -d $[path/chroot]/etc/portage
-if [ -n "$[profile/subarch]" ]; then
 cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
 $[[files/make.conf.subarchprofile]]
 EOF
-elif [ "$[profile/format]" = "new" ]; then
-cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
-$[[files/make.conf.newprofile]]
-EOF
-else
-cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
-$[[files/make.conf.oldprofile]]
-EOF
-fi
 cat << "EOF" > $[path/chroot]/etc/env.d/99zzmetro || exit 6
 $[[files/proxyenv]]
 EOF

@@ -1,4 +1,3 @@
-[collect ./epro.spec]
 
 [section steps]
 
@@ -65,7 +64,32 @@ if [ -e /etc/make.conf ]; then
 else
 	mkconf=/etc/portage/make.conf
 fi
-$[[steps/epro_setup]]
+cat > /tmp/epro_getarch.py << "EOF"
+#!/usr/bin/python3
+
+import sys
+import json
+
+lines = sys.stdin.readlines()
+try:
+    j = json.loads("".join(lines))
+except ValueError:
+    sys.exit(1)
+if "arch" in j and len(j["arch"]):
+    a = j["arch"][0]
+    if "path" in a:
+        print(a["path"])
+        sys.exit(0)
+sys.exit(1)
+EOF
+archdir="$(ego profile show-json | python3 /tmp/epro_getarch.py)"
+echo "$archdir" > /tmp/archdir
+if [ -n "$archdir" ] && [ -e "$archdir/toolchain-version" ]; then
+	# We will use toolchain_version to set a sub-directory for binary packages. This way, bumping the
+	# toolchain version in the profile forces metro to rebuild all binary packages -- which is what we
+	# want when we have a new toolchain, to flush out old, now stable .tbz2 files.
+	toolchain_version="$(cat $archdir/toolchain-version)"
+fi
 if [ -e /var/tmp/cache/package ]
 then
 	export PKGDIR=/var/tmp/cache/package
@@ -81,19 +105,9 @@ fi
 FEATURES="$FEATURES -sandbox"
 install -d /etc/portage
 # the quotes below prevent variable expansion of anything inside make.conf
-if [ -n "$[profile/subarch]" ]; then
 cat > $mkconf << "EOF"
 $[[files/make.conf.subarchprofile]]
 EOF
-elif [ "$[profile/format]" = "new" ]; then
-cat > $mkconf << "EOF"
-$[[files/make.conf.newprofile]]
-EOF
-else
-cat > $mkconf << "EOF"
-$[[files/make.conf.oldprofile]]
-EOF
-fi
 if [ "$[portage/files/package.use?]" = "yes" ]
 then
 cat > /etc/portage/package.use << "EOF"
@@ -143,48 +157,6 @@ rm -rf $[path/chroot/stage]$[portage/ROOT]/var/tmp/*
 [section steps/chroot]
 
 prerun: [
-#!/bin/bash
-rm -f /etc/make.profile 
-pf=""
-pf=$[profile/format:zap]
-if [ "$pf" = "new" ]; then
-	# new-style profiles
-	install -d /etc/portage/make.profile
-	cat > /etc/portage/make.profile/parent << EOF
-$[profile/arch:zap]
-$[profile/subarch:zap]
-$[profile/build:zap]
-$[profile/flavor:zap]
-EOF
-	mixins=""
-	mixins=$[profile/mix-ins:zap]
-	for mixin in $mixins; do
-		echo $mixin >> /etc/portage/make.profile/parent
-	done
-	echo "New-style profile settings:"
-	cat /etc/portage/make.profile/parent
-else
-	# classic profiles
-	echo
-	ln -sf ../usr/portage/profiles/$[portage/profile:zap] /etc/make.profile || exit 1
-	echo "Set Portage profile to $[portage/profile:zap]."
-fi
-	if [ "$[snapshot/source/type]" == "meta-repo" ]; then
-		if [ "$[snapshot/source/ego.conf?]" = "yes" ]
-		then
-			echo "Installing /etc/ego.conf..."
-			cat > /etc/ego.conf << EOF
-$[[snapshot/source/ego.conf]]
-EOF
-			cat /etc/ego.conf
-		fi
-		cat >> /etc/ego.conf << EOF
-[global]
-sync_base_url = $[snapshot/source/sync_base_url]
-EOF
-		cat /etc/ego.conf
-		ego sync --kits-only
-	fi
 ]
 
 # do any cleanup that you need with things bind mounted here:
