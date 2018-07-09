@@ -15,20 +15,27 @@ export AUTOCLEAN="yes"
 export CONFIG_PROTECT="-*"
 export FEATURES="$FEATURES -collision-protect"
 
+ego profile mix-in +stage1
 cat > /tmp/bootstrap.py << "EOF"
 $[[files/bootstrap.py]]
 EOF
-python /tmp/bootstrap.py --check || exit 1
 
 export PYTHON_ABIS="$(portageq envvar PYTHON_ABIS)"
+# this sets python targets to build even though we will be mangling USE soon...
+# without this, python targets are all unset.
 export PYTHON_TARGETS="$(portageq envvar PYTHON_TARGETS)"
 export PYTHON_SINGLE_TARGET="$(portageq envvar PYTHON_SINGLE_TARGET)"
 
+# set USE to expanded version of stage1 USE:
+EXTRA_USE="$(python /tmp/bootstrap.py --use)"
+ego profile mix-in +stage1
+USE="bootstrap $EXTRA_USE"
+
 USE="-* build bootstrap" emerge portage || exit 1
 
-export USE="-* bootstrap `python /tmp/bootstrap.py --use`"
 # adding oneshot below so "libtool" doesn't get added to the world file... 
 # libtool should be in the system profile, but is not currently there it seems.
+
 emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
 emerge --clean 
 emerge --prune sys-devel/gcc || exit 1
@@ -37,7 +44,7 @@ emerge --prune sys-devel/gcc || exit 1
 # a full-featured Python installation to avoid problems during the stage3
 # build:
 
-unset USE
+ego profile mix-in -stage1
 for atom in `portageq match / dev-lang/python`
 do
 	emerge $eopts --oneshot =$atom || exit 1
@@ -59,8 +66,8 @@ alloweduse=["nls", "bindist", "nptl", "nptlonly", "multilib", "userlocales" ]
 alloweduse_startswith = ["userland_"]
 
 use=portage.settings["USE"].split()
-
-myuse=portage.settings["BOOTSTRAP_USE"].split()
+myuse=[]
+# expand USE variables using a limited subset of features that we should enable.
 
 for x in use:
 	if x in alloweduse:
@@ -94,13 +101,7 @@ if "nls" not in use or "gettext" not in pkgdict.keys():
 
 if not "linux-headers" in pkgdict:
 	pkgdict["linux-headers"]="virtual/os-headers"
-if sys.argv[1] == "--check":
-	if "build" in use or "bootstrap" in use:
-		print("Error: please do not specify \"build\" or \"bootstrap\" in USE. Exiting.")
-		sys.exit(1)
-	else:
-		sys.exit(0)
-elif sys.argv[1] == "--use":
+if sys.argv[1] == "--use":
 	# TESTING NLS... not for production
 	print("nls "+" ".join(myuse))
 	sys.exit(0)
