@@ -60,8 +60,21 @@ export PKGDIR=$ORIG_PKGDIR/initial_root
 emerge -u sys-apps/portage || die
 
 # update python
-emerge -u =dev-lang/python-2* =dev-lang/python-3.6* || die 
-emerge -C =dev-lang/python-3.4* || die
+pyver=$[version/python]
+pyver=${pyver:0:1}
+# pyver is now set to major version of specified python in metro config. The version specified in
+# metro config is the "default" version enabled for the system.
+
+# when we have python3 as a default, we'll want to enable something like this (conditional):
+#if [ "$pyver" == "2" ]; then
+emerge -u =dev-lang/python-2*
+#fi
+latest_python3=$(eselect python list --python3 | sed -ne '/python/s/.*\(python.*\)$/\1/p' | sort | tail -n 1)
+emerge =dev-lang/$(latest_python3)* || die 
+oldest_python3=$(eselect python list --python3 | sed -ne '/python/s/.*\(python.*\)$/\1/p' | sort | head -n 1)
+if [ "$latest_python3" != "$oldest_python3" ]; then
+	emerge -C =dev-lang/${oldest_python3}* || die
+fi
 # switch to correct python
 eselect python set python$[version/python] || die
 eselect python cleanup
