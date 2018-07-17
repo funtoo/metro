@@ -57,7 +57,8 @@ die() {
 export ORIG_PKGDIR=$PKGDIR
 export PKGDIR=$ORIG_PKGDIR/initial_root
 # upgrade portage, if necessary, before we begin:
-emerge -u sys-apps/portage || die
+emerge -1u sys-apps/portage || die
+emerge -1u --nodeps app-admin/ego || die
 
 # update python
 pyver=$[version/python]
