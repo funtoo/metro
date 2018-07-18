@@ -70,9 +70,9 @@ pyver=${pyver:0:1}
 #if [ "$pyver" == "2" ]; then
 emerge -u =dev-lang/python-2*
 #fi
+emerge -u =dev-lang/python-3* || die
 latest_python3=$(eselect python list --python3 | sed -ne '/python/s/.*\(python.*\)$/\1/p' | sort | tail -n 1)
 latest_python3=python-${latest_python3:6:3}
-emerge =dev-lang/${latest_python3}* || die 
 oldest_python3=$(eselect python list --python3 | sed -ne '/python/s/.*\(python.*\)$/\1/p' | sort | head -n 1)
 oldest_python3=python-${oldest_python3:6:3}
 if [ "$latest_python3" != "$oldest_python3" ]; then
