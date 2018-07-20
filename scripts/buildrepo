@@ -423,6 +423,7 @@ while len(sys.argv) > 1:
 				elif b.build[-9:] == "-hardened":
 					v.append("hardened")
 					build = b.build[:-9]
+					continue
 				else:
 					build = b.build
 				build_xml = etree.Element("build")
