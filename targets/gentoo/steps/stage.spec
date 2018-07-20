@@ -1,4 +1,3 @@
-[collect ./epro.spec]
 
 [section steps]
 
@@ -14,7 +13,7 @@ export EMERGE_WARNING_DELAY=0
 export CLEAN_DELAY=0
 export EBEEP_IGNORE=0
 export EPAUSE_IGNORE=0
-export CONFIG_PROTECT="-* /etc/locale.gen"
+export CONFIG_PROTECT="-* /etc/locale.gen /etc/ego.conf"
 export UNINSTALL_IGNORE="/etc/portage/*"
 export DISTDIR="/var/cache/portage/distfiles"
 if [ -d /var/tmp/cache/compiler ]
@@ -35,7 +34,7 @@ then
 
 	# It's a weird problem but the next few ccache-config lines takes care of it by removing bogus ccache symlinks and installing
 	# valid ones that reflect the compiler that is actually installed on the system - so if ncurses sees an "i686-pc-linux-gnu-gcc"
-	# in /usr/lib/ccache/bin, it looks for (and finds)  a real i686-pc-linux-gnu-gcc installed in /usr/bin.
+	# in /usr/lib/ccache/bin, it looks for (and finds)	a real i686-pc-linux-gnu-gcc installed in /usr/bin.
 
 	# I am including these detailed notes so that people are aware of the issue and so we can look for a more elegant solution to
 	# this problem in the future. This problem crops up when you are using an i486-pc-linux-gnu CHOST stage3 to create an
@@ -65,7 +64,32 @@ if [ -e /etc/make.conf ]; then
 else
 	mkconf=/etc/portage/make.conf
 fi
-$[[steps/epro_setup]]
+cat > /tmp/epro_getarch.py << "EOF"
+#!/usr/bin/python3
+
+import sys
+import json
+
+lines = sys.stdin.readlines()
+try:
+    j = json.loads("".join(lines))
+except ValueError:
+    sys.exit(1)
+if "arch" in j and len(j["arch"]):
+    a = j["arch"][0]
+    if "path" in a:
+        print(a["path"])
+        sys.exit(0)
+sys.exit(1)
+EOF
+archdir="$(ego profile show-json | python3 /tmp/epro_getarch.py)"
+echo "$archdir" > /tmp/archdir
+if [ -n "$archdir" ] && [ -e "$archdir/toolchain-version" ]; then
+	# We will use toolchain_version to set a sub-directory for binary packages. This way, bumping the
+	# toolchain version in the profile forces metro to rebuild all binary packages -- which is what we
+	# want when we have a new toolchain, to flush out old, now stable .tbz2 files.
+	toolchain_version="$(cat $archdir/toolchain-version)"
+fi
 if [ -e /var/tmp/cache/package ]
 then
 	export PKGDIR=/var/tmp/cache/package
@@ -81,19 +105,9 @@ fi
 FEATURES="$FEATURES -sandbox"
 install -d /etc/portage
 # the quotes below prevent variable expansion of anything inside make.conf
-if [ -n "$[profile/subarch]" ]; then
 cat > $mkconf << "EOF"
 $[[files/make.conf.subarchprofile]]
 EOF
-elif [ "$[profile/format]" = "new" ]; then
-cat > $mkconf << "EOF"
-$[[files/make.conf.newprofile]]
-EOF
-else
-cat > $mkconf << "EOF"
-$[[files/make.conf.oldprofile]]
-EOF
-fi
 if [ "$[portage/files/package.use?]" = "yes" ]
 then
 cat > /etc/portage/package.use << "EOF"
@@ -124,6 +138,8 @@ cat > /etc/portage/package.mask << "EOF"
 $[[portage/files/package.mask:lax]]
 EOF
 fi
+
+
 if [ -d /var/tmp/cache/probe ]
 then
 $[[probe/setup:lax]]
@@ -141,43 +157,6 @@ rm -rf $[path/chroot/stage]$[portage/ROOT]/var/tmp/*
 [section steps/chroot]
 
 prerun: [
-#!/bin/bash
-rm -f /etc/make.profile 
-pf=""
-pf=$[profile/format:zap]
-if [ "$pf" = "new" ]; then
-	# new-style profiles
-	install -d /etc/portage/make.profile
-	cat > /etc/portage/make.profile/parent << EOF
-$[profile/arch:zap]
-$[profile/subarch:zap]
-$[profile/build:zap]
-$[profile/flavor:zap]
-EOF
-	mixins=""
-	mixins=$[profile/mix-ins:zap]
-	for mixin in $mixins; do
-		echo $mixin >> /etc/portage/make.profile/parent
-	done
-	# fix for bogus stages with buggy ego
-	sed -i -e /%s/d /etc/portage/make.profile/parent
-	if [ -d /var/git/meta-repo ]; then
-		cd /var/git/meta-repo/kits/python-kit
-		pykit="$(git branch --remote --verbose --no-abbrev --contains | sed -rne 's/^[^\/]*\/([^\ ]+).*$/\1/p' | grep -v HEAD)"
-		cd /var/git/meta-repo/kits
-		for kit in $(ls -d *kit); do
-			ppath="/var/git/meta-repo/kits/$kit/profiles/funtoo/kits/python-kit/$pykit"
-			[ -d "$ppath" ] && echo "$kit:funtoo/kits/python-kit/$pykit" >> /etc/portage/make.profile/parent
-		done
-	fi
-	echo "New-style profile settings:"
-	cat /etc/portage/make.profile/parent
-else
-	# classic profiles
-	echo
-	ln -sf ../usr/portage/profiles/$[portage/profile:zap] /etc/make.profile || exit 1
-	echo "Set Portage profile to $[portage/profile:zap]."
-fi
 ]
 
 # do any cleanup that you need with things bind mounted here:

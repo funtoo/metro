@@ -11,4 +11,4 @@ for x in $(/root/metro/scripts/buildrepo fails 2>/dev/null | cut -f8  -d' '); do
 		echo arch $arch subarch $subarch build $build
 		rsync -rltJOve ssh --delete --exclude stage1*.tar* --exclude stage2*.tar* $mp/$build/$arch/$subarch drobbins@build.funtoo.org:/home/mirror/funtoo/$build/$arch/
 done
-ssh root@build.funtoo.org /root/metro/scripts/buildrepo cmd /root/metro/scripts/mirrorsync.sh index.xml
+ssh drobbins@build.funtoo.org sudo /root/metro/scripts/buildrepo cmd /root/metro/scripts/mirrorsync.sh index.xml

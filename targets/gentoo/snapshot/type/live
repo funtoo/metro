@@ -17,8 +17,19 @@ then
 	
 	tar -c -C $[path/work] portage > $tarout || die "Couldn't create tar archive"
 elif [ "$[snapshot/source/type]" = "meta-repo" ]; then
-	cp -a $[path/cache/git]/$[snapshot/source/name] $[path/work]/meta-repo
-	( cd $[path/work]/meta-repo; rm -rf kits/* )
+	run_ego() {
+		if [ -e /etc/metro/chroot/etc/ego.conf ]; then
+			export EGO_CONFIG=/etc/metro/chroot/etc/ego.conf
+			echo "Using custom ego configuration at /etc/metro/chroot/etc/ego.conf."
+		fi
+		if [ -e /root/ego/ego ]; then
+			echo "Using /root/ego/ego, since it's there."
+			/root/ego/ego $*
+		else
+			ego $*
+		fi
+	}
+	run_ego sync --dest=$[path/work]/meta-repo --meta-repo-only
 	tar -c -C $[path/work] meta-repo > $tarout || die "Couldn't create tar archive"
 else
 	die "snapshot/type: live is only supported for snapshot/source/type: git or meta-repo"

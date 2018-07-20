@@ -14,9 +14,11 @@ a=$(eselect python list | sed -n -e '1d' -e 's/^.* \(python[23]\..\).*$/\1/g' -e
 if [ "$a" != "" ]
 then
 	eselect python set $a
+	eselect python cleanup
 fi
 
-emerge $eopts --oneshot portage || exit 1
+emerge $eopts -u1 portage || exit 1
+emerge $eopts -u1 --nodeps ego || exit 1
 export USE="$[portage/USE] bindist"
 # handle perl upgrades
 perl-cleaner --modules || exit 1

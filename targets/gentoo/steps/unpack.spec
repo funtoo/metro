@@ -72,32 +72,46 @@ if [ "$[release/type]" == "official" ]; then
 			cd $[path/chroot]/usr/portage 
 			git checkout $[snapshot/source/branch:lax] || exit 50
 		fi
-	elif [ "$[snapshot/source/type]" == "meta-repo" ]; then
-		# make sure meta-repo is enabled correctly
-		rm -rf $[path/chroot]/usr/share/portage/config/repos.conf
-		rm -rf $[path/chroot]/etc/portage/repos.conf
-		ln -s /var/git/meta-repo/repos.conf $[path/chroot]/etc/portage/repos.conf
-		cd $[path/chroot]/var/git/meta-repo
-		git submodule update --no-fetch || exit 500
 	fi
 fi
+install -d $[path/chroot]/etc/portage/make.profile
+cat > $[path/chroot]/etc/portage/make.profile/parent << EOF
+$[profile/arch:zap]
+$[profile/subarch:zap]
+$[profile/build:zap]
+$[profile/flavor:zap]
+EOF
+	mixins=""
+	mixins=$[profile/mix-ins:zap]
+	for mixin in $mixins; do
+		echo $mixin >> $[path/chroot]/etc/portage/make.profile/parent
+	done
+	if [ -e /etc/metro/chroot/etc/ego.conf ]; then
+		cp /etc/metro/chroot/etc/ego.conf $[path/chroot]/etc/ego.conf
+	else 
+		cat > $[path/chroot]/etc/ego.conf << EOF
+[global]
+sync_base_url = $[snapshot/source/sync_base_url]
+EOF
+		if [ "$[snapshot/source/ego.conf?]" = "yes" ]
+		then
+			echo "Installing /etc/ego.conf..."
+			cat >> $[path/chroot]/etc/ego.conf << EOF
+$[[snapshot/source/ego.conf]]
+EOF
+		fi
+	fi
+
+		cat $[path/chroot]/etc/ego.conf
+		ROOT=$[path/chroot] /root/ego/ego sync --kits-only || exit 8
+		ROOT=$[path/chroot] /root/ego/ego sync --config-only || exit 9
 ]
 
 env: [
 install -d $[path/chroot]/etc/portage
-if [ -n "$[profile/subarch]" ]; then
 cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
 $[[files/make.conf.subarchprofile]]
 EOF
-elif [ "$[profile/format]" = "new" ]; then
-cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
-$[[files/make.conf.newprofile]]
-EOF
-else
-cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
-$[[files/make.conf.oldprofile]]
-EOF
-fi
 cat << "EOF" > $[path/chroot]/etc/env.d/99zzmetro || exit 6
 $[[files/proxyenv]]
 EOF

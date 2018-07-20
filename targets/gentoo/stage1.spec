@@ -57,14 +57,35 @@ die() {
 export ORIG_PKGDIR=$PKGDIR
 export PKGDIR=$ORIG_PKGDIR/initial_root
 # upgrade portage, if necessary, before we begin:
-emerge -u sys-apps/portage || die
+emerge -1u sys-apps/portage || die
+emerge -1u --nodeps app-admin/ego || die
 
 # update python
-emerge -u python || die 
+pyver=$[version/python]
+pyver=${pyver:0:1}
+# pyver is now set to major version of specified python in metro config. The version specified in
+# metro config is the "default" version enabled for the system.
+
+# when we have python3 as a default, we'll want to enable something like this (conditional):
+#if [ "$pyver" == "2" ]; then
+emerge -u =dev-lang/python-2*
+#fi
+emerge -u =dev-lang/python-3* || die
+latest_python3=$(eselect python list --python3 | sed -ne '/python/s/.*\(python.*\)$/\1/p' | sort | tail -n 1)
+latest_python3=python-${latest_python3:6:3}
+oldest_python3=$(eselect python list --python3 | sed -ne '/python/s/.*\(python.*\)$/\1/p' | sort | head -n 1)
+oldest_python3=python-${oldest_python3:6:3}
+if [ "$latest_python3" != "$oldest_python3" ]; then
+	emerge -C =dev-lang/${oldest_python3}* || die
+fi
 # switch to correct python
 eselect python set python$[version/python] || die
+eselect python cleanup
+ego sync --config-only
 
 # FL-1398 update perl before we begin and try to update perl modules, if any installed/or will be installed.
+# THIS IS A HACK and should be removed eventually. See FL-5220:
+emerge -1 openssl openssh || die
 emerge -u --nodeps $eopts perl || die
 perl-cleaner --allmodules -- $eopts || die
 emerge $eopts -uDN world || die
@@ -75,19 +96,12 @@ EOF
 
 export buildpkgs="$(python /tmp/build.py) dev-vcs/git"
 
-
-# Gentoo hard-codes the intended python targets into a base profile. Funtoo extracts it from variables
-export BOOTSTRAP_USE="$(portageq envvar BOOTSTRAP_USE | sed -e 's/python_targets_?_?//g')"
 # The following code should also be used in targets/gentoo/stage2.spec
 export PYTHON_ABIS="$(portageq envvar PYTHON_ABIS)"
-export PYTHON_TARGETS="$(portageq envvar PYTHON_TARGETS)"
-export PYTHON_SINGLE_TARGET="$(portageq envvar PYTHON_SINGLE_TARGET)"
-
-export USE="-* bindist build xml ${BOOTSTRAP_USE} ssl threads"
 export FEATURES="$FEATURES nodoc noman noinfo"
+ego profile mix-in +stage1 || die
 
-# In some cases permissions of the root directory are false, force them to 755
-
+# In some cases permissions of the root directory are incorrect, force them to 755
 chmod 755 /
 
 ## Sanity check profile
@@ -120,6 +134,8 @@ mknod() {
 	echo "Creating device node $1"
 	/bin/mknod $* || return 1
 }
+
+ego profile mix-in -stage1 || die
 
 cd ${ROOT}/dev || die "Could not change directory to $2."
 
