@@ -12,14 +12,12 @@ from datetime import date
 from lxml import html
 from pathlib import Path
 
-os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append("../modules")
+script_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(script_dir, "../modules"))
 
 from metro_support import MetroSetup
 
-
 class AutomatedSetup:
-
 
 	def __init__(self):
 
@@ -31,7 +29,6 @@ class AutomatedSetup:
 			print(e)
 			sys.exit(1)
 
-
 	def createMirrorDirectory(self):
 		"""Creates the mirror directory, does nothing if it already exists"""
 		mirror_dir = Path(self.settings["path/mirror"])
@@ -40,7 +37,6 @@ class AutomatedSetup:
 		except FileExistsError as err:
 			print(f"{mirror_dir} does not appear to be a directory. Aborting.")
 			sys.exit(1)
-
 
 	def _generateSubarchList(self, path, arch):
 		"""Returns a list of subarches. [subarch1, subarch2, ...]"""
@@ -51,7 +47,6 @@ class AutomatedSetup:
 		subarches = [subarch.name for subarch in subarch_path.iterdir() if subarch.is_dir()]
 		subarches.sort()
 		return subarches
-
 
 	def getAllAvailableBuildTypes(self):
 		"""Parses core-kit/profiles/funtoo/1.0/linux-gnu/arch/<arch> for available subarches
@@ -74,7 +69,6 @@ class AutomatedSetup:
 		for arch in arches:
 			arch_map[arch] = self._generateSubarchList(arch_dir, arch)
 		return arch_map
-
 
 	def parseMirrorDirectory(self, possible_builds):
 		"""Parses mirror directory for available builds and returns a map in the form of:
@@ -123,7 +117,6 @@ class AutomatedSetup:
 							builds[build] = {arch: [subarch]}
 
 		return builds
-
 
 	def setupNewBuild(self, build_object):
 		"""Sets up a new build based on the information in build_object. This method will
@@ -255,11 +248,9 @@ class BuildObject:
 
 class CursesBuildSelector:
 
-
 	def __init__(self, possible_builds, available_builds):
 		self.possible_builds = possible_builds
 		self.available_builds = available_builds
-
 
 	def _checkKey(self, key, range):
 		if not key.isdigit():
@@ -267,7 +258,6 @@ class CursesBuildSelector:
 		if int(key) not in range:
 			return False
 		return True
-
 
 	def _displayChooser(self, stdscr, build_object, values, heading):
 		stdscr.clear()
@@ -498,7 +488,7 @@ if __name__ == "__main__":
 
 	# 8. Run build
 	if build_obj.run_build:
-		ezbuild_sh = Path(__file__).resolve().parents[1].joinpath("scripts/ezbuild.sh")
+		ezbuild_sh = os.path.join(script_dir, "ezbuild.sh")
 		build_cmd = f"{ezbuild_sh} {build_obj.build} {build_obj.arch} {build_obj.subarch} {build_obj.stages}"
 		result = subprocess.run(build_cmd, shell=True)
 		if result.returncode != 0:
