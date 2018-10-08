@@ -4,9 +4,13 @@ chroot/run/container/base: [
 #!/bin/bash
 
 export CLEAN_DELAY=0
-# remove stuff we don't need inside OpenVZ:
-for x in $(ls /var/db/pkg/sys-kernel | grep -v linux-headers); do
-	emerge -C =sys-kernel/$x
+# remove stuff we don't need inside LXD:
+for x in /var/db/pkg/sys-kernel/* ; do
+     [ -e "$x" ] || continue
+     case $x in
+         *linux-headers*) ;; 
+         *) emerge -C =sys-kernel/"${x##*/}" ;;
+     esac
 done
 
 # Remove more leftover ebuilds that merged with debian-sources and which make no sense to have inside containers. This fixes lvm2 auto-start in OpenVZ. #FL-2484
