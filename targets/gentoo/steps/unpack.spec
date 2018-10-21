@@ -98,7 +98,7 @@ EOF
 		then
 			echo "Installing /etc/ego.conf..."
 			cat >> $[path/chroot]/etc/ego.conf << EOF
-$[[snapshot/source/ego.conf]]
+$[[snapshot/source/ego.conf:lax]]
 EOF
 		fi
 	fi
