@@ -92,6 +92,7 @@ EOF
 		cat > $[path/chroot]/etc/ego.conf << EOF
 [global]
 sync_base_url = $[snapshot/source/sync_base_url]
+release = $[profile/release]
 EOF
 		if [ "$[snapshot/source/ego.conf?]" = "yes" ]
 		then
