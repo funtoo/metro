@@ -88,7 +88,6 @@ ego sync --config-only
 # THIS IS A HACK and should be removed eventually. See FL-5220:
 emerge -1 openssl openssh || die
 emerge -u --nodeps $eopts perl || die
-perl-cleaner --allmodules -- $eopts || die
 perl-cleaner --all -- $eopts || die
 emerge $eopts -uDN world || die
 
