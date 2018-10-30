@@ -70,7 +70,4 @@ echo "Performing QA checks..."
 # root password blank
 [ "`cat /etc/shadow | grep ^root | cut -b1-7`" != 'root:!:' ] && exit 15
 echo "Root password check: PASSED"
-# tty must exist
-[ ! -e /dev/tty ] && exit 16
-echo "/dev/tty check: PASSED"
 ]

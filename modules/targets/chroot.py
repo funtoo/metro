@@ -110,11 +110,7 @@ class ChrootTarget(BaseTarget):
 	def bind(self):
 		""" Perform bind mounts """
 		os.system(self.cmds["mount"]+" none -t proc %s/proc" % self.settings["path/work"])
-		for d in [ "/dev/shm", "/dev/pts" ]:
-			if not os.path.exists("%s%s" % ( self.settings["path/work"], d)):
-				os.makedirs("%s%s" % ( self.settings["path/work"], d))
-		os.system(self.cmds["mount"]+" none -t tmpfs -o mode=1777 %s/dev/shm" % self.settings["path/work"])
-		os.system(self.cmds["mount"]+" none -t devpts -o rw,relatime,gid=5,mode=620,ptmxmode=000 %s/dev/pts" % self.settings["path/work"])
+		os.system(self.cmds["mount"]+" --rbind /dev %s/dev" % self.settings["path/work"])
 		for dst, src in list(self.mounts.items()):
 			if not os.path.exists(src):
 				os.makedirs(src, 0o755)
@@ -127,7 +123,6 @@ class ChrootTarget(BaseTarget):
 			if os.system(self.cmds["mount"]+" -R "+src+" "+wdst) != 0:
 				self.unbind()
 				raise MetroError("Couldn't bind mount "+src)
-		self.mounts["/dev/shm"] = "/dev/shm"
 		self.mounts["/proc"] = "/proc"
 
 	def unbind(self, attempt=0):
