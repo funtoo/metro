@@ -440,7 +440,7 @@ class CursesBuildSelector:
 
 
 def createMetroConf(user_metro_conf):
-	metro_conf = Path(os.path.realpath(os.path.basename(__file__))).parent.joinpath("etc/metro.conf")
+	metro_conf = Path(os.path.realpath(os.path.basename(__file__))).parent.joinpath("metro.conf")
 	with open(metro_conf, mode='r', encoding="utf-8") as mc:
 		with open(user_metro_conf, mode='w', encoding="utf-8") as umc:
 			mc_lines = mc.read().splitlines()
