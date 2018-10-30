@@ -92,7 +92,7 @@ class AutomatedSetup:
 		builds = {}
 		hardened = "funtoo-current-hardened"
 		current = "funtoo-current"
-               release = "1.3-release"
+		release = "1.3-release"
 		for stage in stage3s:
 			# Lets first decide if it's a hardened build or regular build
 			# if it's not funtoo-current or funtoo-current-hardened then we just ignore it
@@ -103,9 +103,9 @@ class AutomatedSetup:
 			elif stage.find("-" + current) != -1:
 				build = current
 				stage = stage[:stage.find("-" + current)]
-                       elif stage.find("-" + release) != -1:
-                               build = release
-                               stage = stage[:stage.find("-" + release)]
+			elif stage.find("-" + release) != -1:
+				build = release
+				stage = stage[:stage.find("-" + release)]
 			else:
 				continue
 			for arch, subarches in possible_builds.items():
