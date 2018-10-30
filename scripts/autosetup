@@ -17,6 +17,7 @@ sys.path.append(os.path.join(script_dir, "../modules"))
 
 from metro_support import MetroSetup
 
+
 class AutomatedSetup:
 
 	def __init__(self):
@@ -81,12 +82,12 @@ class AutomatedSetup:
 		stage3s = []
 		for dirpath, dirs, files in os.walk(self.settings["path/mirror"]):
 			for file in files:
-				if file.startswith("stage3-")\
-					and file.endswith(("tar.bz2", "tar.gz", "tar.xz"))\
-					and not Path(dirpath, file).is_symlink():
-						name = file[7:].rsplit("-", 3)[0]
-						if name not in stage3s:
-							stage3s.append(name)
+				if file.startswith("stage3-") \
+						and file.endswith(("tar.bz2", "tar.gz", "tar.xz")) \
+						and not Path(dirpath, file).is_symlink():
+					name = file[7:].rsplit("-", 3)[0]
+					if name not in stage3s:
+						stage3s.append(name)
 
 		# We'll assume if there is a stage3, it's already set up correctly for that build.
 		builds = {}
@@ -197,7 +198,6 @@ class AutomatedSetup:
 			print("Something went wrong downloading stage3")
 			exit(result.returncode)
 
-
 	def setupRemoteBuild(self, build_object):
 		"""Sets up a remote build based on the information in build_object."""
 
@@ -293,18 +293,15 @@ class CursesBuildSelector:
 			return None
 		return values[int(key) - 1]
 
-
 	def setBuild(self, stdscr, build_object):
-		build_object.build = self._displayChooser(stdscr, build_object, ["funtoo-current", "funtoo-current-hardened", "1.3-release"], "Pick a type to build")
-
+		build_object.build = self._displayChooser(stdscr, build_object, ["funtoo-current", "funtoo-current-hardened", "1.3-release"],
+		                                          "Pick a type to build")
 
 	def setArch(self, stdscr, build_object):
 		build_object.arch = self._displayChooser(stdscr, build_object, list(possible_builds.keys()), "Pick an arch to build")
 
-
 	def setSubarch(self, stdscr, build_object):
 		build_object.subarch = self._displayChooser(stdscr, build_object, possible_builds[build_object.arch], "Pick a subarch to build")
-
 
 	def setBuildType(self, stdscr, build_object):
 
@@ -317,9 +314,9 @@ class CursesBuildSelector:
 		# 2. Remote build if there are other builds of the same build type and arch on the system
 		# 3. New local build via downloading a fresh stage3 from build.funtoo.org
 		source = {"local": f"Local build (Build from existing stage3 for {subarch} on system)",
-			  "remote": "Remote build (Build from another subarch on system)",
-			  "new": f"New build (Download a new stage3 for {subarch} from build.funtoo.org and build)"
-			  }
+		          "remote": "Remote build (Build from another subarch on system)",
+		          "new": f"New build (Download a new stage3 for {subarch} from build.funtoo.org and build)"
+		          }
 		type_of_build = ["new"]
 		if len(available_builds) != 0:
 			if build in available_builds:
@@ -342,16 +339,14 @@ class CursesBuildSelector:
 
 		build_object.build_type = build_type
 
-
 	def setStages(self, stdscr, build_object):
 		# We need to know what to build. Freshen is only available for a local or new build
 		stages_to_build = ["full", "full+openvz", "full+lxd"]
-		if build_object.build_type != "remote" :
+		if build_object.build_type != "remote":
 			stages_to_build.append("freshen")
 			stages_to_build.append("freshen+openvz")
 			stages_to_build.append("freshen+lxd")
 		build_object.stages = self._displayChooser(stdscr, build_object, stages_to_build, "Pick what to build")
-
 
 	def setRemoteSubarch(self, stdscr, build_object):
 		# If we are asked for a remote build then we need to ask which subarch to build from
@@ -367,17 +362,16 @@ class CursesBuildSelector:
 			remote_subarch = self._displayChooser(stdscr, build_object, sub_list, "Pick a remote subarch to use for building")
 		build_object.remote_subarch = remote_subarch
 
-
 	def setRunBuild(self, stdscr, build_object):
 		# Ask if we should run the build
-		start = self._displayChooser(stdscr, build_object, ["Yes", "No"], "Do you want to start the build now? (If 'No' setup will still run)")
+		start = self._displayChooser(stdscr, build_object, ["Yes", "No"],
+		                             "Do you want to start the build now? (If 'No' setup will still run)")
 		if start is None:
 			build_object.run_build = None
 		elif start == "Yes":
 			build_object.run_build = True
 		else:
 			build_object.run_build = False
-
 
 	def getBuildOptions(self, stdscr):
 
@@ -446,10 +440,9 @@ class CursesBuildSelector:
 
 
 def createMetroConf(user_metro_conf):
-
-	metro_conf = Path(os.path.realpath(os.path.basename(__file__))).parent.parent.joinpath("metro.conf")
-	with open(metro_conf, mode = 'r', encoding="utf-8") as mc:
-		with open(user_metro_conf, mode = 'w', encoding="utf-8") as umc:
+	metro_conf = Path(os.path.realpath(os.path.basename(__file__))).parent.joinpath("etc/metro.conf")
+	with open(metro_conf, mode='r', encoding="utf-8") as mc:
+		with open(user_metro_conf, mode='w', encoding="utf-8") as umc:
 			mc_lines = mc.read().splitlines()
 			for line in mc_lines:
 				if line.startswith("install:"):
@@ -498,5 +491,3 @@ if __name__ == "__main__":
 		if result.returncode != 0:
 			print("Something went wrong during building. See log for details")
 			exit(result.returncode)
-
-
