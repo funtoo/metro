@@ -17,13 +17,13 @@ case "$comp" in
 		if [ -e /usr/bin/pbzip2 ]
 		then
 			# Use pbzip2 for multi-core acceleration
-			pbzip2 -dc "$src" | tar xpf - -C $[path/chroot] || exit 3
+			pbzip2 -dc "$src" | tar -xp --exclude='./dev/*' -f - -C $[path/chroot] || exit 3
 		else
-			tar xpf "$src" -C $[path/chroot] || exit 3
+			tar -xp --exclude='./dev/*' -f "$src" -C $[path/chroot] || exit 3
 		fi
 		;;
 	gz|xz)
-		tar xpf "$src" -C $[path/chroot] || exit 3
+		tar -xp --exclude='./dev/*' -f "$src" -C $[path/chroot] || exit 3
 		;;
 	*)
 		echo "Unrecognized source compression for $src"
