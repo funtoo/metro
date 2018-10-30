@@ -1,4 +1,5 @@
 [collect ../snapshot/global.spec]
+[collect ego.spec]
 
 [section steps/unpack]
 
@@ -86,22 +87,7 @@ EOF
 	for mixin in $mixins; do
 		echo $mixin >> $[path/chroot]/etc/portage/make.profile/parent
 	done
-	if [ -e /etc/metro/chroot/etc/ego.conf ]; then
-		cp /etc/metro/chroot/etc/ego.conf $[path/chroot]/etc/ego.conf
-	else 
-		cat > $[path/chroot]/etc/ego.conf << EOF
-[global]
-sync_base_url = $[snapshot/source/sync_base_url]
-EOF
-		if [ "$[snapshot/source/ego.conf?]" = "yes" ]
-		then
-			echo "Installing /etc/ego.conf..."
-			cat >> $[path/chroot]/etc/ego.conf << EOF
-$[[snapshot/source/ego.conf]]
-EOF
-		fi
-	fi
-
+$[[steps/ego/prep]]
 		cat $[path/chroot]/etc/ego.conf
 		ROOT=$[path/chroot] /root/ego/ego sync --kits-only || exit 8
 		ROOT=$[path/chroot] /root/ego/ego sync --config-only || exit 9

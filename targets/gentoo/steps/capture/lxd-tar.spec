@@ -38,6 +38,14 @@ case $[target/arch_desc] in
 		my_arch="i686"
 		my_arch_desc="32bit"
 		;;
+	arm-64bit)
+		my_arch="aarch64"
+		my_arch_desc="64bit"
+		;;
+	arm-32bit)
+		my_arch="armv7l"
+		my_arch_desc="32bit"
+		;;
 	*)
 		my_arch="unknown"
 		my_arch_desc=""

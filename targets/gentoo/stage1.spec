@@ -81,13 +81,14 @@ fi
 # switch to correct python
 eselect python set python$[version/python] || die
 eselect python cleanup
+emerge -1 --nodeps ego portage
 ego sync --config-only
 
 # FL-1398 update perl before we begin and try to update perl modules, if any installed/or will be installed.
 # THIS IS A HACK and should be removed eventually. See FL-5220:
 emerge -1 openssl openssh || die
 emerge -u --nodeps $eopts perl || die
-perl-cleaner --allmodules -- $eopts || die
+perl-cleaner --all -- $eopts || die
 emerge $eopts -uDN world || die
 
 cat > /tmp/build.py << "EOF"
