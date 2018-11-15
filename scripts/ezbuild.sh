@@ -25,8 +25,8 @@ do_help() {
 
   Usage: $0 build arch subarch [ full|freshen|quick [date] ]
   Examples:
-  	# $0 funtoo-stable x86-64bit generic_64
-	# $0 funtoo-current x86-32bit core2_32 freshen
+  	# $0 1.3-release-std x86-64bit generic_64
+	# $0 1.3-release-std x86-32bit core2_32 freshen
 EOF
 }
 
