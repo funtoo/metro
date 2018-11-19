@@ -85,7 +85,7 @@ EOF
 	mixins=""
 	mixins=$[profile/mix-ins:zap]
 	for mixin in $mixins; do
-		ROOT=$[path/chroot] /root/ego/ego profile mix-in +$mix-in
+		ROOT=$[path/chroot] /root/ego/ego profile mix-in +${mixin}
 	done
 $[[steps/ego/prep]]
 		cat $[path/chroot]/etc/ego.conf
