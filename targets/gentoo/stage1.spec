@@ -94,6 +94,9 @@ export buildpkgs="$(python /tmp/build.py) dev-vcs/git"
 export PYTHON_ABIS="$(portageq envvar PYTHON_ABIS)"
 export FEATURES="$FEATURES nodoc noman noinfo"
 export ROOT="$[portage/ROOT]"
+# create symlink to real meta-repo to allow ego to pick up profiles inside ROOT...
+install -d $ROOT/var/git || die
+ln -s /var/git/meta-repo $ROOT/var/git/meta-repo || die
 ego profile mix-in +stage1 || die
 
 # In some cases permissions of the root directory are incorrect, force them to 755
