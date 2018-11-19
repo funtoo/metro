@@ -16,6 +16,19 @@ export EPAUSE_IGNORE=0
 export CONFIG_PROTECT="-* /etc/locale.gen /etc/ego.conf"
 export UNINSTALL_IGNORE="/etc/portage/*"
 export DISTDIR="/var/cache/portage/distfiles"
+if [ "$[target]" != "stage1" ]; then
+	mixins=""
+	mixins=$[profile/mix-ins:zap]
+	for mixin in $mixins; do
+		ego profile mix-in +$mixin || exit 98
+	done
+	for mixin in $mixins; do
+		if [ -z "$(grep $mixin /etc/portage/make.profile/parent)" ]; then
+			exit 99
+		fi
+	done
+	cat /etc/protage/make.profile/parent
+fi
 if [ -d /var/tmp/cache/compiler ]
 then
 	if ! [ -e /usr/bin/ccache ] 

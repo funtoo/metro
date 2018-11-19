@@ -100,6 +100,7 @@ export buildpkgs="$(python /tmp/build.py) dev-vcs/git"
 # The following code should also be used in targets/gentoo/stage2.spec
 export PYTHON_ABIS="$(portageq envvar PYTHON_ABIS)"
 export FEATURES="$FEATURES nodoc noman noinfo"
+export ROOT="$[portage/ROOT]"
 ego profile mix-in +stage1 || die
 
 # In some cases permissions of the root directory are incorrect, force them to 755
@@ -115,7 +116,6 @@ then
 else
 	echo "WE ARE BUILDING: ${buildpkgs}"
 fi
-export ROOT="$[portage/ROOT]"
 export PKGDIR=$ORIG_PKGDIR/new_root
 install -d ${ROOT}
 

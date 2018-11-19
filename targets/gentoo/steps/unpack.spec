@@ -82,11 +82,6 @@ $[profile/subarch:zap]
 $[profile/build:zap]
 $[profile/flavor:zap]
 EOF
-	mixins=""
-	mixins=$[profile/mix-ins:zap]
-	for mixin in $mixins; do
-		ROOT=$[path/chroot] /root/ego/ego profile mix-in +${mixin}
-	done
 $[[steps/ego/prep]]
 		cat $[path/chroot]/etc/ego.conf
 		ROOT=$[path/chroot] /root/ego/ego sync --kits-only || exit 8
