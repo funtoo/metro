@@ -21,7 +21,8 @@ from db import *
 builds = ( )
 arches = ( )
 subarches = ( )
-
+index_ignore_builds = ()
+index_ignore_subarches ()
 # these variables, if defined, are used for repo management (cleaning, etc.):
 
 all_builds = ( )
@@ -402,11 +403,13 @@ while len(sys.argv) > 1:
 			s = x.subarch
 			if s[-7:] == "-pure64":
 				s = s[:-7]
+			if s in index_ignore_subarches:
+				continue
 			if s not in subarch_builds:
 				subarch_builds[s] = []
 			subarch_builds[s].append(x)
 		numfails = 0
-		for s in subarch_builds:
+		for s in index_ignore_builds - subarch_builds:
 			subarch_xml = etree.Element("subarch")
 			subarch_xml.attrib["name"] = s
 			# we treat "hardened' and "pure64" as "variants" of the main build (current/experimental) -- to make things clearer for users.
