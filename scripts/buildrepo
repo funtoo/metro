@@ -416,6 +416,8 @@ while len(sys.argv) > 1:
 			count = 1
 			info_json_path = None
 			for b in subarch_builds[s]:
+				if b.build in index_ignore_builds:
+					continue
 				# variant
 				v = []
 				if b.subarch[-7:] == "-pure64":
