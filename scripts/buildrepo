@@ -21,7 +21,8 @@ from db import *
 builds = ( )
 arches = ( )
 subarches = ( )
-
+index_ignore_builds = ()
+index_ignore_subarches = ()
 # these variables, if defined, are used for repo management (cleaning, etc.):
 
 all_builds = ( )
@@ -402,6 +403,8 @@ while len(sys.argv) > 1:
 			s = x.subarch
 			if s[-7:] == "-pure64":
 				s = s[:-7]
+			if s in index_ignore_subarches:
+				continue
 			if s not in subarch_builds:
 				subarch_builds[s] = []
 			subarch_builds[s].append(x)
@@ -413,6 +416,8 @@ while len(sys.argv) > 1:
 			count = 1
 			info_json_path = None
 			for b in subarch_builds[s]:
+				if b.build in index_ignore_builds:
+					continue
 				# variant
 				v = []
 				if b.subarch[-7:] == "-pure64":
