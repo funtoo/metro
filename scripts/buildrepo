@@ -409,7 +409,7 @@ while len(sys.argv) > 1:
 				subarch_builds[s] = []
 			subarch_builds[s].append(x)
 		numfails = 0
-		for s in index_ignore_builds - subarch_builds:
+		for s in subarch_builds:
 			subarch_xml = etree.Element("subarch")
 			subarch_xml.attrib["name"] = s
 			# we treat "hardened' and "pure64" as "variants" of the main build (current/experimental) -- to make things clearer for users.
