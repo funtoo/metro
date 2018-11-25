@@ -124,7 +124,6 @@ if [ $? -ne 0 ]; then
 	# FL-1398: update perl before we begin and try to update perl modules, if any installed/or will be installed.
 	unset ROOT
 	emerge -C dev-python/cryptography
-	emerge $eopts -uDN @world || die
 	emerge -u --nodeps $eopts perl || die
 	perl-cleaner --all -- $eopts || die
 	emerge $eopts -uDN @world || die
