@@ -118,7 +118,17 @@ install -d ${ROOT}
 # It's important to merge baselayout first so it can set perms on key dirs
 emerge $eopts --nodeps baselayout || exit 1
 
-emerge $eopts -p -v --noreplace --oneshot ${buildpkgs} || exit 3
+emerge $eopts -p -v --noreplace --oneshot ${buildpkgs}
+if [ $? -ne 0 ]; then
+	# we encountered some problem resolving deps; so let's do some additional clean-ups first.
+	# FL-1398: update perl before we begin and try to update perl modules, if any installed/or will be installed.
+	unset ROOT
+	emerge -C dev-python/cryptography
+	emerge -u --nodeps $eopts perl || die
+	perl-cleaner --all -- $eopts || die
+	emerge $eopts -uDN @world || die
+	export ROOT="$[portage/ROOT]"
+fi
 emerge $eopts --noreplace --oneshot ${buildpkgs} || exit 1
 
 install -d ${ROOT}/{proc,sys,dev}

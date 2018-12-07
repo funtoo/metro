@@ -84,8 +84,7 @@ $[profile/flavor:zap]
 EOF
 $[[steps/ego/prep]]
 		cat $[path/chroot]/etc/ego.conf
-		ROOT=$[path/chroot] /root/ego/ego sync --kits-only || exit 8
-		ROOT=$[path/chroot] /root/ego/ego sync --config-only || exit 9
+		ROOT=$[path/chroot] /root/ego/ego sync || exit 9
 ]
 
 env: [
