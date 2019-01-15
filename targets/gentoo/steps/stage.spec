@@ -27,7 +27,7 @@ if [ "$[target]" != "stage1" ]; then
 			exit 99
 		fi
 	done
-	cat /etc/protage/make.profile/parent
+	cat /etc/portage/make.profile/parent
 fi
 if [ -d /var/tmp/cache/compiler ]
 then
