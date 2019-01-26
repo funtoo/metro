@@ -69,7 +69,10 @@ class ChrootTarget(BaseTarget):
 			self.run_script_in_chroot("steps/chroot/postrun", optional=True)
 			self.unbind()
 			self.run_script_in_chroot("steps/chroot/clean", optional=True)
+			# re-add bind mounts -- only for tests to run...
+			self.bind()
 			self.run_script_in_chroot("steps/chroot/test", optional=True)
+			self.unbind()
 			self.run_script_in_chroot("steps/chroot/postclean", optional=True)
 		except:
 			self.kill_chroot_pids()

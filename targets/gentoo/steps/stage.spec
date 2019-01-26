@@ -223,14 +223,14 @@ then
 	for f in /etc/profile.env /etc/csh.env /etc/env.d/99zzmetro
 	do
 		echo "Cleaning chroot: $f..."
-		rm -f $f || exit 1
+		rm -f "$f" || exit 1
 	done
 	for f in /etc/resolv.conf /etc/hosts
 	do
-		[ -e $f ] && rm -f $f
-		if [ -e $f.orig ]
+		[ -e "$f" ] && rm -f "$f"
+		if [ -e "$f.orig" ]
 		then
-			mv -f $f.orig $f || exit 2
+			mv -f "$f.orig" "$f" || exit 2
 		fi
 	done
 else
@@ -274,18 +274,12 @@ find $ROOT/etc -iname '._cfg????_*' -exec rm -f {} \;
 
 install -d $ROOT/etc/portage
 
-# ensure that make.conf.example is set up OK...
-if [ ! -e $ROOT/etc/portage/make.conf.example ] && [ ! -L $ROOT/etc/portage/make.conf.example ]
-then
-	if [ -e $ROOT/usr/share/portage/config/make.conf.example ]
-	then
-		ln -s ../../usr/share/portage/config/make.conf.example $ROOT/etc/portage/make.conf.example || exit 6
-	fi
-fi
 # locale-archive can be ~81 MB; this should shrink it to 2MB.
 rm -f /usr/lib*/locale/locale-archive
 locale-gen
 rm -rf $ROOT/run/*
+# clean up any crap in /dev
+rm -rf $ROOT/dev/*
 ]
 
 postclean: [
