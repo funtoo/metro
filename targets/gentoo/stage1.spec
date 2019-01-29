@@ -57,7 +57,7 @@ die() {
 export ORIG_PKGDIR=$PKGDIR
 export PKGDIR=$ORIG_PKGDIR/initial_root
 # upgrade gcc, portage, if necessary, before we begin:
-emerge -1u sys-devel/gcc || die
+emerge -1u $eopts sys-devel/gcc || die
 emerge -1u sys-apps/portage || die
 emerge -1u --nodeps app-admin/ego || die
 
