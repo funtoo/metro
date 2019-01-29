@@ -1,5 +1,5 @@
 import os
-
+import time
 from metro_support import MetroError, ismount
 
 from .base import BaseTarget
@@ -135,6 +135,7 @@ class ChrootTarget(BaseTarget):
 			progress = 0
 			mpos = 0
 			while mpos < len(mounts):
+				time.sleep(1)
 				self.cmd("umount "+mounts[mpos], badval=10)
 				if not ismount(mounts[mpos]):
 					del mounts[mpos]
