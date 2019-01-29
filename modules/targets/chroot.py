@@ -1,6 +1,7 @@
 import os
 import time
 from metro_support import MetroError, ismount
+import subprocess
 
 from .base import BaseTarget
 
@@ -151,6 +152,10 @@ class ChrootTarget(BaseTarget):
 				mstring = ""
 				for mount in mounts:
 					mstring += mount+"\n"
+					print("Couldn't unmount: %s" % mount)
+					if os.path.exists("/usr/bin/lsof"):
+						subprocess.call("/usr/bin/lsof | grep %s" % mount, shell=True)
+					print()
 				raise MetroError("The following bind mounts could not be unmounted: \n"+mstring)
 			else:
 				attempt += 1
