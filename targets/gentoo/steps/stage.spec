@@ -5,7 +5,8 @@
 
 setup: [
 /usr/sbin/env-update
-gcc-config 1
+# This should switch to most recent compiler:
+gcc-config $(gcc-config -l | wc -l)
 source /etc/profile
 export MAKEOPTS="$[portage/MAKEOPTS:zap]"
 export FEATURES="$[portage/FEATURES:zap]"
