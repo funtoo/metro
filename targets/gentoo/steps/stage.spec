@@ -4,6 +4,7 @@
 #[option parse/lax]
 
 setup: [
+ego sync --config-only
 /usr/sbin/env-update
 # This should switch to most recent compiler:
 gcc-config $(gcc-config -l | wc -l)
