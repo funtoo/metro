@@ -7,7 +7,13 @@ setup: [
 ego sync --config-only
 /usr/sbin/env-update
 # This should switch to most recent compiler:
-gcc-config $(gcc-config -l | wc -l)
+gcc_num=$(gcc-config -l | grep \\[ | wc -l)
+if [ "$gcc_num" -ge 1 ]; then
+	echo
+else
+	gcc_num=1
+fi
+gcc-config $gcc_num
 source /etc/profile
 export MAKEOPTS="$[portage/MAKEOPTS:zap]"
 export FEATURES="$[portage/FEATURES:zap]"
