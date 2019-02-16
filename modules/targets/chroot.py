@@ -6,7 +6,7 @@ from metro_support import MetroError, ismount
 import subprocess
 
 from .base import BaseTarget
-from ..qemu import native_support, qemu_arch_settings
+from qemu import native_support, qemu_arch_settings
 
 class ChrootTarget(BaseTarget):
 	def __init__(self, settings, cr):
