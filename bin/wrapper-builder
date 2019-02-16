@@ -8,17 +8,8 @@
 
 import sys
 import os
-
-qemu_arch_dict = {
-	'arm-64bit': {
-		'qemu_binary' : 'qemu-aarch64',
-		'qemu_cpu' : 'cortex-a53',
-	},
-	'arm-32bit' : {
-		'qemu_binary' : 'qemu-arm',
-		'qemu_cpu' : 'cortex-a7'
-	}
-}
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "../modules"))
+from qemu import qemu_arch_settings
 
 wrapper_code = """#include <string.h>
 #include <unistd.h>
@@ -37,19 +28,19 @@ int main(int argc, char **argv, char **envp) {{
 """
 
 if __name__ == "__main__":
-	if len(sys.argv) < 2 or sys.argv[1] not in qemu_arch_dict.keys():
-		print("Please specify one of: %s." % ", ".join(qemu_arch_dict.keys()))
+	if len(sys.argv) < 2 or sys.argv[1] not in qemu_arch_settings.keys():
+		print("Please specify one of: %s." % ", ".join(qemu_arch_settings.keys()))
 		sys.exit(1)
 
 	qemu_arch = sys.argv[1]
-	qemu_binary_path = "/usr/bin/%s" % qemu_arch_dict[qemu_arch]['qemu_binary'])
+	qemu_binary_path = "/usr/bin/%s" % qemu_arch_settings[qemu_arch]['qemu_binary']
 	
 	if not os.path.exists(qemu_binary_path):
 		print("Please ensure that %s exists first." % qemu_binary_path)
 		sys.exit(1)
 
 	with open("/tmp/qemu-wrapper.c", "w") as f:
-		f.write(wrapper_code.format(**qemu_arch_dict[qemu_arch]))
+		f.write(wrapper_code.format(**qemu_arch_settings[qemu_arch]))
 
 	os.system("cd /tmp; gcc -static -O3 -s -o qemu-{qemu_arch}-wrapper qemu-wrapper.c".format(qemu_arch=qemu_arch))
 

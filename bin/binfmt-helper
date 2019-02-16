@@ -1,0 +1,84 @@
+#!/usr/bin/python3
+
+# This python script will register a binary format for qemu franken-chroot.
+
+import sys
+import os
+import string
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "../modules"))
+from qemu import qemu_arch_settings
+
+
+def get_binary_hexstring(path):
+	chunk_as_hexstring = ""
+	with open(path, 'rb') as f:
+		for x in range(0,19):
+			chunk_as_hexstring += f.read(1).hex()
+	return chunk_as_hexstring
+
+
+printable_chars = set(string.printable)
+
+
+def escape_hexstring(hexstring):
+	global printable_chars
+	to_process = hexstring
+	to_output = ""
+	while len(to_process):
+		ascii_value = chr(int(to_process[:2], 16))
+		to_process = to_process[2:]
+		if ascii_value in printable_chars:
+			to_output += ascii_value
+		else:
+			to_output += "\\x" + "{0:02x}".format(ord(ascii_value))
+	return to_output
+
+def configure_binfmt(arch_desc, wrapper_bin):
+	if not os.path.exists(wrapper_bin):
+		sys.stderr.write("Error: wrapper binary %s not found.\n" % wrapper_bin)
+		sys.exit(1)
+	if arch_desc not in qemu_arch_settings:
+		sys.stderr.write("Error: arch %s not recognized. Specify one of: %s.\n" % (arch_desc, ", ".join(arch_dict.keys())))
+		sys.exit(1)
+	if os.path.exists("/proc/sys/fs/binfmt_misc/%s" % arch_desc):
+		sys.stderr.write("Error: binary format %s already registered in /proc/sys/fs/binfmt_misc.\n" % arch_desc)
+		sys.exit(1)
+	with open("/proc/sys/fs/binfmt_misc/%s" % arch_desc, "w") as f:
+		chunk_as_hexstring = qemu_arch_settings[arch_desc]
+		mask_as_hexstring = "fffffffffffffffcfffffffffffffffffeffff"
+		mask = int(mask_as_hexstring, 16)
+		chunk = int(chunk_as_hexstring, 16)
+		out_as_hexstring = hex(chunk & mask)[2:]
+		f.write(":%s:M::" % arch_desc)
+		f.write(escape_hexstring(out_as_hexstring))
+		f.write(":")
+		f.write(escape_hexstring(mask_as_hexstring))
+		f.write(":/usr/local/bin/%s:\n" % wrapper_bin)
+
+
+def usage():
+	print("""Usage:
+ {bin} register [arch_desc] [wrapper]
+		Configure system for binfmt_misc for arch_desc.'
+ {bin} hexstring bin_path
+		Print out magic hexstring for specified binary path.
+""".format(bin=sys.argv[0]))
+	sys.exit(1)
+
+
+if __name__ == "__main__":
+	if len(sys.argv) <= 2:
+		usage()
+	elif sys.argv[1] == "register":
+		if len(sys.argv) != 4:
+			usage()
+		configure_binfmt(sys.argv[2], sys.argv[3])
+	elif sys.argv[1] == "hexstring":
+		if len(sys.argv) != 3:
+			usage()
+		print(get_binary_hexstring(sys.argv[2]))
+	else:
+		sys.stderr.write("Unrecognized command: %s\n" % sys.argv[1])
+		sys.exit(1)
+
+# vim: ts=4 sw=4 noet

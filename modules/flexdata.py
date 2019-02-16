@@ -39,6 +39,7 @@ class collection:
 		self.conditional=None
 		self.collector=[]
 		self.collectorcond={}
+
 	def clear(self):
 		self.raw={}
 		self.conditionals={}
@@ -103,7 +104,7 @@ class collection:
 
 	def expandString(self,mystring=None,myvar=None,stack=[],options={}):
 		# Expand all variables in a basic value, ie. a string
-		if mystring == None:
+		if mystring is None:
 			if myvar[-1] == "?":
 				boolean = True
 				myvar = myvar[:-1]
@@ -120,7 +121,7 @@ class collection:
 					mystring = self.raw[myvar]
 			else:
 				mystring = self.get_condition_for(myvar)
-				if mystring == None:
+				if mystring is None:
 					if boolean:
 						mystring = "no"
 					elif len(stack) and stack[-1] in self.laxvars and self.laxvars[stack[-1]]:

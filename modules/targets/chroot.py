@@ -1,9 +1,12 @@
-import os
+#!/usr/bin/python3
+
+import os, sys
 import time
 from metro_support import MetroError, ismount
 import subprocess
 
 from .base import BaseTarget
+from ..qemu import native_support, qemu_arch_settings
 
 class ChrootTarget(BaseTarget):
 	def __init__(self, settings, cr):
@@ -38,7 +41,7 @@ class ChrootTarget(BaseTarget):
 			if name in options:
 				if key not in self.settings:
 					raise MetroError("Required setting %s not found (for %s option support)" % (key, name))
-				if self.settings[key] != None:
+				if self.settings[key] is not None:
 					# package cache dir will not be defined for snapshot...
 					self.cr.mesg("Enabling cache: %s" % key)
 					self.mounts[dst] = self.settings[key]
@@ -56,6 +59,52 @@ class ChrootTarget(BaseTarget):
 		try:
 			self.run_script("steps/unpack")
 			self.run_script("steps/unpack/post", optional=True)
+
+			if ["host/arch_desc"] in self.settings:
+				host_arch = self.settings["host/arch_desc"]
+			else:
+				uname_arch = os.uname()[4]
+				if uname_arch in [ "x86_64", "AMD64" ]:
+					host_arch = "x86-64bit"
+				elif uname_arch in [ "x86", "i686", "i386"]:
+					host_arch = "x86-32bit"
+				else:
+					raise MetroError("Unrecognized host architecture. Please set host/arch to x86-64bit, arm-32bit, etc. in ~/.metro.")
+
+			if host_arch not in native_support.keys():
+				raise MetroError("Arch specified in host/arch_desc \"%s\" not supported." % host_arch)
+			target_arch = self.settings["target/arch_desc"]
+
+			franken_chroot = False
+
+			if host_arch != target_arch:
+				if target_arch not in native_support[target_arch]:
+					franken_chroot = True
+
+			# FRANKEN-CHROOT SETUP
+
+			if franken_chroot:
+				helper_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "bin")
+				if not os.path.exists("/proc/sys/fs/binfmt_misc/%s" % target_arch):
+					os.system("%s/binfmt-helper register %s" % (helper_path, target_arch))
+				if not os.path.exists("/proc/sys/fs/binfmt_misc/%s" % target_arch):
+					raise MetroError("Unable to register binfmt for %s." % target_arch)
+				if not os.path.exists("/tmp/qemu-%s-wrapper" % target_arch):
+					os.system("%s/wrapper-builder %s" % (helper_path, target_arch))
+				source_wrapper = '/tmp/qemu-%s-wrapper' % target_arch
+				if not os.path.exists(source_wrapper):
+					raise MetroError("Unable to build wrapper %s." % source_wrapper)
+				source_qemu = '/usr/bin/%s' % qemu_arch_settings[target_arch]['qemu_binary']
+				if not os.path.exists(source_qemu):
+					raise MetroError("Required binary %s not found." % source_qemu)
+				os.system("cp %s %s/usr/local/bin/" % ( source_qemu, self.settings["path/work"]))
+				if not os.path.exists("%s/usr/local/bin/%s" % (self.settings["path/work"], os.path.basename(source_qemu))):
+					raise MetroError("Unable to copy %s into place." % source_qemu)
+				os.system("cp %s %s/usr/local/bin/" % (source_wrapper, self.settings["path/work"]))
+				if not os.path.exists("%s/usr/local/bin/%s" % ( self.settings["path/work"], os.path.basename(source_wrapper))):
+					raise MetroError("Unable to copy source wrapper %s into place." % source_wrapper)
+
+			# END FRANKEN-CHROOT SETUP
 
 			self.bind()
 
