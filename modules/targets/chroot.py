@@ -60,7 +60,7 @@ class ChrootTarget(BaseTarget):
 			self.run_script("steps/unpack")
 			self.run_script("steps/unpack/post", optional=True)
 
-			if ["host/arch_desc"] in self.settings:
+			if "host/arch_desc" in self.settings:
 				host_arch = self.settings["host/arch_desc"]
 			else:
 				uname_arch = os.uname()[4]
