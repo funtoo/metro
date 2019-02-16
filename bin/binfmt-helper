@@ -43,7 +43,7 @@ def configure_binfmt(arch_desc, wrapper_bin):
 	if os.path.exists("/proc/sys/fs/binfmt_misc/%s" % arch_desc):
 		sys.stderr.write("Error: binary format %s already registered in /proc/sys/fs/binfmt_misc.\n" % arch_desc)
 		sys.exit(1)
-	with open("/proc/sys/fs/binfmt_misc/%s" % arch_desc, "w") as f:
+	with open("/proc/sys/fs/binfmt_misc/register", "w") as f:
 		chunk_as_hexstring = qemu_arch_settings[arch_desc]
 		mask_as_hexstring = "fffffffffffffffcfffffffffffffffffeffff"
 		mask = int(mask_as_hexstring, 16)
