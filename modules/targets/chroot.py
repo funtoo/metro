@@ -85,10 +85,7 @@ class ChrootTarget(BaseTarget):
 
 			if franken_chroot:
 				helper_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "bin")
-				if not os.path.exists("/proc/sys/fs/binfmt_misc/%s" % target_arch):
-					os.system("%s/binfmt-helper register %s" % (helper_path, target_arch))
-				if not os.path.exists("/proc/sys/fs/binfmt_misc/%s" % target_arch):
-					raise MetroError("Unable to register binfmt for %s." % target_arch)
+
 				if not os.path.exists("/tmp/qemu-%s-wrapper" % target_arch):
 					os.system("%s/wrapper-builder %s" % (helper_path, target_arch))
 				source_wrapper = '/tmp/qemu-%s-wrapper' % target_arch
@@ -103,6 +100,10 @@ class ChrootTarget(BaseTarget):
 				os.system("cp %s %s/usr/local/bin/" % (source_wrapper, self.settings["path/work"]))
 				if not os.path.exists("%s/usr/local/bin/%s" % ( self.settings["path/work"], os.path.basename(source_wrapper))):
 					raise MetroError("Unable to copy source wrapper %s into place." % source_wrapper)
+				if not os.path.exists("/proc/sys/fs/binfmt_misc/%s" % target_arch):
+					os.system("%s/binfmt-helper register %s %s" % (helper_path, target_arch, source_wrapper))
+				if not os.path.exists("/proc/sys/fs/binfmt_misc/%s" % target_arch):
+					raise MetroError("Unable to register binfmt for %s." % target_arch)
 
 			# END FRANKEN-CHROOT SETUP
 
