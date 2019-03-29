@@ -38,7 +38,9 @@ do
 	s=${service%%:*}
 	l=${service##*:}
 	[ "$l" == "$s" ] && l="default"
-	rc-update add $s ${l}
+	if -e [ /etc/init.d/$service ]; then
+		rc-update add $s ${l}
+	fi
 done
 
 if [ -e /usr/share/eselect/modules/vi.eselect ] && [ -e /bin/busybox ]
