@@ -75,35 +75,23 @@ class ChrootTarget(BaseTarget):
 				raise MetroError("Arch specified in host/arch_desc \"%s\" not supported." % host_arch)
 			target_arch = self.settings["target/arch_desc"]
 
-			franken_chroot = False
+			self.franken_chroot = False
 
 			if host_arch != target_arch:
 				if target_arch not in native_support[target_arch]:
-					franken_chroot = True
+					self.franken_chroot = True
 
 			# FRANKEN-CHROOT SETUP
 
-			if franken_chroot:
-				helper_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "bin")
+			found_chroot_bin = None
 
-				if not os.path.exists("/tmp/qemu-%s-wrapper" % target_arch):
-					os.system("%s/wrapper-builder %s" % (helper_path, target_arch))
-				source_wrapper = '/tmp/qemu-%s-wrapper' % target_arch
-				if not os.path.exists(source_wrapper):
-					raise MetroError("Unable to build wrapper %s." % source_wrapper)
-				source_qemu = '/usr/bin/%s' % qemu_arch_settings[target_arch]['qemu_binary']
-				if not os.path.exists(source_qemu):
-					raise MetroError("Required binary %s not found." % source_qemu)
-				os.system("cp %s %s/usr/local/bin/" % ( source_qemu, self.settings["path/work"]))
-				if not os.path.exists("%s/usr/local/bin/%s" % (self.settings["path/work"], os.path.basename(source_qemu))):
-					raise MetroError("Unable to copy %s into place." % source_qemu)
-				os.system("cp %s %s/usr/local/bin/" % (source_wrapper, self.settings["path/work"]))
-				if not os.path.exists("%s/usr/local/bin/%s" % ( self.settings["path/work"], os.path.basename(source_wrapper))):
-					raise MetroError("Unable to copy source wrapper %s into place." % source_wrapper)
-				if not os.path.exists("/proc/sys/fs/binfmt_misc/%s" % target_arch):
-					os.system("%s/binfmt-helper register %s %s" % (helper_path, target_arch, source_wrapper))
-				if not os.path.exists("/proc/sys/fs/binfmt_misc/%s" % target_arch):
-					raise MetroError("Unable to register binfmt for %s." % target_arch)
+			if self.franken_chroot:
+				for fchroot_bin in [ "/root/fchroot/bin/fchroot", "/usr/bin/fchroot" ]:
+					if os.path.exists(fchroot_bin):
+					found_chroot_bin = self.cmds["chroot"] = fchroot_bin
+					break
+				if found_chroot_bin is None:
+					raise MetroError("Please install fchroot to /usr/bin or clone fchroot git repo to /root for non-native binary support.")
 
 			# END FRANKEN-CHROOT SETUP
 
