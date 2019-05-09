@@ -78,7 +78,7 @@ class ChrootTarget(BaseTarget):
 			self.franken_chroot = False
 
 			if host_arch != target_arch:
-				if target_arch not in native_support[target_arch]:
+				if target_arch not in native_support[host_arch]:
 					self.franken_chroot = True
 
 			# FRANKEN-CHROOT SETUP
@@ -88,7 +88,7 @@ class ChrootTarget(BaseTarget):
 			if self.franken_chroot:
 				for fchroot_bin in [ "/root/fchroot/bin/fchroot", "/usr/bin/fchroot" ]:
 					if os.path.exists(fchroot_bin):
-					found_chroot_bin = self.cmds["chroot"] = fchroot_bin
+						found_chroot_bin = self.cmds["chroot"] = fchroot_bin
 					break
 				if found_chroot_bin is None:
 					raise MetroError("Please install fchroot to /usr/bin or clone fchroot git repo to /root for non-native binary support.")
