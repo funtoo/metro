@@ -59,12 +59,12 @@ class AutomatedSetup:
 			return []
 
 		# It's usually a bad practice but I'm going to hard code some values in here to make code simpler
-		# Currently there are 5 main build arches , x86-64bit, x86-32bit, pure64, arm-64bit and arm-32bit
+		# Currently there are 6 main build arches: x86-64bit, x86-32bit, pure64, arm-64bit, arm-32bit, and riscv
 		# We need to parse the subarch directory of each of them to create our lists.
 		# These directories are currently located inside of the core-kit module at profiles/funtoo/1.0/linux-gnu/arch
 		core_kit_dir = comp_proc.stdout.strip()
 		arch_dir = Path(core_kit_dir).joinpath("profiles", "funtoo", "1.0", "linux-gnu", "arch")
-		arches = ("x86-64bit", "x86-32bit", "pure64", "arm-64bit", "arm-32bit")
+		arches = ("x86-64bit", "x86-32bit", "pure64", "arm-64bit", "arm-32bit", "riscv")
 		arch_map = {}
 		for arch in arches:
 			arch_map[arch] = self._generateSubarchList(arch_dir, arch)
