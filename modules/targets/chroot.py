@@ -78,7 +78,7 @@ class ChrootTarget(BaseTarget):
 			self.franken_chroot = False
 
 			if host_arch != target_arch:
-				if target_arch not in native_support[target_arch]:
+				if target_arch not in native_support[host_arch]:
 					self.franken_chroot = True
 
 			# FRANKEN-CHROOT SETUP
