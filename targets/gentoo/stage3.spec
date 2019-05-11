@@ -38,7 +38,7 @@ do
 	s=${service%%:*}
 	l=${service##*:}
 	[ "$l" == "$s" ] && l="default"
-	if -e [ /etc/init.d/$service ]; then
+	if [ -e /etc/init.d/$service ]; then
 		rc-update add $s ${l}
 	fi
 done

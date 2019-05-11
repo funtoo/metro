@@ -86,6 +86,7 @@ class ChrootTarget(BaseTarget):
 			found_chroot_bin = None
 
 			if self.franken_chroot:
+				chroot_bin = self.cmds["chroot"]
 				for fchroot_bin in [ "/root/fchroot/bin/fchroot", "/usr/bin/fchroot" ]:
 					if os.path.exists(fchroot_bin):
 						found_chroot_bin = self.cmds["chroot"] = fchroot_bin
@@ -107,12 +108,20 @@ class ChrootTarget(BaseTarget):
 			# postrun is for cleaning with bind-mounts still active:
 			self.run_script_in_chroot("steps/chroot/postrun", optional=True)
 			self.unbind()
+			if self.franken_chroot:
+				self.cmds["chroot"] = chroot_bin
 			self.run_script_in_chroot("steps/chroot/clean", optional=True)
+			if self.franken_chroot:
+				self.cmds["chroot"] = fchroot_bin
 			# re-add bind mounts -- only for tests to run...
 			self.bind()
 			self.run_script_in_chroot("steps/chroot/test", optional=True)
 			self.unbind()
+			if self.franken_chroot:
+				self.cmds["chroot"] = chroot_bin
 			self.run_script_in_chroot("steps/chroot/postclean", optional=True)
+			if self.franken_chroot:
+				self.cmds["chroot"] = fchroot_bin
 		except:
 			self.kill_chroot_pids()
 			self.unbind()
