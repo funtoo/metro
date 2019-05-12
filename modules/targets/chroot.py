@@ -176,7 +176,7 @@ class ChrootTarget(BaseTarget):
 			progress = 0
 			mpos = 0
 			while mpos < len(mounts):
-				time.sleep(1)
+				time.sleep(0.1)
 				self.cmd("umount -Rl "+mounts[mpos], badval=10)
 				if not ismount(mounts[mpos]):
 					del mounts[mpos]
