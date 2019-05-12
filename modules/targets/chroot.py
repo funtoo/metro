@@ -86,7 +86,7 @@ class ChrootTarget(BaseTarget):
 			found_chroot_bin = None
 
 			if self.franken_chroot:
-				for fchroot_bin in [ "/root/fchroot/bin/fchroot", "/usr/bin/fchroot" ]:
+				for fchroot_bin in [ "/root/fchroot/bin/fchroot-simple", "/usr/bin/fchroot-simple" ]:
 					if os.path.exists(fchroot_bin):
 						found_chroot_bin = self.cmds["chroot"] = fchroot_bin
 					break
@@ -151,7 +151,9 @@ class ChrootTarget(BaseTarget):
 
 	def bind(self):
 		""" Perform bind mounts """
+		self.cr.mesg("Mounting /proc in chroot...")
 		os.system(self.cmds["mount"]+" none -t proc %s/proc" % self.settings["path/work"])
+		self.cr.mesg("Mounting /dev in chroot...")
 		os.system(self.cmds["mount"]+" --rbind /dev %s/dev" % self.settings["path/work"])
 		for dst, src in list(self.mounts.items()):
 			if not os.path.exists(src):
