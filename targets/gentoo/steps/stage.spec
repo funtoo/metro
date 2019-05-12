@@ -223,7 +223,7 @@ else
 	mkconf=/etc/portage/make.conf
 fi
 export ROOT=$[portage/ROOT]
-if -e [ $ROOT/etc/ego.conf ]; then
+if [ -e $ROOT/etc/ego.conf ]; then
 	# we have a custom sync_base_url set but we don't want it in released stages.
 	sed -i -e '/^sync_base_url.*/d' $ROOT/etc/ego.conf
 fi
