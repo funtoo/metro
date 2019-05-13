@@ -9,7 +9,19 @@ chroot/run: [
 $[[steps/setup]]
 #emerge --oneshot $eopts portage || exit 1
 export USE="$[portage/USE] bindist"
-emerge $eopts --deep --newuse -u @world || exit 1
+emerge $eopts --deep --newuse -u @world 
+if [ $? -ne 0 ]; then
+	# maybe we did a perl upgrade, and we need to fix-up perl modules that are currently broken and causing perl
+	# DEPEND to not work.
+	# this was migrated *into* perl itself, and perl-cleaner doesn't handle it well:
+	emerge -C perl-core/Scalar-List-Utils
+	# perl-cleaner will now do its thing and even emerge virtual/Scalar-List-Utils if missing, like a good boy!
+	perl-cleaner --all || exit 1
+	# perl should be upgraded at this point, so perl and its modules should be happy, so they shouldn't be in an intermediate
+	# state when we do the following:
+	# continue where we left off...
+	emerge $eopts --deep --newuse -u @world
+fi
 emerge --deep --newuse -u $eopts $[emerge/packages/force:zap] || exit 2
 emerge --deep --newuse -u $eopts $[emerge/packages:zap] || exit 1
 if [ "`emerge --list-sets | grep preserved-rebuild`" = "preserved-rebuild" ]
