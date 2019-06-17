@@ -31,6 +31,7 @@ fi
 
 # Clean older debian-sources slotsand keep highest installed, which will reduce resulting stage
 emerge --prune sys-kernel/debian-sources || exit 1
+emerge --prune sys-kernel/debian-sources-lts || exit 1
 
 # run perl-cleaner to ensure all modules rebuilt after a major
 # perl update, fix FL-122

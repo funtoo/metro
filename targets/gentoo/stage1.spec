@@ -83,6 +83,13 @@ fi
 eselect python set python$[version/python] || die
 eselect python cleanup
 emerge -1 --nodeps ego portage
+
+# let's say openssl is upgraded -- we may need to rebuild lots of things. So we gotta take care of this:
+emerge $eopts -uDN @world || die
+emerge $eopts @preserved-rebuild || die
+# so now, we have upgraded stuff, and have the right libs installed that things going to /tmp/stage1root
+# will link to... and can proceed.
+
 ego sync --config-only
 
 cat > /tmp/build.py << "EOF"
