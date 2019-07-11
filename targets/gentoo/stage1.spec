@@ -57,6 +57,16 @@ die() {
 export ORIG_PKGDIR=$PKGDIR
 export PKGDIR=$ORIG_PKGDIR/initial_root
 # upgrade gcc, portage, if necessary, before we begin:
+# first remove all but the most recent gcc
+gcc_list="$(cd /var/db/pkg/sys-devel; ls -d gcc-[0-9]* | sort -V | head -n-1 )"
+if [ -n "$gcc_list" ]; then
+	for gcc in $gcc_list; do
+	echo "Cleaning $gcc..." 
+		emerge --rage-clean sys-devel/gcc:$(cd /var/db/pkg/sys-devel/$gcc; cat SLOT) || die
+	done
+	else
+		echo "No gcc versions to clean (installed: $(cd /var/db/pkg/sys-devel; ls -d gcc-[0-9]*))"
+fi
 emerge -1u $eopts sys-devel/gcc || die
 emerge -1u sys-apps/portage || die
 emerge -1u --nodeps app-admin/ego || die
