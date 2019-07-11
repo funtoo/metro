@@ -29,13 +29,15 @@ export PYTHON_SINGLE_TARGET="$(portageq envvar PYTHON_SINGLE_TARGET)"
 # set USE to expanded version of stage1 USE:
 EXTRA_USE="$(python /tmp/bootstrap.py --use)"
 ego profile mix-in +stage1
-USE="bootstrap $EXTRA_USE"
+export USE="bootstrap $EXTRA_USE"
 
 USE="-* build bootstrap" emerge portage || exit 1
 
 # adding oneshot below so "libtool" doesn't get added to the world file... 
 # libtool should be in the system profile, but is not currently there it seems.
-
+echo
+echo "USE is exported as: $USE"
+echo
 emerge $eopts --oneshot `python /tmp/bootstrap.py --pkglist` || exit 1
 emerge --clean 
 emerge --prune sys-devel/gcc || exit 1
@@ -98,11 +100,9 @@ pkglist = ["texinfo", "gettext", "binutils", "gcc", "glibc", "baselayout", "zlib
 
 if "nls" not in use or "gettext" not in pkgdict.keys():
 	pkglist.remove("gettext")
-
 if not "linux-headers" in pkgdict:
 	pkgdict["linux-headers"]="virtual/os-headers"
 if sys.argv[1] == "--use":
-	# TESTING NLS... not for production
 	print("nls "+" ".join(myuse))
 	sys.exit(0)
 elif sys.argv[1] == "--pkglist":
