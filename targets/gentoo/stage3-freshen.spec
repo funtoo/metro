@@ -32,6 +32,16 @@ fi
 # Clean older debian-sources slotsand keep highest installed, which will reduce resulting stage
 emerge --prune sys-kernel/debian-sources || exit 1
 emerge --prune sys-kernel/debian-sources-lts || exit 1
+latest_python3=$(eselect python list --python3 | sed -ne '/python/s/.*\(python.*\)$/\1/p' | sort | tail -n 1)
+latest_python3=python-${latest_python3:6:3}
+oldest_python3=$(eselect python list --python3 | sed -ne '/python/s/.*\(python.*\)$/\1/p' | sort | head -n 1)
+oldest_python3=python-${oldest_python3:6:3}
+if [ "$latest_python3" != "$oldest_python3" ]; then
+	emerge -C =dev-lang/${oldest_python3}* || die
+fi
+# switch to correct python
+eselect python set python$[version/python] || die
+eselect python cleanup
 
 # run perl-cleaner to ensure all modules rebuilt after a major
 # perl update, fix FL-122
