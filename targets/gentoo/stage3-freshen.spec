@@ -24,11 +24,6 @@ if [ $? -ne 0 ]; then
 fi
 emerge --deep --newuse -u $eopts $[emerge/packages/force:zap] || exit 2
 emerge --deep --newuse -u $eopts $[emerge/packages:zap] || exit 1
-if [ "`emerge --list-sets | grep preserved-rebuild`" = "preserved-rebuild" ]
-then
-	emerge $eopts @preserved-rebuild || exit 3
-fi
-
 # Clean older debian-sources slotsand keep highest installed, which will reduce resulting stage
 emerge --prune sys-kernel/debian-sources || exit 1
 emerge --prune sys-kernel/debian-sources-lts || exit 1
@@ -42,10 +37,14 @@ fi
 # switch to correct python
 eselect python set python$[version/python] || die
 eselect python cleanup
-
 # run perl-cleaner to ensure all modules rebuilt after a major
 # perl update, fix FL-122
 perl-cleaner --all || exit 1
+if [ "`emerge --list-sets | grep preserved-rebuild`" = "preserved-rebuild" ]
+then
+	emerge $eopts @preserved-rebuild || exit 3
+fi
+
 ]
 
 [section portage]
