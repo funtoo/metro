@@ -20,7 +20,7 @@ if [ $? -ne 0 ]; then
 	# perl should be upgraded at this point, so perl and its modules should be happy, so they shouldn't be in an intermediate
 	# state when we do the following:
 	# continue where we left off...
-	emerge $eopts --deep --newuse -u @world
+	emerge $eopts --deep --newuse -u @world libxml2
 fi
 emerge --deep --newuse -u $eopts $[emerge/packages/force:zap] || exit 2
 emerge --deep --newuse -u $eopts $[emerge/packages:zap] || exit 1
