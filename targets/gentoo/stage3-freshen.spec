@@ -39,10 +39,10 @@ eselect python set python$[version/python] || die
 eselect python cleanup
 # run perl-cleaner to ensure all modules rebuilt after a major
 # perl update, fix FL-122
-perl-cleaner --all || exit 1
+perl-cleaner --all -- $eopts || exit 1
 if [ "`emerge --list-sets | grep preserved-rebuild`" = "preserved-rebuild" ]
 then
-	emerge $eopts @preserved-rebuild || exit 3
+	emerge $eopts @preserved-rebuild -uDN -1 gentoolkit || exit 3
 fi
 
 ]
