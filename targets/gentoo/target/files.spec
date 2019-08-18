@@ -24,6 +24,7 @@ locale.gen: [
 # yourself instead of re-emerging glibc.
 
 en_US.UTF-8 UTF-8
+C.UTF-8 UTF-8
 ]
 
 proxyenv: [
