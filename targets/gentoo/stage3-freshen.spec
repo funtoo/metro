@@ -7,6 +7,7 @@
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
+locale-gen
 #emerge --oneshot $eopts portage || exit 1
 export USE="$[portage/USE] bindist"
 emerge $eopts --deep --newuse -u @world 
