@@ -43,7 +43,7 @@ eselect python cleanup
 perl-cleaner --all -- $eopts || exit 1
 if [ "`emerge --list-sets | grep preserved-rebuild`" = "preserved-rebuild" ]
 then
-	emerge $eopts @preserved-rebuild -uDN -1 gentoolkit || exit 3
+	emerge $eopts @preserved-rebuild -uDN -1 gentoolkit --backtrack=6 || exit 3
 fi
 
 ]
