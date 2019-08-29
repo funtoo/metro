@@ -210,6 +210,8 @@ echo "Creating motd..."
 cat > /etc/motd << "EOF"
 $[[files/motd]]
 EOF
+# make sure /root exists and has proper perms:
+install -d /root -m0700
 ]
 
 clean: [
