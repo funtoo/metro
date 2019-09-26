@@ -26,7 +26,7 @@ export UNINSTALL_IGNORE="/etc/portage/*"
 export DISTDIR="/var/cache/portage/distfiles"
 if [ "$[target]" != "stage1" ]; then
 	mixins=""
-	mixins=$[profile/mix-ins:zap]
+	mixins=$[profile/mix-ins:zap] $EGO_PROFILE_MIX_INS
 	for mixin in $mixins; do
 		ego profile mix-in +$mixin || exit 98
 	done
