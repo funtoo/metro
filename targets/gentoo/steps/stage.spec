@@ -122,8 +122,6 @@ then
 else
 	eopts="$[emerge/options]"
 fi
-# work around glibc sandbox issues, and franken-chroot incompatible with ipc-sandbox
-export FEATURES="$FEATURES -pid-sandbox -network-sandbox -sandbox -usersandbox -ipc-sandbox"
 install -d /etc/portage
 # the quotes below prevent variable expansion of anything inside make.conf
 cat > $mkconf << "EOF"
