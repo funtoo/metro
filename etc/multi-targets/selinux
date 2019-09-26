@@ -1,5 +1,3 @@
 [section multi]
 
-targets: lxd
-
-
+targets: selinux
