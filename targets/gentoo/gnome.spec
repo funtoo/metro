@@ -24,7 +24,10 @@ fi
 chroot/run: [
 #!/bin/bash
 $[[steps/setup]]
-epro mix-in gnome gfxcard-nvidia gfxcard-amdgpu gfxcard-intel gfxcard-radeon || exit 1
+epro mix-in gnome || exit 1
+if [ "$[target/arch_desc]" == "x86-64bit" ]; then
+	epro mix-in gfxcard-nvidia gfxcard-amdgpu gfxcard-intel gfxcard-radeon || exit 1
+fi
 epro flavor desktop || exit 2
 emerge $eopts -uDN @world || exit 3
 for pkg in gnome metalog vim firefox linux-firmware; do
