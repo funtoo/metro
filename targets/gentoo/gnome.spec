@@ -11,7 +11,7 @@ target/name: gnome-stage3
 unpack/post: [
 #!/bin/bash
 fsroot_loc=$[path/install]/etc/builds/$[target/build]/$[target]/fsroot
-if [ -d "$fsroot_loc" ]
+if [ -d "$fsroot_loc" ]; then
 	install -d "$[path/chroot]/tmp/fsroot" || exit 8
 	# we will need to sync this to the root filesystem after we're done merging...
 	rsync -av "${fsroot_loc}/" "$[path/chroot]/tmp/fsroot" || exit 9
