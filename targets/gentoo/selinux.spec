@@ -44,11 +44,11 @@ for service in rsyslog auditd; do
 	rc-update add $service default || exit 3
 done
 # This should be done last so it can override any default configs from packages emerged above:
+if [ -d /tmp/fsroot ]; then
+	echo "Syncing custom config over myself..."
+	rsync -av /tmp/fsroot/ / || exit 1
+fi
 if [ -e /tmp/fsroot.mtree ]; then
-	if [ -d /tmp/fsroot ]; then
-		echo "Syncing custom config over myself..."
-		rsync -av /tmp/fsroot/ / || exit 1
-	fi
 	emerge mtree || exit 1
 	echo "Applying fsroot permissions/ownership..."
 	mtree -U -f /tmp/fsroot.mtree -p /

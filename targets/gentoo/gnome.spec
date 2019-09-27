@@ -16,7 +16,9 @@ sys:
 unpack/post: [
 fsroot_loc=$[path/install]/etc/builds/$[target/build]/fsroot
 if [ -d "$fsroot_loc" ]
-	rsync -av "${fsroot_loc}/" "$[path/chroot]/" || exit 9
+	install -d "$[path/chroot]/tmp/fsroot" || exit 8
+	# we will need to sync this to the root filesystem after we're done merging...
+	rsync -av "${fsroot_loc}/" "$[path/chroot]/tmp/fsroot" || exit 9
 fi
 if [ -e "${fsroot_loc}.mtree" ]; then
 	cp "${fsroot_loc}.mtree" "$[path/chroot]/tmp/" || exit 10
@@ -32,4 +34,8 @@ emerge $eopts -uDN @world || exit 3
 for pkg in gnome; do
 	emerge $eopts $pkg || exit 4
 done
+if [ -d /tmp/fsroot ]; then
+	echo "Syncing custom config over myself..."
+	rsync -av /tmp/fsroot/ / || exit 1
+fi
 ]
