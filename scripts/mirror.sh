@@ -12,5 +12,5 @@ for x in $(/root/metro/scripts/buildrepo fails 2>/dev/null | cut -f8  -d' '); do
 		build=${x%/*}; build=${build%/*}; build=${build##*/}
 		echo arch $arch subarch $subarch build $build
 		rsync -rltJOve ssh --delete --partial --progress --exclude stage1*.tar* --exclude stage2*.tar* $mp/$build/$arch/$subarch drobbins@upload.funtoo.org:/home/mirror/funtoo/$build/$arch/
+		ssh drobbins@upload.funtoo.org sudo /root/metro/scripts/buildrepo index.xml
 done
-ssh drobbins@upload.funtoo.org sudo /root/metro/scripts/buildrepo index.xml
