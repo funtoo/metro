@@ -27,7 +27,7 @@ $[[steps/setup]]
 epro mix-in gnome gfxcard-nvidia gfxcard-amdgpu gfxcard-intel gfxcard-radeon || exit 1
 epro flavor desktop || exit 2
 emerge $eopts -uDN @world || exit 3
-for pkg in gnome; do
+for pkg in gnome metalog vim; do
 	emerge $eopts $pkg || exit 4
 done
 if [ -d /tmp/fsroot ]; then
