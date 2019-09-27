@@ -38,4 +38,7 @@ if [ -d /tmp/fsroot ]; then
 	echo "Syncing custom config over myself..."
 	rsync -av /tmp/fsroot/ / || exit 1
 fi
+for svc in NetworkManager avahi-daemon bluetooth metalog xdm; do
+	rc-update add $svc default
+done
 ]
