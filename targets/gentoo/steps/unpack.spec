@@ -34,9 +34,9 @@ esac
 if [ -d $[path/chroot]/lib ] && [ -d $[path/chroot]/lib64 ] && [ ! -h $[path/chroot]/lib ]; then
 	echo "Attempting to fix split /lib..."
 	# we have both /lib and /lib64 as regular directories. Need to fix.
-	rsync -av $[path/chroot]/lib64/ $[path/chroot]/lib/ || exit 23
-	rm -rf $[path/chroot]/lib64 || exit 24
-	ln -s /lib $[path/chroot]/lib64 || exit 25
+	rsync -av $[path/chroot]/lib/ $[path/chroot]/lib64/ || exit 23
+	rm -rf $[path/chroot]/lib || exit 24
+	ln -s /lib64 $[path/chroot]/lib || exit 25
 fi
 if [ -n "$(ls $[path/chroot]/lib.backup.*)" ]; then
 	rm -rf $[path/chroot]/lib.backup.* || exit 26
