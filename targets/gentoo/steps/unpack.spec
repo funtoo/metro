@@ -38,6 +38,13 @@ if [ -d $[path/chroot]/lib ] && [ -d $[path/chroot]/lib64 ] && [ ! -h $[path/chr
 	rm -rf $[path/chroot]/lib || exit 24
 	ln -s /lib64 $[path/chroot]/lib || exit 25
 fi
+if [ -h $[path/chroot]/lib64 ] && [ -d $[path/chroot]/lib ]; then
+	# wonky lib setup. Let's fix.
+	echo "Fixing wonky lib setup..."
+	rm $[path/chroot]/lib64 || exit 29
+	mv $[path/chroot]/lib $[path/chroot]/lib64 || exit 30
+	ln -s /lib64 $[path/chroot]/lib || exit 31
+fi
 if [ -n "$(ls $[path/chroot]/lib.backup.*)" ]; then
 	rm -rf $[path/chroot]/lib.backup.* || exit 26
 fi
