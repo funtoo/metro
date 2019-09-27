@@ -1,5 +1,7 @@
 #!/bin/bash
-source ~/.bash_login
+if [ -e ~/.bash_login ]; then
+	source ~/.bash_login
+fi
 mp=$(/root/metro/metro -k path/mirror 2>/dev/null)
 /root/metro/scripts/buildrepo clean | tee /tmp/foo.sh
 sh /tmp/foo.sh
