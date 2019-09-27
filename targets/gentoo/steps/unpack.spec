@@ -33,13 +33,16 @@ esac
 # let's fix /lib if it is a problematic state. Note that this is NOT multilib-compatible.
 if [ -d $[path/chroot]/lib ] && [ -d $[path/chroot]/lib64 ] && [ ! -h $[path/chroot]/lib ]; then
 	echo "Attempting to fix split /lib..."
-	# we have both /lib and /lib64 as regular directories. Need to fix.
-	rsync -av $[path/chroot]/lib/ $[path/chroot]/lib64/ || exit 23
-	rm -rf $[path/chroot]/lib || exit 24
-	ln -s /lib64 $[path/chroot]/lib || exit 25
+	# we have both /lib and /lib64 as regular directories. Need to fix. Sync everything to /lib.
+	rsync -av $[path/chroot]/lib64/ $[path/chroot]/lib/ || exit 23
+	# Now, remove lib64.
+	rm -rf $[path/chroot]/lib64 || exit 24
+	# Next, create a lib64 symlink pointing to /lib 
+	ln -s /lib $[path/chroot]/lib64 || exit 25
+	# we are done, but we are left with a wonky lib setup. This is actually backwards. It's easier to fix separately, below.
 fi
 if [ -h $[path/chroot]/lib64 ] && [ -d $[path/chroot]/lib ]; then
-	# wonky lib setup. Let's fix.
+	# wonky lib setup. Let's fix. This can happen from previous step, or maybe we're just wonky.
 	echo "Fixing wonky lib setup..."
 	rm $[path/chroot]/lib64 || exit 29
 	mv $[path/chroot]/lib $[path/chroot]/lib64 || exit 30
