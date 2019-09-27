@@ -173,6 +173,7 @@ class Metro:
 					print("Could not create multi-target lock file %s" % self.multi_ts.path)
 					sys.exit(1)
 		current_target = None
+		user_abort = False
 		for targetname in targetlist:
 			current_target = targetname
 			# We start by grabbing settings for this target:
@@ -222,7 +223,6 @@ class Metro:
 			self.ts = lockFile(tsfn)
 			abort = False
 			error = False
-			user_abort = False
 			try:
 				if self.ts.exists():
 					if targetname == "snapshot":

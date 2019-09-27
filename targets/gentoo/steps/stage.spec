@@ -4,6 +4,19 @@
 #[option parse/lax]
 
 setup: [
+# first, let's fix /lib if it is a problematic state:
+if [ -d /lib ] && [ -d /lib64 ] && [ ! -h /lib ]; then
+	echo "Attempting to fix split /lib..."
+	# we have both /lib and /lib64 as regular directories. Need to fix.
+	if [ -e /usr/bin/rsync ]; then
+		rsync -av /lib/ /lib64/ || exit 23
+		rm -rf /lib/ || exit 24
+		ln -s /lib64 /lib || exit 25
+	fi
+	if [ -n "$(ls /lib.backup.*)" ]; then
+		rm -rf /lib.backup.* || exit 26
+	fi
+fi
 ego sync --config-only
 /usr/sbin/env-update
 # This should switch to most recent compiler:
@@ -39,7 +52,7 @@ if [ "$[target]" != "stage1" ]; then
 fi
 if [ -d /var/tmp/cache/compiler ]
 then
-	if ! [ -e /usr/bin/ccache ] 
+	if ! [ -e /usr/bin/ccache ]
 	then
 		emerge --oneshot --nodeps ccache || exit 2
 	fi

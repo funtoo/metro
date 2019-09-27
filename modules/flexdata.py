@@ -39,11 +39,12 @@ class collection:
 		self.conditional=None
 		self.collector=[]
 		self.collectorcond={}
-
+	
 	def clear(self):
 		self.raw={}
 		self.conditionals={}
 		self.blanks={}
+		self.definedinfile={}
 
 	def expand_all(self):
 		# try to expand all variables to find any undefined elements, to record all blanks or throw an exception
@@ -341,11 +342,14 @@ class collection:
 		if self.immutable and key in self.raw:
 			raise IndexError("Attempting to redefine "+key+" to "+value+" when immutable.")
 		self.raw[key]=value
+		self.definedinfile[key] = "via __setitem__"
 
 	def __delitem__(self,key):
 		if self.immutable and key in self.raw:
 			raise IndexError("Attempting to delete "+key+" when immutable.")
 		del self.raw[key]
+		if key in self.definedinfile:
+			del self.definedinfile[key]
 
 	def __getitem__(self,element):
 		return self.expand(element)
@@ -390,7 +394,7 @@ class collection:
 			else:
 				continue
 
-	def parseline(self,filename,openfile=None,dups=False):
+	def parseline(self,filename,openfile=None,origfile=None,dups=False):
 
 		# parseline() will parse a line and return None on EOF, return [] on a blank line with no data, or will
 		# return a list of string elements if there is data on the line, split along whitespace: [ "foo:", "bar", "oni" ]
@@ -451,9 +455,13 @@ class collection:
 							raise FlexDataError("Conditional element %s already defined for condition %s" % (myvar, self.conditional))
 						self.conditionals[myvar][self.conditional] = mylines
 					elif not dups and myvar in self.raw:
-						raise FlexDataError("Error - \""+myvar+"\" already defined.")
+						if self.definedinfile[myvar] == filename:
+							raise FlexDataError("Error - file %s was already collected, duplicate definitions." % filename)
+						else:
+							raise FlexDataError("Error - in parsing %s: \"%s\" already defined in %s" % (filename, myvar, self.definedinfile[myvar]))
 					else:
 						self.raw[myvar] = mylines
+						self.definedinfile[myvar] = filename
 					break
 				else:
 					# append new line
@@ -668,3 +676,4 @@ if __name__ == "__main__":
 	coll.runCollector()
 	sys.exit(0)
 
+# vim: ts=4 sw=4 noet
