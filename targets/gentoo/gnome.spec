@@ -1,19 +1,15 @@
 [collect ./source/stage3.spec]
 [collect ./target/stage4.spec]
-[collect ./steps/stage.spec]
 [collect ./steps/capture/tar.spec]
 
 [section stage4]
 
 target/name: gnome-stage3
 
-[section target]
-
-sys:
-
 [section steps]
 
 unpack/post: [
+#!/bin/bash
 fsroot_loc=$[path/install]/etc/builds/$[target/build]/fsroot
 if [ -d "$fsroot_loc" ]
 	install -d "$[path/chroot]/tmp/fsroot" || exit 8
