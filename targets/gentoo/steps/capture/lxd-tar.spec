@@ -103,20 +103,16 @@ case "$[target/compression]" in
 	bz2)
 		if [ -e /usr/bin/pbzip2 ]
 		then
-			pbzip2 -p4 $tarout
+			pbzip2 -9 -p4 $tarout
 		else
-			bzip2 $tarout
+			bzip2 -9 $tarout
 		fi
 		;;
 	xz)
-		if [ -e /usr/bin/pxz ]; then
-			pxz $tarout
-		else
-			xz --threads=0 $tarout
-		fi
+		xz -9 --threads=0 $tarout
 		;;
 	gz)
-		gzip $tarout
+		gzip -9 $tarout
 		;;
 esac
 
