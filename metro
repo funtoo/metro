@@ -73,10 +73,6 @@ class Metro:
 		self.debug_flexdata = self.has_opts(["-f", "--debug-flexdata"])
 		self.verbose = self.has_opts(["-v", "--verbose"])
 
-		# Step 1: check preconditions
-		if os.getuid() != 0:
-			raise RuntimeError("this script requires root privileges to operate")
-
 		# Step 2: set up metro modules and prepare to parse settings:
 		self.setup = MetroSetup(verbose=self.verbose,debug=self.debug)
 		if self.setup == None:
