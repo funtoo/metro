@@ -5,12 +5,12 @@
 
 metro="$(dirname $0)/../metro"
 buildrepo="$(dirname $0)/buildrepo"
-mp=$($metro -k path/mirror 2>/dev/null)
+mp="$($metro -k path/mirror 2>/dev/null)"
 echo $mp
 if [ -z "$mp" ]; then
 	echo "Could not get path/mirror from metro configuration; exiting."
 	exit 1
 fi
-$metro clean | tee /tmp/foo.sh
+$buildrepo clean | tee /tmp/foo.sh
 sh /tmp/foo.sh
 $buildrepo digestgen
