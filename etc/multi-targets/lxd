@@ -1,5 +1,5 @@
 [section multi]
 
-targets: lxd
+targets: lxd $[:extras:lax]
 
 
