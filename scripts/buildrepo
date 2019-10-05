@@ -43,35 +43,35 @@ else:
 Create a ~/.buildbot file that contains something like this (python syntax):
 
 builds = (
-	"funtoo-experimental",
-	"funtoo-current",
-	"funtoo-current-hardened",
+"funtoo-experimental",
+"funtoo-current",
+"funtoo-current-hardened",
 )
 
 arches = (
-	"x86-32bit",
-	"x86-64bit",
-	"sparc-64bit",
-	"pure64"
+"x86-32bit",
+"x86-64bit",
+"sparc-64bit",
+"pure64"
 )
 
 # all subarches that are built here:
 subarches = ( 
-	"atom_32",
-	"atom_64",
-	"corei7",
-	"corei7-pure64",
-	"generic_32", 
-	"i686", 
-	"athlon-xp",
-	"pentium4",
-	"core2_32",
-	"amd64-k8_32",
-	"amd64-k8",
-	"amd64-k10",
-	"core2_64",
-	"generic_64",
-	"generic_64-pure64",
+"atom_32",
+"atom_64",
+"corei7",
+"corei7-pure64",
+"generic_32", 
+"i686", 
+"athlon-xp",
+"pentium4",
+"core2_32",
+"amd64-k8_32",
+"amd64-k8",
+"amd64-k10",
+"core2_64",
+"generic_64",
+"generic_64-pure64",
 )
 
 # optional - how many days old it takes for a stage build to be considered "stale":
@@ -87,20 +87,20 @@ keep_num = 3
 
 # optional - all subarches that are built + uploaded here:
 all_subarches = subarches + (
-	"amd64-piledriver",
-	"amd64-steamroller"
+"amd64-piledriver",
+"amd64-steamroller"
 )
 
 # optional:
 def map_build(build, subarch, full, full_date):
-	# arguments refer to last build...
-	if full == True:
-		buildtype = "freshen"
-	else:
-		buildtype = "full"
-	if subarch in [ "corei7", "corei7-pure64", "generic_64",  "generic_64-pure64" ]:
-		buildtype = buildtype + "+openvz"
-	return buildtype
+# arguments refer to last build...
+if full == True:
+	buildtype = "freshen"
+else:
+	buildtype = "full"
+if subarch in [ "corei7", "corei7-pure64", "generic_64",  "generic_64-pure64" ]:
+	buildtype = buildtype + "+openvz"
+return buildtype
 """)
 	sys.exit(1)
 
@@ -126,8 +126,23 @@ class SubArch(dbobject):
 			Column('full_date', DateTime, index=True),
 			Column('full_date_str', String, index=True),
 			Column('do_build', Boolean, index=True),
-			Column('containers', String),
 		)
+
+class Artifact(dbobject):
+	@classmethod
+	def _makeTable(cls,db):
+		cls.db = db
+		cls.__table__ = Table('artifacts', db.metadata,
+			Column('id', Integer, primary_key=True),
+			Column('subarch_id', Integer, index=True),
+			Column('flavor', String),
+			Column('path', String, index=True),
+		)
+
+	@classmethod
+	def _mapTable(cls, db):
+		dbobject._mapTable(db)
+		mapper(SubArch, Subarch.__table__, properties={ 'artifacts' : relationship(Subarch, backref=backref('artifacts', order_by='Artifact.flavor'))})
 
 class BuildDir(dbobject):
 	@classmethod
@@ -142,7 +157,6 @@ class BuildDir(dbobject):
 			Column('subarch', String, index=True),
 			Column('date_str', String, index=True),
 			Column('complete', Boolean, index=True),
-			Column('containers', String),
 			Column('full', Boolean, index=True)
 		)
 
@@ -159,7 +173,7 @@ class Snapshot(dbobject):
 class RepositoryDatabase(Database):
 	__database__ = "sqlite:///cleaner.db"
 	def __init__(self):
-		Database.__init__(self,[BuildDir, Snapshot, SubArch])
+		Database.__init__(self,[BuildDir, Snapshot, SubArch, Artifact])
 		self.associate()
 	def associate(self):
 		Database.associate(self,self.__database__)
@@ -203,7 +217,6 @@ if __name__ == "__main__":
 				else:
 					fc = countFile(failpath)
 					failcount = fc.count
-				containers = None
 				for dirname in os.listdir(path):
 					if dirname == ".control":
 						continue
@@ -213,7 +226,8 @@ if __name__ == "__main__":
 					if not os.path.isdir(ipath):
 						continue
 					complete = False
-					openvz = False
+					# artifacts: map 'extra' name like 'gnome' build to full path of artifact:
+					artifacts = {}
 					bdir = BuildDir()
 					if sha1:
 						# QA build -- use this special method for getting datestamp of directory.
@@ -233,10 +247,16 @@ if __name__ == "__main__":
 							bdir.date = datetime.datetime.strptime(instance,"%Y-%m-%d")
 							bdir.date_str = instance
 							for match in glob.glob("%s/stage3*.tar.*" % ipath):
-								complete = True
+								artifacts["stage3"] = match
 								break
 							for match in glob.glob("%s/funtoo-*-openvz-*.tar.*" % ipath):
-								openvz = True
+								artifacts["openvz"] = match
+								break
+							for match in glob.glob("%s/lxd-*.tar.*" % ipath):
+								artifacts["lxd"] = match
+								break
+							for match in glob.glob("%s/gnome-*.tar.*" % ipath):
+								artifacts["gnome"] = match
 								break
 						except ValueError:
 							# didn't work? Use old date on purpose to force cleaning:
@@ -247,7 +267,7 @@ if __name__ == "__main__":
 					bdir.arch = arch
 					bdir.subarch = subarch
 					bdir.complete = complete
-					bdir.containers = "openvz" if openvz else None
+
 					if complete:
 						for match in glob.glob("%s/stage1*.tar.*" % ipath):
 							bdir.full = True
@@ -256,7 +276,6 @@ if __name__ == "__main__":
 					if complete and ( most_recent == None or most_recent < bdir.date ):
 						most_recent = bdir.date
 						most_recent_str = bdir.date_str
-						containers = bdir.containers
 						if bdir.full:
 							most_recent_full = bdir.date
 							most_recent_full_str = bdir.date_str
@@ -268,7 +287,6 @@ if __name__ == "__main__":
 				sa.date_str = most_recent_str
 				sa.full_date = most_recent_full
 				sa.full_date_str = most_recent_full_str
-				sa.containers = containers
 				sa.failcount = failcount
 				sa.path = path
 				# is subarch in our list of things to build, or just to maintain (ie. clean, for main repo)?
@@ -277,7 +295,14 @@ if __name__ == "__main__":
 				else:
 					sa.do_build = False
 				session.add(sa)
-
+				session.flush()
+				for artifact_keyword, artifact_path in artifacts.items():
+					art = Artifact()
+					art.subarch_id = sa.id
+					art.flavor = artifact_keyword
+					art.path = artifact_path
+					session.add(art)
+					session.flush()
 	session.commit()
 now = datetime.datetime.now()
 # more than 3 fails and we remove the build from our rotation:
@@ -377,7 +402,7 @@ while len(sys.argv) > 1:
 		fails = session.query(SubArch).filter(SubArch.__table__.c.failcount > 0).order_by(SubArch.__table__.c.failcount.desc())
 		goods = session.query(SubArch).filter(SubArch.__table__.c.failcount == 0)
 		for x in fails:
-			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
+			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path, x.artifacts)
 		for x in goods:
 			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
 	elif sys.argv[1] == "index.xml":
@@ -439,8 +464,8 @@ while len(sys.argv) > 1:
 				build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
 				if b.date:
 					build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
-					if b.containers == "openvz":
-						build_xml.attrib["openvz"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/" + b.build + "-" + b.subarch + "-openvz-" + build_xml.attrib["latest"] + ".tar.xz"
+					#if "openvz" in b.extras.split(","):
+					#	build_xml.attrib["openvz"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/" + b.build + "-" + b.subarch + "-openvz-" + build_xml.attrib["latest"] + ".tar.xz"
 					if not info_json_path:
 						bifn = os.path.join(b.path,b.date_str,"build-info.json")
 						if os.path.exists(bifn):
