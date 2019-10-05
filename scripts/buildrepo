@@ -275,7 +275,6 @@ if __name__ == "__main__":
 				for dirname in os.listdir(path):
 					if dirname == ".control":
 						continue
-					instance = dirname[:10]
 					ipath = "%s/%s" % ( path, dirname )
 					if not os.path.isdir(ipath):
 						continue
@@ -285,18 +284,21 @@ if __name__ == "__main__":
 					bdir = db.BuildDir()
 					spath = ipath + "/status"
 					if os.path.exists(spath):
-						complete = True
-						# grab mtime of status file:
-						bdir.date = datetime.datetime.utcfromtimestamp(os.path.getmtime(spath))
-						# use that to generate date string:
-						bdir.date_str = bdir.date.strftime("%Y-%m-%d")
+						with open(spath,"r") as sfile:
+							sdata = sfile.read().strip()
+							if sdata == "ok":
+								complete = True
+							# grab mtime of status file:
+							bdir.date = datetime.datetime.utcfromtimestamp(os.path.getmtime(spath))
+							# use that to generate date string:
+							bdir.date_str = bdir.date.strftime("%Y-%m-%d")
 					else:
 						# build is in progress, so skip cleaning:
 						continue
 					# datestamped build dir -- let's try to parse it:
 					try:
-						bdir.date = datetime.datetime.strptime(instance,"%Y-%m-%d")
-						bdir.date_str = instance
+						bdir.date = datetime.datetime.strptime(dirname,"%Y-%m-%d")
+						bdir.date_str = dirname
 						for match in glob.glob("%s/stage3*.tar.*" % ipath):
 							artifacts["stage3"] = match
 							break
@@ -326,7 +328,7 @@ if __name__ == "__main__":
 					with db.get_session() as session:
 						session.add(bdir)
 						session.flush()
-					if complete or ( most_recent == None or most_recent < bdir.date ):
+					if complete and ( most_recent == None or most_recent < bdir.date ):
 						most_recent = bdir.date
 						most_recent_str = bdir.date_str
 						if bdir.full:
@@ -405,7 +407,7 @@ while len(sys.argv) > 1:
 				# first -- remove any more than 3 complete builds, starting with oldest, of course:
 				for arch in all_arches:
 					for subarch in all_subarches:
-						out = session.query(db.BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
+						out = session.query(db.BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).order_by(BuildDir.date_str).all()
 						for x in out[0:-keep_num]:
 							print(("rm -rf %s" % x.path))
 						for x in out[-keep_num:]:
