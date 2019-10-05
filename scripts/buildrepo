@@ -206,7 +206,7 @@ class MetroRepositoryDatabase(Database):
 		class Artifact(self.Base):
 			__tablename__ = "artifacts"
 			id = Column(Integer, primary_key=True)
-			subarch_id = Column(Integer, index=True)
+			subarch_id = Column(Integer, ForeignKey('subarches.id'))
 			flavor = Column(String)
 			path = Column(String, index=True)
 			subarch = relationship(SubArch, backref=backref("artifacts", order_by="Artifact.flavor"))
