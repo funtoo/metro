@@ -171,7 +171,7 @@ class Metro:
 		# create a .targets file listing the targets we are building. This way, we can later check to see
 		# (in buildrepo) if all of these targets built, or not.
 
-		with open(settings["path/mirror/target/path"] + "/.targets", "w") as targfile:
+		with open(initial_settings["path/mirror/target/path"] + "/.targets", "w") as targfile:
 			for target in targetlist:
 				if target != "snapshot":
 					targfile.write(target + "\n")
