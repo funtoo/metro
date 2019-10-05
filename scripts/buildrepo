@@ -187,7 +187,6 @@ class MetroRepositoryDatabase(Database):
 
 	def initialize(self):
 
-
 		class SubArch(self.Base):
 
 			__tablename__ = "subarches"
@@ -462,10 +461,9 @@ while len(sys.argv) > 1:
 		with db.get_session() as session:
 			fails = session.query(db.SubArch).filter(db.SubArch.failcount > 0).order_by(db.SubArch.failcount.desc())
 			goods = session.query(db.SubArch).filter(db.SubArch.failcount == 0)
-			for x in fails:
-				print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path, x.artifacts)
-			for x in goods:
-				print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
+			for x in list(fails) + list(goods):
+				art_list = [art.flavor for art in x.artifacts]
+				print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path, "(%s)" % ",".join(art_list))
 	elif sys.argv[1] == "index.xml":
 		del sys.argv[1]
 		from lxml import etree
