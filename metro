@@ -158,7 +158,6 @@ class Metro:
 			# skip over in-progress multi-targets so it can build the next multi-target (allowing parallel
 			# multi-target builds.
 
-
 			multi_tsfn = initial_settings["path/mirror/target/control"] + "/.multi_progress"
 			self.multi_ts = lockFile(multi_tsfn)
 			if self.multi_ts.exists():
@@ -168,6 +167,15 @@ class Metro:
 				if not self.multi_ts.create():
 					print("Could not create multi-target lock file %s" % self.multi_ts.path)
 					sys.exit(1)
+
+		# create a .targets file listing the targets we are building. This way, we can later check to see
+		# (in buildrepo) if all of these targets built, or not.
+
+		with open(settings["path/mirror/target/path"] + "/.targets", "w") as targfile:
+			for target in targetlist:
+				if target != "snapshot":
+					targfile.write(target + "\n")
+
 		current_target = None
 		user_abort = False
 		for targetname in targetlist:

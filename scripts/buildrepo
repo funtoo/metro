@@ -260,10 +260,12 @@ if __name__ == "__main__":
 				path = "%s/%s/%s/%s" % (initial_path, build, arch, subarch)
 				if not os.path.exists(path):
 					continue
+
 				most_recent = None
 				most_recent_str = None
 				most_recent_full = None
 				most_recent_full_str = None
+
 				failpath = path + "/.control/.failcount"
 				if not os.path.exists(failpath):
 					failcount = 0
@@ -273,7 +275,6 @@ if __name__ == "__main__":
 				for dirname in os.listdir(path):
 					if dirname == ".control":
 						continue
-					sha1 = dirname[10:]
 					instance = dirname[:10]
 					ipath = "%s/%s" % ( path, dirname )
 					if not os.path.isdir(ipath):
@@ -282,39 +283,36 @@ if __name__ == "__main__":
 					# artifacts: map 'extra' name like 'gnome' build to full path of artifact:
 					artifacts = {}
 					bdir = db.BuildDir()
-					if sha1:
-						# QA build -- use this special method for getting datestamp of directory.
-						spath = ipath + "/status"
-						if os.path.exists(spath):
-							complete = True
-							# grab mtime of status file:
-							bdir.date = datetime.datetime.utcfromtimestamp(os.path.getmtime(spath))
-							# use that to generate date string:
-							bdir.date_str = bdir.date.strftime("%Y-%m-%d")
-						else:
-							# build is in progress, so skip cleaning:
-							continue
+					spath = ipath + "/status"
+					if os.path.exists(spath):
+						complete = True
+						# grab mtime of status file:
+						bdir.date = datetime.datetime.utcfromtimestamp(os.path.getmtime(spath))
+						# use that to generate date string:
+						bdir.date_str = bdir.date.strftime("%Y-%m-%d")
 					else:
-						# datestamped build dir -- let's try to parse it:
-						try:
-							bdir.date = datetime.datetime.strptime(instance,"%Y-%m-%d")
-							bdir.date_str = instance
-							for match in glob.glob("%s/stage3*.tar.*" % ipath):
-								artifacts["stage3"] = match
-								break
-							for match in glob.glob("%s/funtoo-*-openvz-*.tar.*" % ipath):
-								artifacts["openvz"] = match
-								break
-							for match in glob.glob("%s/lxd-*.tar.*" % ipath):
-								artifacts["lxd"] = match
-								break
-							for match in glob.glob("%s/gnome-*.tar.*" % ipath):
-								artifacts["gnome"] = match
-								break
-						except ValueError:
-							# didn't work? Use old date on purpose to force cleaning:
-							bdir.date = datetime.datetime(1980,1,1)
-							bdir.date_str = "1980-01-01"
+						# build is in progress, so skip cleaning:
+						continue
+					# datestamped build dir -- let's try to parse it:
+					try:
+						bdir.date = datetime.datetime.strptime(instance,"%Y-%m-%d")
+						bdir.date_str = instance
+						for match in glob.glob("%s/stage3*.tar.*" % ipath):
+							artifacts["stage3"] = match
+							break
+						for match in glob.glob("%s/funtoo-*-openvz-*.tar.*" % ipath):
+							artifacts["openvz"] = match
+							break
+						for match in glob.glob("%s/lxd-*.tar.*" % ipath):
+							artifacts["lxd"] = match
+							break
+						for match in glob.glob("%s/gnome-*.tar.*" % ipath):
+							artifacts["gnome"] = match
+							break
+					except ValueError:
+						# didn't work? Use old date on purpose to force cleaning:
+						bdir.date = datetime.datetime(1980,1,1)
+						bdir.date_str = "1980-01-01"
 					bdir.path = ipath
 					bdir.build = build
 					bdir.arch = arch
@@ -327,13 +325,14 @@ if __name__ == "__main__":
 							break
 					with db.get_session() as session:
 						session.add(bdir)
-						session.commit()
-					if complete and ( most_recent == None or most_recent < bdir.date ):
+						session.flush()
+					if complete or ( most_recent == None or most_recent < bdir.date ):
 						most_recent = bdir.date
 						most_recent_str = bdir.date_str
 						if bdir.full:
 							most_recent_full = bdir.date
 							most_recent_full_str = bdir.date_str
+
 				sa = db.SubArch()
 				sa.build = build
 				sa.arch = arch
