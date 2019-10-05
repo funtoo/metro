@@ -48,7 +48,7 @@ if [ -h $[path/chroot]/lib64 ] && [ -d $[path/chroot]/lib ]; then
 	mv $[path/chroot]/lib $[path/chroot]/lib64 || exit 30
 	ln -s /lib64 $[path/chroot]/lib || exit 31
 fi
-if [ -n "$(ls $[path/chroot]/lib.backup.*)" ]; then
+if [ -n "$(ls $[path/chroot]/lib.backup.* 2>/dev/null)" ]; then
 	rm -rf $[path/chroot]/lib.backup.* || exit 26
 fi
 ]
