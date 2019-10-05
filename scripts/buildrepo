@@ -9,12 +9,17 @@ import fnmatch
 import pwd, grp
 import json
 from subprocess import call
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
+from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime, Boolean
+from sqlalchemy.pool import NullPool
+from contextlib import contextmanager
 
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append("../modules")
 
 from metro_support import lockFile, countFile, CommandRunner, MetroSetup
-from db import *
 
 # these variables are used for building:
 
@@ -110,73 +115,121 @@ if len(all_builds) == 0:
 	all_arches = arches
 	all_subarches = subarches
 
-class SubArch(dbobject):
-	@classmethod
-	def _makeTable(cls,db):
-		cls.db = db
-		cls.__table__ = Table('subarch', db.metadata,
-			Column('id', Integer, primary_key = True),
-			Column('date', DateTime, index=True),
-			Column('date_str', String, index=True),
-			Column('path', String, index=True),
-			Column('build', String, index=True),
-			Column('arch', String, index=True),
-			Column('subarch', String, index=True),
-			Column('failcount', Integer, index=True),
-			Column('full_date', DateTime, index=True),
-			Column('full_date_str', String, index=True),
-			Column('do_build', Boolean, index=True),
-		)
+class Database(object):
+	poolclass = NullPool
+	autoflush = True
+	pool_recycle = -1
+	cfg_section = "database"
+	cfg_setting = "connection"
+	echo = False
+	orm_objects = {}
 
-class Artifact(dbobject):
-	@classmethod
-	def _makeTable(cls,db):
-		cls.db = db
-		cls.__table__ = Table('artifacts', db.metadata,
-			Column('id', Integer, primary_key=True),
-			Column('subarch_id', Integer, index=True),
-			Column('flavor', String),
-			Column('path', String, index=True),
-		)
+	def orm_register(self, *args):
+		"""
+		This method takes any number of classes as arguments and makes these classes available as properties
+		of self. So self.orm_register(Foo) would make the class Foo accessible at self.Foo.
 
-	@classmethod
-	def _mapTable(cls, db):
-		dbobject._mapTable(db)
-		mapper(SubArch, Subarch.__table__, properties={ 'artifacts' : relationship(Subarch, backref=backref('artifacts', order_by='Artifact.flavor'))})
+		:param args: any number of classes.
+		:return: None
+		"""
+		for classdef in args:
+			classname = classdef.__name__
+			self.orm_objects[classname] = classdef
 
-class BuildDir(dbobject):
-	@classmethod
-	def _makeTable(cls,db):
-		cls.db = db
-		cls.__table__ = Table('bdir', db.metadata,
-			Column('id', Integer, primary_key = True),
-			Column('date', DateTime, index=True),
-			Column('path', String, index=True),
-			Column('build', String, index=True),
-			Column('arch', String, index=True),
-			Column('subarch', String, index=True),
-			Column('date_str', String, index=True),
-			Column('complete', Boolean, index=True),
-			Column('full', Boolean, index=True)
-		)
+	def __getattr__(self, item):
+		return self.orm_objects[item]
 
-class Snapshot(dbobject):
-	@classmethod
-	def _makeTable(cls,db):
-		cls.db = db
-		cls.__table__ = Table('snapshot', db.metadata,
-			Column('id', Integer, primary_key = True),
-			Column('path', String, index=True),
-			Column('build', String, index=True),
-		)
+	def __dir__(self):
+		return super().__dir__() + [str(k) for k in self.orm_objects.keys()]
 
-class RepositoryDatabase(Database):
-	__database__ = "sqlite:///cleaner.db"
-	def __init__(self):
-		Database.__init__(self,[BuildDir, Snapshot, SubArch, Artifact])
-		self.associate()
-	def associate(self):
-		Database.associate(self,self.__database__)
+	def initialize(self):
+		"""Override this class to create tables, etc."""
+		pass
+
+	def __init__(self, **kwargs):
+		self.engine = create_engine("sqlite:///cleaner.db", poolclass=self.poolclass, pool_recycle=self.pool_recycle, echo=self.echo)
+		self.Base = declarative_base(bind=self.engine)
+		self.session_factory = sessionmaker(bind=self.engine, autoflush=self.autoflush)
+		self.Session = scoped_session(self.session_factory)
+		self.initialize()
+
+		self.Base.metadata.create_all(self.engine)
+
+	@property
+	@contextmanager
+	def session(self):
+		session = self.Session()
+		try:
+			yield session
+		except:
+			session.rollback()
+			raise
+		else:
+			session.commit()
+
+	@property
+	@contextmanager
+	def session_no_flush(self):
+		self.Session.configure(autoflush=False)
+		session = self.Session()
+		try:
+			yield session
+		except:
+			session.rollback()
+			raise
+		else:
+			session.commit()
+
+	def get_session(self):
+		return self.session
+
+class MetroRepositoryDatabase(Database):
+
+	def initialize(self):
+
+
+		class SubArch(self.Base):
+
+			__tablename__ = "subarches"
+			id = Column(Integer, primary_key = True)
+			date = Column(DateTime, index=True)
+			date_str = Column(String, index=True)
+			path = Column(String, index=True)
+			build = Column(String, index=True)
+			arch = Column(String, index=True)
+			subarch = Column(String, index=True)
+			failcount = Column(Integer, index=True)
+			full_date = Column(DateTime, index=True)
+			full_date_str = Column(String, index=True)
+			do_build = Column(Boolean, index=True)
+
+		class Artifact(self.Base):
+			__tablename__ = "artifacts"
+			id = Column(Integer, primary_key=True)
+			subarch_id = Column(Integer, index=True)
+			flavor = Column(String)
+			path = Column(String, index=True)
+			subarch = relationship(SubArch, backref=backref("artifacts", order_by="Artifact.flavor"))
+
+		class BuildDir(self.Base):
+			__tablename__ = "build_dirs"
+			id = Column(Integer, primary_key = True)
+			date = Column(DateTime, index=True)
+			path = Column(String, index=True)
+			build = Column(String, index=True)
+			arch = Column(String, index=True)
+			subarch = Column(String, index=True)
+			date_str = Column(String, index=True)
+			complete = Column(Boolean, index=True)
+			full = Column(Boolean, index=True)
+
+		class Snapshot(self.Base):
+			__tablename__ = "snapshots"
+			id = Column(Integer, primary_key = True)
+			path = Column(String, index=True)
+			build = Column(String, index=True)
+
+		self.orm_register(BuildDir, Snapshot, SubArch, Artifact)
 
 setup = MetroSetup()
 settings = setup.getSettings()
@@ -185,8 +238,7 @@ initial_path = settings["path/mirror"]
 if __name__ == "__main__":
 	if os.path.exists("cleaner.db"):
 		os.unlink("cleaner.db")
-	db = RepositoryDatabase()
-	session = db.session
+	db = MetroRepositoryDatabase()
 	for build in all_builds:
 		if not os.path.exists("%s/%s" % (initial_path, build)):
 			continue
@@ -196,10 +248,12 @@ if __name__ == "__main__":
 				basename = os.path.basename(match)
 				if basename == "portage-current.tar.xz":
 					continue
-				sna = Snapshot()
+				sna = db.Snapshot()
 				sna.path = match
 				sna.build = build
-				session.add(sna)
+				with db.get_session() as session:
+					session.add(sna)
+					session.commit()
 		for arch in all_arches:
 			if not os.path.exists("%s/%s/%s" % ( initial_path, build, arch )):
 				continue
@@ -228,7 +282,7 @@ if __name__ == "__main__":
 					complete = False
 					# artifacts: map 'extra' name like 'gnome' build to full path of artifact:
 					artifacts = {}
-					bdir = BuildDir()
+					bdir = db.BuildDir()
 					if sha1:
 						# QA build -- use this special method for getting datestamp of directory.
 						spath = ipath + "/status"
@@ -272,14 +326,16 @@ if __name__ == "__main__":
 						for match in glob.glob("%s/stage1*.tar.*" % ipath):
 							bdir.full = True
 							break
-					session.add(bdir)
+					with db.get_session() as session:
+						session.add(bdir)
+						session.commit()
 					if complete and ( most_recent == None or most_recent < bdir.date ):
 						most_recent = bdir.date
 						most_recent_str = bdir.date_str
 						if bdir.full:
 							most_recent_full = bdir.date
 							most_recent_full_str = bdir.date_str
-				sa = SubArch()
+				sa = db.SubArch()
 				sa.build = build
 				sa.arch = arch
 				sa.subarch = subarch
@@ -294,16 +350,17 @@ if __name__ == "__main__":
 					sa.do_build = True
 				else:
 					sa.do_build = False
-				session.add(sa)
-				session.flush()
-				for artifact_keyword, artifact_path in artifacts.items():
-					art = Artifact()
-					art.subarch_id = sa.id
-					art.flavor = artifact_keyword
-					art.path = artifact_path
-					session.add(art)
+				with db.get_session() as session:
+					session.add(sa)
 					session.flush()
-	session.commit()
+					for artifact_keyword, artifact_path in artifacts.items():
+						art = db.Artifact()
+						art.subarch_id = sa.id
+						art.flavor = artifact_keyword
+						art.path = artifact_path
+						session.add(art)
+						session.flush()
+					session.commit()
 now = datetime.datetime.now()
 # more than 3 fails and we remove the build from our rotation:
 def find_build(q,min_age=stale_days,max_age=None):
@@ -345,66 +402,70 @@ def find_build(q,min_age=stale_days,max_age=None):
 while len(sys.argv) > 1:
 	if sys.argv[1] == "clean":
 		del sys.argv[1]
-		for build in all_builds:
-			# first -- remove any more than 3 complete builds, starting with oldest, of course:
-			for arch in all_arches:
-				for subarch in all_subarches:
-					out = session.query(BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
-					for x in out[0:-keep_num]:
-						print(("rm -rf %s" % x.path))
-					for x in out[-keep_num:]:
-						print(("# keeping %s" % x.path))
-			# next, remove any more than 2 snapshots:
-			sna = session.query(Snapshot).filter_by(build=build).order_by(Snapshot.path).all()
-			for x in sna[0:-keep_num]:
-				print(("rm %s*" % x.path))
-			for x in sna[-(keep_num-1):]:
-				print(("# keeping %s" % x.path))
-		# Now, look at incomplete builds. Clean them out when they're stale and not the most recent build.
-		for x in session.query(BuildDir).filter_by(complete=False):
-			# ignore non-stale builds for cleaning -- they could be in-progress...
-			y = session.query(SubArch).filter_by(subarch=x.subarch).filter_by(arch=x.arch).filter_by(build=x.build).first()
-			if x.date != None and now - x.date > datetime.timedelta(days=stale_days) and y.date != x.date:
-				# don't zap most recent...
-				print(("rm -rf %s* # not complete and stale, not most recent build" % x.path))
-			else:
-				print("# keeping %s" % x.path)
+		with db.get_session() as session:
+			for build in all_builds:
+				# first -- remove any more than 3 complete builds, starting with oldest, of course:
+				for arch in all_arches:
+					for subarch in all_subarches:
+						out = session.query(db.BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).filter_by(complete=True).order_by(BuildDir.date_str).all()
+						for x in out[0:-keep_num]:
+							print(("rm -rf %s" % x.path))
+						for x in out[-keep_num:]:
+							print(("# keeping %s" % x.path))
+				# next, remove any more than 2 snapshots:
+				sna = session.query(db.Snapshot).filter_by(build=build).order_by(db.Snapshot.path).all()
+				for x in sna[0:-keep_num]:
+					print(("rm %s*" % x.path))
+				for x in sna[-(keep_num-1):]:
+					print(("# keeping %s" % x.path))
+			# Now, look at incomplete builds. Clean them out when they're stale and not the most recent build.
+			for x in session.query(db.BuildDir).filter_by(complete=False):
+				# ignore non-stale builds for cleaning -- they could be in-progress...
+				y = session.query(db.SubArch).filter_by(subarch=x.subarch).filter_by(arch=x.arch).filter_by(build=x.build).first()
+				if x.date != None and now - x.date > datetime.timedelta(days=stale_days) and y.date != x.date:
+					# don't zap most recent...
+					print(("rm -rf %s* # not complete and stale, not most recent build" % x.path))
+				else:
+					print("# keeping %s" % x.path)
 	elif sys.argv[1] == "nextbuild":
 		del sys.argv[1]
-		sa = session.query(SubArch)
-		myfail = 0
-		while myfail < max_failcount:
-			# we start with failcount of zero, and prioritize not-yet-built stages:
-			empties = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail)
-			find_build(empties)
-			# next, we look for builds with a failcount of "myfail+1", but haven't been built in at least stale_days * 2. 
-			# This prevents them from being pushed out of the build rotation if we aren't building *every* stale stage (if we always have some builds queued at any given time.)
-			if myfail + 1 < max_failcount:
-				baddies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail+1).order_by(SubArch.__table__.c.date)
-				find_build(baddies,min_age=stale_days*2)
-			# if we can't find one, we look for a failcount of zero, but prioritize by date:
-			oldies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date != None).filter(SubArch.__table__.c.build.in_(builds)).filter_by(failcount=myfail).order_by(SubArch.__table__.c.date)
-			find_build(oldies)
-			myfail += 1
-			# if no builds are found, we increment failcount, and try again:
-		# THIS PART IS DISABLED. IF A BUILD IS BEYOND ITS FAILCOUNT, IT IS OUT OF ROTATION UNTIL SOMEONE MANUALLY INTERVENES:
-		# if our loop didn't present a build, we ignore date, look for all builds with failcount >= our max, and then order by failcount, and pick a build:
-		#baddies = sa.filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.build.in_(builds)).filter(SubArch.__table__.c.failcount >= failcount).order_by(SubArch.__table__.c.failcount.asc())
-		#find_build(baddies)
-		sys.exit(1)
+		with db.get_session() as session:
+			sa = session.query(db.SubArch)
+			myfail = 0
+			while myfail < max_failcount:
+				# we start with failcount of zero, and prioritize not-yet-built stages:
+				empties = sa.filter(db.SubArch.do_build == True).filter(db.SubArch.date == None).filter(db.SubArch.build.in_(builds)).filter_by(failcount=myfail)
+				find_build(empties)
+				# next, we look for builds with a failcount of "myfail+1", but haven't been built in at least stale_days * 2. 
+				# This prevents them from being pushed out of the build rotation if we aren't building *every* stale stage (if we always have some builds queued at any given time.)
+				if myfail + 1 < max_failcount:
+					baddies = sa.filter(db.SubArch.do_build == True).filter(db.SubArch.build.in_(builds)).filter_by(failcount=myfail+1).order_by(db.SubArch.date)
+					find_build(baddies,min_age=stale_days*2)
+				# if we can't find one, we look for a failcount of zero, but prioritize by date:
+				oldies = sa.filter(db.SubArch.do_build == True).filter(db.SubArch.date != None).filter(db.SubArch.build.in_(builds)).filter_by(failcount=myfail).order_by(db.SubArch.date)
+				find_build(oldies)
+				myfail += 1
+				# if no builds are found, we increment failcount, and try again:
+			# THIS PART IS DISABLED. IF A BUILD IS BEYOND ITS FAILCOUNT, IT IS OUT OF ROTATION UNTIL SOMEONE MANUALLY INTERVENES:
+			# if our loop didn't present a build, we ignore date, look for all builds with failcount >= our max, and then order by failcount, and pick a build:
+			#baddies = sa.filter(SubArch.do_build == True).filter(SubArch.build.in_(builds)).filter(SubArch.failcount >= failcount).order_by(SubArch.failcount.asc())
+			#find_build(baddies)
+			sys.exit(1)
 	elif sys.argv[1] == "empties":
 		del sys.argv[1]
-		empties = session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.date == None).filter(SubArch.__table__.c.build.in_(builds))
-		for x in empties:
-			print(x.path)
+		with db.get_session() as session:
+			empties = session.query(db.SubArch).filter(db.SubArch.do_build == True).filter(db.SubArch.date == None).filter(db.SubArch.build.in_(builds))
+			for x in empties:
+				print(x.path)
 	elif sys.argv[1] == "fails":
 		del sys.argv[1]
-		fails = session.query(SubArch).filter(SubArch.__table__.c.failcount > 0).order_by(SubArch.__table__.c.failcount.desc())
-		goods = session.query(SubArch).filter(SubArch.__table__.c.failcount == 0)
-		for x in fails:
-			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path, x.artifacts)
-		for x in goods:
-			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
+		with db.get_session() as session:
+			fails = session.query(db.SubArch).filter(db.SubArch.failcount > 0).order_by(db.SubArch.failcount.desc())
+			goods = session.query(db.SubArch).filter(db.SubArch.failcount == 0)
+			for x in fails:
+				print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path, x.artifacts)
+			for x in goods:
+				print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path)
 	elif sys.argv[1] == "index.xml":
 		del sys.argv[1]
 		from lxml import etree
@@ -424,80 +485,82 @@ while len(sys.argv) > 1:
 		fails = etree.Element("fails")
 		outxml.append(fails)
 		subarch_builds = {}
-		for x in session.query(SubArch):
-			s = x.subarch
-			if s[-7:] == "-pure64":
-				s = s[:-7]
-			if s in index_ignore_subarches:
-				continue
-			if s not in subarch_builds:
-				subarch_builds[s] = []
-			subarch_builds[s].append(x)
-		numfails = 0
-		for s in subarch_builds:
-			subarch_xml = etree.Element("subarch")
-			subarch_xml.attrib["name"] = s
-			# we treat "hardened' and "pure64" as "variants" of the main build (current/experimental) -- to make things clearer for users.
-			count = 1
-			info_json_path = None
-			for b in subarch_builds[s]:
-				if b.build in index_ignore_builds:
+		with db.get_session() as session:
+			for x in session.query(db.SubArch):
+				s = x.subarch
+				if s[-7:] == "-pure64":
+					s = s[:-7]
+				if s in index_ignore_subarches:
 					continue
-				# variant
-				v = []
-				if b.subarch[-7:] == "-pure64":
-					# "variant"
-					v.append("pure64")
-				if b.build[-5:] == "-next":
-					continue
-				elif b.build[-9:] == "-hardened":
-					v.append("hardened")
-					build = b.build[:-9]
-					continue
-				else:
-					build = b.build
-				build_xml = etree.Element("build")
-				build_xml.attrib["id"] = str(count)
-				build_xml.attrib["variant"] = '+'.join(v)
-				build_xml.attrib["build"] = build
-				build_xml.attrib["path"] = b.path[len(initial_path):]
-				build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
-				if b.date:
-					build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
-					#if "openvz" in b.extras.split(","):
-					#	build_xml.attrib["openvz"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/" + b.build + "-" + b.subarch + "-openvz-" + build_xml.attrib["latest"] + ".tar.xz"
-					if not info_json_path:
-						bifn = os.path.join(b.path,b.date_str,"build-info.json")
-						if os.path.exists(bifn):
-							info_json_path = bifn
-				subarch_xml.append(build_xml)
-				if b.failcount > 0:
-					numfails += 1
-					fail_xml = deepcopy(build_xml)
-					fail_xml.attrib["id"] = str(numfails)
-					fail_xml.attrib["failcount"] = str(b.failcount)
-					fails.append(fail_xml)
-				count += 1
-			subarch_xml.attrib["builds"] = ",".join(map(str,range(1,count)))
-
-			# We found extracted CFLAGS, etc from most recent build -- grab this info and add it to our XML:
-			if info_json_path:
-				with open(info_json_path,"r") as bif:
-					bif_json = json.loads(bif.read())
-					for x in bif_json:
-						subarch_xml.attrib[x] = bif_json[x]
-			outxml.append(subarch_xml)
+				if s not in subarch_builds:
+					subarch_builds[s] = []
+				subarch_builds[s].append(x)
+			numfails = 0
+			for s in subarch_builds:
+				subarch_xml = etree.Element("subarch")
+				subarch_xml.attrib["name"] = s
+				# we treat "hardened' and "pure64" as "variants" of the main build (current/experimental) -- to make things clearer for users.
+				count = 1
+				info_json_path = None
+				for b in subarch_builds[s]:
+					if b.build in index_ignore_builds:
+						continue
+					# variant
+					v = []
+					if b.subarch[-7:] == "-pure64":
+						# "variant"
+						v.append("pure64")
+					if b.build[-5:] == "-next":
+						continue
+					elif b.build[-9:] == "-hardened":
+						v.append("hardened")
+						build = b.build[:-9]
+						continue
+					else:
+						build = b.build
+					build_xml = etree.Element("build")
+					build_xml.attrib["id"] = str(count)
+					build_xml.attrib["variant"] = '+'.join(v)
+					build_xml.attrib["build"] = build
+					build_xml.attrib["path"] = b.path[len(initial_path):]
+					build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
+					if b.date:
+						build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
+						#if "openvz" in b.extras.split(","):
+						#	build_xml.attrib["openvz"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/" + b.build + "-" + b.subarch + "-openvz-" + build_xml.attrib["latest"] + ".tar.xz"
+						if not info_json_path:
+							bifn = os.path.join(b.path,b.date_str,"build-info.json")
+							if os.path.exists(bifn):
+								info_json_path = bifn
+					subarch_xml.append(build_xml)
+					if b.failcount > 0:
+						numfails += 1
+						fail_xml = deepcopy(build_xml)
+						fail_xml.attrib["id"] = str(numfails)
+						fail_xml.attrib["failcount"] = str(b.failcount)
+						fails.append(fail_xml)
+					count += 1
+				subarch_xml.attrib["builds"] = ",".join(map(str,range(1,count)))
+	
+				# We found extracted CFLAGS, etc from most recent build -- grab this info and add it to our XML:
+				if info_json_path:
+					with open(info_json_path,"r") as bif:
+						bif_json = json.loads(bif.read())
+						for x in bif_json:
+							subarch_xml.attrib[x] = bif_json[x]
+				outxml.append(subarch_xml)
 		fails.attrib["builds"] = ",".join(map(str,range(1,numfails + 1)))
 	 
 		outf = open(os.path.join(initial_path,"index.xml"),"wb")
 		outf.write(etree.tostring(outxml, encoding="UTF-8", pretty_print=True, xml_declaration=True))
 	elif sys.argv[1] == "zap":
 		del sys.argv[1]
-		for x in session.query(SubArch).filter(SubArch.__table__.c.do_build == True).filter(SubArch.__table__.c.failcount > 0):
-			failpath = "%s/.control/.failcount" % x.path
-			if os.path.exists(failpath):
-				print("Removing %s..." % failpath)
-				os.unlink(failpath)
+		with db.get_session() as session:
+			for x in session.query(db.SubArch).filter(db.SubArch.do_build == True).filter(db.SubArch.failcount > 0):
+				failpath = "%s/.control/.failcount" % x.path
+				if os.path.exists(failpath):
+					print("Removing %s..." % failpath)
+					os.unlink(failpath)
 	elif sys.argv[1] == "cmd":
 		# this option exists to run an external script. The concept is that you can mirror all files by running a mirror script
 		# and then re-run index.xml, which updates the wiki with new stage3 metadata. Thus all download links -- even mirror links --
