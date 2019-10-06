@@ -9,27 +9,19 @@ source: [
 src="$(ls $[path/mirror/source])"
 comp="${src##*.}"
 
+if [ ! -e "$src" ]; then
+	src="${src%.*}"
+	if [ -e "$src" ]; then
+		echo "Found uncompressed artifact -- will use it."
+	fi
+fi
+
 [ ! -e "$src" ] && echo "Source file $src not found, exiting." && exit 1
 echo "Extracting source stage $src..."
 
-case "$comp" in
-	bz2)
-		if [ -e /usr/bin/pbzip2 ]
-		then
-			# Use pbzip2 for multi-core acceleration
-			pbzip2 -dc "$src" | tar -xp --exclude='./dev/*' -f - -C $[path/chroot] || exit 3
-		else
-			tar -xp --exclude='./dev/*' -f "$src" -C $[path/chroot] || exit 3
-		fi
-		;;
-	gz|xz)
-		tar -xp --exclude='./dev/*' -f "$src" -C $[path/chroot] || exit 3
-		;;
-	*)
-		echo "Unrecognized source compression for $src"
-		exit 1
-		;;
-esac
+# Perform the extraction:
+tar -xp --exclude='./dev/*' -f "$src" -C $[path/chroot] || exit 3
+
 # let's fix /lib if it is a problematic state. Note that this is NOT multilib-compatible.
 if [ -d $[path/chroot]/lib ] && [ -d $[path/chroot]/lib64 ] && [ ! -h $[path/chroot]/lib ]; then
 	echo "Attempting to fix split /lib..."

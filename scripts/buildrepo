@@ -589,7 +589,9 @@ while len(sys.argv) > 1:
 		print("Generating hashes...")
 		links = []
 		for root, dirnames, filenames in os.walk(initial_path):
-			for filename in fnmatch.filter(filenames, '*.tar.*'):
+			for filename in fnmatch.filter(filenames, '*.tar*'):
+				if filename.endswith(".targets"):
+					continue
 				if filename[-4:] == ".txt":
 					continue
 				if filename[-4:] == ".gpg":
@@ -598,6 +600,18 @@ while len(sys.argv) > 1:
 				if os.path.islink(p):
 					links.append(p)
 					continue
+				if filename[-4:] == ".tar":
+					# file is not compressed, let's see if we should compress it:
+					comp = settings["target/compression"]
+					if comp in [ "bz2", "xz", "gz" ]:
+						print("Compressing file...")
+						if comp == "bz2":
+							call("PATH=/bin/:/usr/bin bzip2 -9 " + p)
+						elif comp == "xz":
+							call("PATH=/bin/:/usr/bin xz -9 " + p)
+						elif comp == "gz":
+							call("PATH=/bin/:/usr/bin gzip -9 " + p)
+						p = p + "." + comp
 				print(p)
 				if not os.path.exists(p+".hash.txt"):
 					sys.stdout.write('h')

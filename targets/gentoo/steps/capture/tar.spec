@@ -20,28 +20,8 @@ if [ $? -ge 2 ]
 then
 	rm -f "$tarout" "$[path/mirror/target]"
 	exit 1
-fi	
-case "$[target/compression]" in
-	bz2)
-		if [ -e /usr/bin/pbzip2 ]
-		then
-			pbzip2 -9 -p4 $tarout
-		else
-			bzip2 -9 $tarout
-		fi
-		;;
-	xz)
-		xz -9 --threads=0 $tarout
-		;;
-	gz)
-		gzip -9 $tarout
-		;;
-esac
-if [ $? -ne 0 ]
-then
-	echo "Compression error - aborting."
-	rm -f $[path/mirror/target]
-	exit 99
 fi
+# Note: we used to compress here. We no longer do. We want that handled out-of-band
+# for performance reasons.
 chown $[path/mirror/owner]:$[path/mirror/group] $[path/mirror/target]
 ]
