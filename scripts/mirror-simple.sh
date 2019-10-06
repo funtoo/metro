@@ -12,5 +12,5 @@ if [ -z "$mp" ]; then
 else
 	echo "Mirroring $mp..."
 fi
-rsync -rltJOve ssh --partial --progress --exclude stage1*.tar* --exclude stage2*.tar* $mp/1.4-release-std/ drobbins@upload.funtoo.org:/home/mirror/funtoo/1.4-release-std/
+rsync -rltJOve ssh --partial --progress --exclude stage1*.tar* --exclude stage2*.tar* --exclude *.tar $mp/1.4-release-std/ drobbins@upload.funtoo.org:/home/mirror/funtoo/1.4-release-std/
 ssh drobbins@upload.funtoo.org sudo /root/metro/scripts/buildrepo index.xml
