@@ -98,9 +98,11 @@ class Metro:
 		# Step 6: Create list of targets to run, checking whether "multi" mode is enabled
 		if "multi" in settings and settings["multi"] == "yes":
 			targetlist = settings["multi/targets"].split()
+			if 'multi/targets/extras' in settings:
+				targetlist += settings['multi/targets/extras'].split()
 		else:
 			targetlist = [settings["target"]]
-
+		
 		self.run_targets(targetlist, self.args)
 
 	def has_opts(self, opts, fnc=any):

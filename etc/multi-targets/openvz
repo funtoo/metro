@@ -1,4 +1,0 @@
-[section multi]
-
-targets: openvz $[:extras:lax]
-

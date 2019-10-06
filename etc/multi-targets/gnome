@@ -1,3 +1,0 @@
-[section multi]
-
-targets: gnome $[:extras:lax]

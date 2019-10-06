@@ -1,3 +1,0 @@
-[section multi]
-
-targets: selinux $[:extras:lax]
