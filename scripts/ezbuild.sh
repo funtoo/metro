@@ -48,7 +48,7 @@ else
 	if [ "$#" -ge "4" ]
 	then
 		MODE=$4
-		modesp="${4##*+}"
+		modesp="${4#*+}"
 		if [ "$modesp" != "$MODE" ]; then
 			extras=$modesp
 			MODE="${4%%+*}"
