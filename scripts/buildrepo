@@ -604,13 +604,13 @@ while len(sys.argv) > 1:
 					# file is not compressed, let's see if we should compress it:
 					comp = settings["target/compression"]
 					if comp in [ "bz2", "xz", "gz" ]:
-						print("Compressing file...")
+						print("Compressing file %s..." % filename)
 						if comp == "bz2":
-							call("PATH=/bin/:/usr/bin bzip2 -9 " + p)
+							call("PATH=/bin/:/usr/bin bzip2 -9 " + p, shell=True)
 						elif comp == "xz":
-							call("PATH=/bin/:/usr/bin xz -9 " + p)
+							call("PATH=/bin/:/usr/bin xz -9e --threads=0 " + p, shell=True)
 						elif comp == "gz":
-							call("PATH=/bin/:/usr/bin gzip -9 " + p)
+							call("PATH=/bin/:/usr/bin gzip -9 " + p, shell=True)
 						p = p + "." + comp
 				print(p)
 				if not os.path.exists(p+".hash.txt"):
