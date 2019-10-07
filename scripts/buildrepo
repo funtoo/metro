@@ -515,7 +515,10 @@ elif sys.argv[1] == "fails":
 		goods = session.query(db.SubArch).filter(db.SubArch.failcount == 0)
 		for x in list(fails) + list(goods):
 			# some stuff is not cached in the subarch db entry, so we need to grab the associated most recent build directory entry for the subarch:
-			bdir = session.query(db.BuildDir).filter(db.BuildDir.date_str == x.date_str).first()
+			for bd in x.build_dirs:
+				if x.date_str == bd.date_str:
+					bdir = bd
+					break
 			art_list = [art.flavor for art in bdir.artifacts]
 			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path, "(%s)" % ",".join(art_list))
 elif sys.argv[1] == "index.xml":
