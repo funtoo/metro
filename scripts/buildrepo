@@ -249,6 +249,7 @@ class MetroRepositoryDatabase(Database):
 			flavor = Column(String)
 			path = Column(String, index=True)
 			build_dir = relationship(BuildDir, backref=backref("artifacts", order_by="Artifact.flavor"))
+			date_str = Column(String)
 
 		class Snapshot(self.Base):
 
@@ -393,6 +394,7 @@ for release in all_builds:
 					art.build_dir_id = bdir.id
 					art.flavor = artifact_keyword
 					art.path = artifact_path
+					art.date_str = bdir.date_str
 					session.add(art)
 					session.flush()
 
@@ -445,6 +447,7 @@ def find_build(q, min_age=stale_days, max_age=None):
 				sys.stderr.write("# Build at %s in progress, skipping...\n" % x.path)
 				continue
 		# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
+		# TODO: this has changed to RELEASE, and buildbot needs to be updated to understand it.
 		print("release=%s" % x.release)
 		print("arch_desc=%s" % x.arch)
 		print("subarch=%s" % x.subarch)
@@ -527,67 +530,38 @@ elif sys.argv[1] == "fails":
 			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path, "(%s)" % ",".join(art_list))
 elif sys.argv[1] == "index.xml":
 	from lxml import etree
-	from copy import deepcopy
 	"""
 	<subarches>
 		<subarch name="amd64-bulldozer" builds="1,2">
-			<build id="1" variant="pure64+hardened" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31"/>
-			<build id="2" variant="" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31"/>
+			<build id="1" variant="stage3" release="1.4-release-std" path="/1.4-release-std/blah/blah" latest="2018-12-31"/>
+			<build id="2" variant="lxd" release="1.4-release-std" path="/1.4-release-std/blah/blah" latest="2018-12-31"/>
 		</subarch>
-		<fails>
-			<build id="1" variant="pure64+hardened" build="funtoo-current" path="/funtoo-current/blah/blah" latest="2014-12-31" failcount="2"/>
-		</fails>
 	</subarches>
-"""
+	"""
 	outxml = etree.Element("subarches")
-	fails = etree.Element("fails")
-	outxml.append(fails)
 	subarch_builds = {}
 	with db.get_session() as session:
-		for x in session.query(db.SubArch):
-			s = x.subarch
-			if s[-7:] == "-pure64":
-				s = s[:-7]
-			if s in index_ignore_subarches:
-				continue
-			if s not in subarch_builds:
-				subarch_builds[s] = []
-			subarch_builds[s].append(x)
 		numfails = 0
-		for s in subarch_builds:
+		for subarch in session.query(db.SubArch).filter(db.SubArch.release.notin_(index_ignore_builds)):
 			subarch_xml = etree.Element("subarch")
-			subarch_xml.attrib["name"] = s
-			count = 1
-			info_json_path = None
-			for b in subarch_builds[s]:
-				if b.release in index_ignore_builds:
-					continue
-				# variant
-				v = []
-				release = b.release
+			subarch_xml.attrib["name"] = subarch.subarch
+			count: int = 1
+			info_json_path: str = None
+			for artifact in subarch.latest_full_build.artifacts:
 				build_xml = etree.Element("build")
 				build_xml.attrib["id"] = str(count)
-				build_xml.attrib["variant"] = '+'.join(v)
-				build_xml.attrib["release"] = release
-				build_xml.attrib["path"] = b.path[len(initial_path):]
-				build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
-				if b.date:
-					build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.release + "-" + build_xml.attrib["latest"] + ".tar.xz"
-					#if "openvz" in b.extras.split(","):
-					#	build_xml.attrib["openvz"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/" + b.build + "-" + b.subarch + "-openvz-" + build_xml.attrib["latest"] + ".tar.xz"
-					if not info_json_path:
-						bifn = os.path.join(b.path,b.date_str,"build-info.json")
-						if os.path.exists(bifn):
-							info_json_path = bifn
+				build_xml.attrib["variant"] = artifact.flavor
+				build_xml.attrib["release"] = artifact.release
+				build_xml.attrib["path"] = artifact.path[len(initial_path):]
+				build_xml.attrib["latest"] = "None" if not artifact.date else datetime.datetime.strftime(artifact.date_str, "%Y-%m-%d")
+				build_xml.attrib["download"] = artifact.path
+				if not info_json_path:
+					bifn = os.path.join(subarch.path, artifact.date_str, "build-info.json")
+					if os.path.exists(bifn):
+						info_json_path = bifn
 				subarch_xml.append(build_xml)
-				if b.failcount > 0:
-					numfails += 1
-					fail_xml = deepcopy(build_xml)
-					fail_xml.attrib["id"] = str(numfails)
-					fail_xml.attrib["failcount"] = str(b.failcount)
-					fails.append(fail_xml)
 				count += 1
-			subarch_xml.attrib["builds"] = ",".join(map(str,range(1,count)))
+			subarch_xml.attrib["builds"] = ",".join(map(str, range(1, count)))
 
 			# We found extracted CFLAGS, etc from most recent build -- grab this info and add it to our XML:
 			if info_json_path:
@@ -596,9 +570,7 @@ elif sys.argv[1] == "index.xml":
 					for x in bif_json:
 						subarch_xml.attrib[x] = bif_json[x]
 			outxml.append(subarch_xml)
-	fails.attrib["builds"] = ",".join(map(str,range(1,numfails + 1)))
- 
-	outf = open(os.path.join(initial_path,"index.xml"),"wb")
+	outf = open(os.path.join(initial_path, "index.xml"), "wb")
 	outf.write(etree.tostring(outxml, encoding="UTF-8", pretty_print=True, xml_declaration=True))
 elif sys.argv[1] == "zap":
 	with db.get_session() as session:
@@ -607,24 +579,6 @@ elif sys.argv[1] == "zap":
 			if os.path.exists(failpath):
 				print("Removing %s..." % failpath)
 				os.unlink(failpath)
-elif sys.argv[1] == "cmd":
-	# this option exists to run an external script. The concept is that you can mirror all files by running a mirror script
-	# and then re-run index.xml, which updates the wiki with new stage3 metadata. Thus all download links -- even mirror links --
-	# should work
-	del sys.argv[1]
-	if len(sys.argv) <= 1:
-		print("Not enough arguments for 'cmd' option. Specify script to run.")
-		sys.exit(1)
-	cmd = sys.argv[1]
-	if not os.path.exists(cmd):
-		print("Cmd argument %s does not exist; exiting." % cmd)
-		sys.exit(1)
-	del sys.argv[1]
-	myc = CommandRunner(settings=None,logging=False)
-	retval = myc.run([cmd], env={})
-	if retval != 0:
-		print("Error running cmd... exiting.")
-		sys.exit(1)
 elif sys.argv[1] == "compress":
 	# this performs a global compression scan on the entire build repository, and will
 	# compress files even if not built locally. This is so you can do compression on a
