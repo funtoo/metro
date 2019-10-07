@@ -204,6 +204,10 @@ class MetroRepositoryDatabase(Database):
 
 			do_build = Column(Boolean, index=True)
 
+			# latest_full_build is destined to replace the de-normalized crap below it eventually:
+
+			latest_full_build_id = Column(Integer, ForeignKey("build_dir.id"))
+			latest_full_build = relationship("BuildDir", ForeignKey("build_dir.id"), uselist=False, primaryjoin="latest_build_id == BuildDir.id")
 			# de-normalized crap, status info about the subarch:
 			date = Column(DateTime, index=True)
 			date_str = Column(String, index=True)
@@ -303,6 +307,7 @@ for release in all_builds:
 			most_recent_str = None
 			most_recent_full = None
 			most_recent_full_str = None
+			latest_full_build = None
 
 			failpath = path + "/.control/.failcount"
 			if not os.path.exists(failpath):
@@ -397,6 +402,7 @@ for release in all_builds:
 					if bdir.full:
 						most_recent_full = bdir.date
 						most_recent_full_str = bdir.date_str
+						latest_full_build = bdir
 
 			# NOW, UPDATE SUBARCH OBJECT TO INCLUDE DATE INFORMATION:
 
@@ -406,6 +412,7 @@ for release in all_builds:
 				sa.date_str = most_recent_str
 				sa.full_date = most_recent_full
 				sa.full_date_str = most_recent_full_str
+				sa.latest_full_build_id = bdir.id
 				sa.failcount = failcount
 
 				# is subarch in our list of things to build, or just to maintain (ie. clean, for main repo)?
@@ -419,7 +426,7 @@ for release in all_builds:
 now = datetime.datetime.now()
 
 
-def find_build(q,min_age=stale_days,max_age=None):
+def find_build(q, min_age=stale_days, max_age=None):
 	for x in q:
 		if min_age is not None:
 			if x.date is not None and now - x.date < datetime.timedelta(days=min_age):
@@ -515,10 +522,7 @@ elif sys.argv[1] == "fails":
 		goods = session.query(db.SubArch).filter(db.SubArch.failcount == 0)
 		for x in list(fails) + list(goods):
 			# some stuff is not cached in the subarch db entry, so we need to grab the associated most recent build directory entry for the subarch:
-			for bd in x.build_dirs:
-				if x.date_str == bd.date_str:
-					bdir = bd
-					break
+			bdir = x.latest_full_build
 			art_list = [art.flavor for art in bdir.artifacts]
 			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path, "(%s)" % ",".join(art_list))
 elif sys.argv[1] == "index.xml":
@@ -553,7 +557,6 @@ elif sys.argv[1] == "index.xml":
 		for s in subarch_builds:
 			subarch_xml = etree.Element("subarch")
 			subarch_xml.attrib["name"] = s
-			# we treat "hardened' and "pure64" as "variants" of the main build (current/experimental) -- to make things clearer for users.
 			count = 1
 			info_json_path = None
 			for b in subarch_builds[s]:
@@ -561,11 +564,7 @@ elif sys.argv[1] == "index.xml":
 					continue
 				# variant
 				v = []
-				if b.subarch[-7:] == "-pure64":
-					# "variant"
-					v.append("pure64")
-				else:
-					release = b.release
+				release = b.release
 				build_xml = etree.Element("build")
 				build_xml.attrib["id"] = str(count)
 				build_xml.attrib["variant"] = '+'.join(v)
