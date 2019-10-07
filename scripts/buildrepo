@@ -630,26 +630,24 @@ elif sys.argv[1] == "compress":
 	# this performs a global compression scan on the entire build repository, and will
 	# compress files even if not built locally. This is so you can do compression on a
 	# fast box.
-
-
 	if len(sys.argv) != 3:
 		print("Please specify path to scan as second argument.")
 		sys.exit(1)
 	
 	def get_all_cme_files(path):
 		for entry in os.scandir(path):
-			if entry.is_file() and entry.name.endswith(".tar.cme"):
-				yield entry
+			if entry.is_file():
+				if entry.name.endswith(".tar.cme"):
+					yield entry
 			elif entry.is_dir():
-				get_all_cme_files(entry.path)
+				yield from get_all_cme_files(entry.path)
 
 	for entry in get_all_cme_files(sys.argv[2]):
-		print(entry.name)
 		# we use .cme to indicate "compress me". It's a zero-length file. Indicates
 		# tarball is ready to be compressed (done being created, to avoid race condition
 		# of compressing 'in-progress' tarballs.) We unlink the .cme file after we're
 		# done compressing. And we also exclude them from mirrors.
-		tarfile = entry.name[:-4]
+		tarfile = entry.path[:-4]
 		if os.path.exists(tarfile):
 			comp = settings["target/compression"]
 			if comp in [ "bz2", "xz", "gz" ]:
@@ -661,7 +659,10 @@ elif sys.argv[1] == "compress":
 				elif comp == "gz":
 					call("PATH=/bin/:/usr/bin gzip -9 " + tarfile, shell=True)
 			# remove .cme file, and set p to the new compressed file.
-			os.unlink(entry.name)
+			os.unlink(entry.path)
+		else:
+			print(tarfile, "doesn't exist, can't compress.")
+
 elif sys.argv[1] == "digestgen":
 	owner = settings["path/mirror/owner"]
 	group = settings["path/mirror/group"]
@@ -679,7 +680,7 @@ elif sys.argv[1] == "digestgen":
 					if without_compress.endswith(".tar"):
 						yield entry
 			elif entry.is_dir():
-				get_all_relevant_files(entry.path)
+				yield from get_all_relevant_files(entry.path)
 
 	with db.get_session() as session:
 		# only generate digests for the subarches of our local build system:
