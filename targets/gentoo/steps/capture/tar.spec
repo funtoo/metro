@@ -23,7 +23,10 @@ then
 	rm -f "$tarout" "$[path/mirror/target]"
 	exit 1
 fi
+# cme = "compress me"
+touch $tarout.cme
 # Note: we used to compress here. We no longer do. We want that handled out-of-band
 # for performance reasons.
-chown $[path/mirror/owner]:$[path/mirror/group] "$tarout"
+chown $[path/mirror/owner]:$[path/mirror/group] "$tarout" "${tarout}.cme"
+exit 0
 ]

@@ -14,9 +14,6 @@ then
 	install -o $[path/mirror/owner] -g $[path/mirror/group] -m $[path/mirror/dirmode] -d $outdir || exit 1
 fi
 
-tarout="$[path/mirror/target]"
-tarout="${tarout%.*}"
-
 rm -rf $[path/lxd]
 install -d $[path/lxd]
 mv $[path/chroot/stage] $[path/lxd]/rootfs
@@ -92,14 +89,16 @@ templates:
     template: hostname.tpl
 EOF
 
+tarout="$[path/mirror/target]"
+tarout="${tarout%.*}"
 cd $[path/lxd] && tar cpf $tarout --xattrs --acls *
 if [ $? -ge 2 ]
 then
 	rm -f "$tarout" "$[path/mirror/target]"
 	exit 1
 fi
-
-chown $[path/mirror/owner]:$[path/mirror/group] $[path/mirror/target]
+touch ${tarout}.cme
+chown $[path/mirror/owner]:$[path/mirror/group] $tarout ${tarout}.cme 
 
 rm -rf $[path/lxd]
 ]

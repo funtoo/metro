@@ -586,6 +586,29 @@ while len(sys.argv) > 1:
 		if retval != 0:
 			print("Error running cmd... exiting.")
 			sys.exit(1)
+	elif sys.argv[1] == "compress":
+		# this performs a global compression scan on the entire build repository, and will
+		# compress files even if not built locally. This is so you can do compression on a
+		# fast box.
+		for root, dirnames, filenames in os.walk(initial_path):
+			# we use .cme to indicate "compress me". It's a zero-length file. Indicates
+			# tarball is ready to be compressed (done being created, to avoid race condition
+			# of compressing 'in-progress' tarballs.) We unlink the .cme file after we're
+			# done compressing. And we also exclude them from mirrors.
+			for filename in fnmatch.filter(filenames, '*.tar.cme'):
+				tarfile = p[:-4]
+				if os.path.exists(tarfile):
+					comp = settings["target/compression"]
+					if comp in [ "bz2", "xz", "gz" ]:
+						print("Compressing file %s..." % filename)
+						if comp == "bz2":
+							call("PATH=/bin/:/usr/bin bzip2 -9 " + p, shell=True)
+						elif comp == "xz":
+							call("PATH=/bin/:/usr/bin xz -9e --threads=0 " + p, shell=True)
+						elif comp == "gz":
+							call("PATH=/bin/:/usr/bin gzip -9 " + p, shell=True)
+					# remove .cme file, and set p to the new compressed file.
+					os.unlink(p)
 	elif sys.argv[1] == "digestgen":
 		del sys.argv[1]
 		if not digestgen:
@@ -596,45 +619,41 @@ while len(sys.argv) > 1:
 		gid = grp.getgrnam(group)[2] 
 		print("Generating hashes...")
 		links = []
-		for root, dirnames, filenames in os.walk(initial_path):
-			for filename in fnmatch.filter(filenames, '*.tar*'):
-				if filename.endswith(".targets"):
-					continue
-				if filename[-4:] == ".txt":
-					continue
-				if filename[-4:] == ".gpg":
-					continue
-				p = os.path.join(root, filename)
-				if os.path.islink(p):
-					links.append(p)
-					continue
-				if filename[-4:] == ".tar":
-					# file is not compressed, let's see if we should compress it:
-					comp = settings["target/compression"]
-					if comp in [ "bz2", "xz", "gz" ]:
-						print("Compressing file %s..." % filename)
-						if comp == "bz2":
-							call("PATH=/bin/:/usr/bin bzip2 -9 " + p, shell=True)
-						elif comp == "xz":
-							call("PATH=/bin/:/usr/bin xz -9e --threads=0 " + p, shell=True)
-						elif comp == "gz":
-							call("PATH=/bin/:/usr/bin gzip -9 " + p, shell=True)
-						p = p + "." + comp
-				print(p)
-				if not os.path.exists(p+".hash.txt"):
-					sys.stdout.write('h')
-					sys.stdout.flush()
-					call("PATH=/bin/:/usr/bin echo sha256 $(sha256sum %s | cut -f1 -d' ') > %s.hash.txt" % ( p, p ), shell=True)
-				os.lchown(p+".hash.txt",uid,gid)
-				if not os.path.exists(p+".gpg"):
-					print(p+".gpg")
-					sys.stdout.flush()
-					call("PATH=/bin/:/usr/bin gpg --batch --homedir /root/.gnupg --use-agent --output %s.gpg --detach-sig %s" % (p, p), env=os.environ, shell=True) 
-				if os.path.exists(p+".gpg"):
-					os.lchown(p+".gpg",uid,gid)
-				# CLEANUP LOOP START:
-				# for every link to a tarball, make sure that links to hashes are in place.
-				# also clean up dead tarball links:
+		with db.get_session() as session:
+			# only generate digests for the subarches of our local build system:
+			all_subarches = session.query(db.SubArch)
+			for subarch in all_subarches:
+				print("Processing %s..." % subarch.path)
+				continue
+				for root, dirnames, filenames in os.walk(subarch.path):
+					for filename in fnmatch.filter(filenames, '*.tar.*'):
+						if filename.endswith(".cme"):
+							continue
+						if filename.endswith(".targets"):
+							continue
+						if filename[-4:] == ".txt":
+							continue
+						if filename[-4:] == ".gpg":
+							continue
+						p = os.path.join(root, filename)
+						if os.path.islink(p):
+							links.append(p)
+							continue
+						print(p)
+						if not os.path.exists(p+".hash.txt"):
+							sys.stdout.write('h')
+							sys.stdout.flush()
+							call("PATH=/bin/:/usr/bin echo sha256 $(sha256sum %s | cut -f1 -d' ') > %s.hash.txt" % ( p, p ), shell=True)
+						os.lchown(p+".hash.txt",uid,gid)
+						if not os.path.exists(p+".gpg"):
+							print(p+".gpg")
+							sys.stdout.flush()
+							call("PATH=/bin/:/usr/bin gpg --batch --homedir /root/.gnupg --use-agent --output %s.gpg --detach-sig %s" % (p, p), env=os.environ, shell=True) 
+						if os.path.exists(p+".gpg"):
+							os.lchown(p+".gpg",uid,gid)
+						# CLEANUP LOOP START:
+						# for every link to a tarball, make sure that links to hashes are in place.
+						# also clean up dead tarball links:
 		for link in links:
 			# link = link to a TARBALL
 			abs_realpath = os.path.normpath(os.path.join(os.path.dirname(link),os.readlink(link)))
