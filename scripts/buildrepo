@@ -556,7 +556,7 @@ elif sys.argv[1] == "index.xml":
 				build_xml.attrib["path"] = subarch.path[len(initial_path):]
 				build_xml.attrib["latest"] = "None" if not artifact.date_str else artifact.date_str
 				build_xml.attrib["download"] = artifact.path[len(initial_path):]
-				build_xml.attrib["size"] = subprocess.getoutput("/usr/bin/du -h "+artifact.path.strip() + "B")
+				build_xml.attrib["size"] = subprocess.getoutput("/usr/bin/du -h "+artifact.path.strip()) + "B"
 				if not info_json_path:
 					bifn = os.path.join(subarch.path, artifact.date_str, "build-info.json")
 					if os.path.exists(bifn):
