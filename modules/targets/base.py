@@ -83,7 +83,22 @@ class BaseTarget:
 			except:
 				raise MetroError("Setting %s is set to %s; glob failed." % (loc, repr(self.settings[loc])))
 			if len(matches) == 0:
-				raise MetroError("Required file "+self.settings[loc]+" not found. Aborting.")
+				loc_no_ending = None
+				found = False
+				# look for uncompressed version of file:
+				for ending in [ ".tar.xz", ".tar.gz", "tar.bz2" ]:
+					if self.settings[loc].endswith(ending):
+						zap_part = "." + ending.split(".")[-1]
+						# remove .gz, .xz extension:
+						loc_no_ending = self.settings[loc][:-len(zap_part)]
+						break
+				if loc_no_ending is not None:
+					matches = glob(loc_no_ending)
+					if len(matches) != 0:
+						print("Found uncompressed file: %s" % loc_no_ending)
+						found = True
+				if not found:
+					raise MetroError("Required file "+self.settings[loc]+" not found. Aborting.")
 			elif len(matches) > 1:
 				raise MetroError("Multiple matches found for required file pattern defined in '%s'; Aborting." % loc)
 

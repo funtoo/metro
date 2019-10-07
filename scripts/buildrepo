@@ -299,9 +299,17 @@ if __name__ == "__main__":
 					try:
 						bdir.date = datetime.datetime.strptime(dirname,"%Y-%m-%d")
 						bdir.date_str = dirname
-						for match in glob.glob("%s/stage3*.tar.*" % ipath):
-							artifacts["stage3"] = match
-							break
+						stage3_match = False
+						for match in glob.glob("%s/stage3*.tar*" % ipath):
+							for ending in [ ".tar.bz2", "tar.gz", "tar.xz", ".tar" ]:
+								if match.endswith(ending):
+									artifacts["stage3"] = match
+									stage3_match = True
+									# if we just have a stage3, we consider it "complete" for our purposes, for now
+									complete = True
+									break
+							if stage3_match:
+								break
 						for match in glob.glob("%s/funtoo-*-openvz-*.tar.*" % ipath):
 							artifacts["openvz"] = match
 							break

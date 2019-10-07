@@ -6,17 +6,21 @@
 source: [
 [ ! -d $[path/chroot] ] && install -d $[path/chroot]
 [ ! -d $[path/chroot]/tmp ] && install -d $[path/chroot]/tmp --mode=1777
-src="$(ls $[path/mirror/source])"
+src="$[path/mirror/source]"
 comp="${src##*.}"
 
 if [ ! -e "$src" ]; then
+	echo "Could not find uncompressed artifact $src..."
 	src="${src%.*}"
 	if [ -e "$src" ]; then
 		echo "Found uncompressed artifact -- will use it."
 	fi
 fi
 
-[ ! -e "$src" ] && echo "Source file $src not found, exiting." && exit 1
+if [ ! -e "$src" ]; then
+	echo "Source file $src not found, exiting."
+	exit 200
+fi
 echo "Extracting source stage $src..."
 
 # Perform the extraction:
@@ -76,7 +80,7 @@ if [ "$[release/type]" == "official" ]; then
 			;;
 		*)
 			echo "Unrecognized source compression for $snap"
-			exit 1
+			exit 300
 			;;
 	esac
 	if [ "$[snapshot/source/type]" == "git" ]; then
