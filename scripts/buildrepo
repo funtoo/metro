@@ -234,6 +234,17 @@ setup = MetroSetup()
 settings = setup.getSettings()
 initial_path = settings["path/mirror"]
 
+def find_file_compressed_or_not(glob_pattern):
+	found_match = None
+	for match in glob.glob(glob_pattern):
+		for ending in [ ".tar.bz2", "tar.gz", "tar.xz", ".tar" ]:
+			if match.endswith(ending):
+				found_match = match
+				break
+		if found_match:
+			break
+	return found_match
+
 if __name__ == "__main__":
 	if os.path.exists("cleaner.db"):
 		os.unlink("cleaner.db")
@@ -299,26 +310,13 @@ if __name__ == "__main__":
 					try:
 						bdir.date = datetime.datetime.strptime(dirname,"%Y-%m-%d")
 						bdir.date_str = dirname
-						stage3_match = False
-						for match in glob.glob("%s/stage3*.tar*" % ipath):
-							for ending in [ ".tar.bz2", "tar.gz", "tar.xz", ".tar" ]:
-								if match.endswith(ending):
-									artifacts["stage3"] = match
-									stage3_match = True
-									# if we just have a stage3, we consider it "complete" for our purposes, for now
-									complete = True
-									break
-							if stage3_match:
-								break
-						for match in glob.glob("%s/funtoo-*-openvz-*.tar.*" % ipath):
-							artifacts["openvz"] = match
-							break
-						for match in glob.glob("%s/lxd-*.tar.*" % ipath):
-							artifacts["lxd"] = match
-							break
-						for match in glob.glob("%s/gnome-*.tar.*" % ipath):
-							artifacts["gnome"] = match
-							break
+						artifacts["stage3"] = find_file_compressed_or_not("%s/stage3*.tar*" % ipath)
+						if artifacts["stage3"]is not None:
+							# if we just have a stage3, we consider it "complete" for our purposes, for now
+							complete = True
+						artifacts["openvz"] = find_file_compressed_or_not("%s/funtoo-*-openvz-*.tar*" % ipath)
+						artifacts["lxd"] = find_file_compressed_or_not("%s/lxd-*.tar*" % ipath)
+						artifacts["gnome"] = find_file_compressed_or_not("%s/gnome-*.tar*" % ipath)
 					except ValueError:
 						# didn't work? Use old date on purpose to force cleaning:
 						bdir.date = datetime.datetime(1980,1,1)
@@ -362,6 +360,8 @@ if __name__ == "__main__":
 					session.add(sa)
 					session.flush()
 					for artifact_keyword, artifact_path in artifacts.items():
+						if artifact_path is None:
+							continue
 						art = db.Artifact()
 						art.subarch_id = sa.id
 						art.flavor = artifact_keyword
