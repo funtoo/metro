@@ -185,7 +185,6 @@ class Database(object):
 class MetroRepositoryDatabase(Database):
 
 	def initialize(self):
-
 		class SubArch(self.Base):
 
 			__tablename__ = "subarches"
@@ -244,130 +243,132 @@ def find_file_compressed_or_not(glob_pattern):
 			break
 	return found_match
 
-if __name__ == "__main__":
-	if os.path.exists("cleaner.db"):
-		os.unlink("cleaner.db")
-	db = MetroRepositoryDatabase()
-	for build in all_builds:
-		if not os.path.exists("%s/%s" % (initial_path, build)):
-			continue
-		snapdir = "%s/%s/snapshots" % ( initial_path, build )
-		if os.path.isdir(snapdir) and not os.path.islink(snapdir):
-			for match in glob.glob("%s/portage-*.tar.xz" % snapdir):
-				basename = os.path.basename(match)
-				if basename == "portage-current.tar.xz":
-					continue
-				sna = db.Snapshot()
-				sna.path = match
-				sna.build = build
-				with db.get_session() as session:
-					session.add(sna)
-					session.commit()
-		for arch in all_arches:
-			if not os.path.exists("%s/%s/%s" % ( initial_path, build, arch )):
+if os.path.exists("cleaner.db"):
+	os.unlink("cleaner.db")
+db = MetroRepositoryDatabase()
+for build in all_builds:
+	if not os.path.exists("%s/%s" % (initial_path, build)):
+		continue
+	snapdir = "%s/%s/snapshots" % ( initial_path, build )
+	if os.path.isdir(snapdir) and not os.path.islink(snapdir):
+		for match in glob.glob("%s/portage-*.tar.xz" % snapdir):
+			basename = os.path.basename(match)
+			if basename == "portage-current.tar.xz":
 				continue
-			for subarch in all_subarches:
-				path = "%s/%s/%s/%s" % (initial_path, build, arch, subarch)
-				if not os.path.exists(path):
+			sna = db.Snapshot()
+			sna.path = match
+			sna.build = build
+			with db.get_session() as session:
+				session.add(sna)
+				session.commit()
+	for arch in all_arches:
+		funky_path = "%s/%s/%s" % ( initial_path, build, arch )
+		if not os.path.exists(funky_path):
+			print("Path not found: %s" % funky_path)
+			continue
+		for subarch in all_subarches:
+			path = "%s/%s/%s/%s" % (initial_path, build, arch, subarch)
+			if not os.path.exists(path):
+				continue
+
+			most_recent = None
+			most_recent_str = None
+			most_recent_full = None
+			most_recent_full_str = None
+
+			failpath = path + "/.control/.failcount"
+			if not os.path.exists(failpath):
+				failcount = 0
+			else:
+				fc = countFile(failpath)
+				failcount = fc.count
+			for dirname in os.listdir(path):
+				if dirname == ".control":
 					continue
-
-				most_recent = None
-				most_recent_str = None
-				most_recent_full = None
-				most_recent_full_str = None
-
-				failpath = path + "/.control/.failcount"
-				if not os.path.exists(failpath):
-					failcount = 0
-				else:
-					fc = countFile(failpath)
-					failcount = fc.count
-				for dirname in os.listdir(path):
-					if dirname == ".control":
-						continue
-					ipath = "%s/%s" % ( path, dirname )
-					if not os.path.isdir(ipath):
-						continue
-					complete = False
-					# artifacts: map 'extra' name like 'gnome' build to full path of artifact:
-					artifacts = {}
-					bdir = db.BuildDir()
-					spath = ipath + "/status"
-					if os.path.exists(spath):
-						with open(spath,"r") as sfile:
-							sdata = sfile.read().strip()
-							if sdata == "ok":
-								complete = True
-							# grab mtime of status file:
-							bdir.date = datetime.datetime.utcfromtimestamp(os.path.getmtime(spath))
-							# use that to generate date string:
-							bdir.date_str = bdir.date.strftime("%Y-%m-%d")
-					else:
-						# build is in progress, so skip cleaning:
-						continue
-					# datestamped build dir -- let's try to parse it:
-					try:
-						bdir.date = datetime.datetime.strptime(dirname,"%Y-%m-%d")
-						bdir.date_str = dirname
-						artifacts["stage3"] = find_file_compressed_or_not("%s/stage3*.tar*" % ipath)
-						if artifacts["stage3"]is not None:
-							# if we just have a stage3, we consider it "complete" for our purposes, for now
+				ipath = "%s/%s" % ( path, dirname )
+				if not os.path.isdir(ipath):
+					continue
+				complete = False
+				# artifacts: map 'extra' name like 'gnome' build to full path of artifact:
+				artifacts = {}
+				bdir = db.BuildDir()
+				spath = ipath + "/status"
+				if os.path.exists(spath):
+					with open(spath,"r") as sfile:
+						sdata = sfile.read().strip()
+						if sdata == "ok":
 							complete = True
-						artifacts["openvz"] = find_file_compressed_or_not("%s/funtoo-*-openvz-*.tar*" % ipath)
-						artifacts["lxd"] = find_file_compressed_or_not("%s/lxd-*.tar*" % ipath)
-						artifacts["gnome"] = find_file_compressed_or_not("%s/gnome-*.tar*" % ipath)
-					except ValueError:
-						# didn't work? Use old date on purpose to force cleaning:
-						bdir.date = datetime.datetime(1980,1,1)
-						bdir.date_str = "1980-01-01"
-					bdir.path = ipath
-					bdir.build = build
-					bdir.arch = arch
-					bdir.subarch = subarch
-					bdir.complete = complete
-
-					if complete:
-						for match in glob.glob("%s/stage1*.tar.*" % ipath):
-							bdir.full = True
-							break
-					with db.get_session() as session:
-						session.add(bdir)
-						session.flush()
-					if complete and ( most_recent == None or most_recent < bdir.date ):
-						most_recent = bdir.date
-						most_recent_str = bdir.date_str
-						if bdir.full:
-							most_recent_full = bdir.date
-							most_recent_full_str = bdir.date_str
-
-				sa = db.SubArch()
-				sa.build = build
-				sa.arch = arch
-				sa.subarch = subarch
-				sa.date = most_recent
-				sa.date_str = most_recent_str
-				sa.full_date = most_recent_full
-				sa.full_date_str = most_recent_full_str
-				sa.failcount = failcount
-				sa.path = path
-				# is subarch in our list of things to build, or just to maintain (ie. clean, for main repo)?
-				if build in builds and arch in arches and subarch in subarches:
-					sa.do_build = True
+						# grab mtime of status file:
+						bdir.date = datetime.datetime.utcfromtimestamp(os.path.getmtime(spath))
+						# use that to generate date string:
+						bdir.date_str = bdir.date.strftime("%Y-%m-%d")
 				else:
-					sa.do_build = False
+					# build is in progress, so skip cleaning:
+					continue
+				# datestamped build dir -- let's try to parse it:
+				try:
+					bdir.date = datetime.datetime.strptime(dirname,"%Y-%m-%d")
+					bdir.date_str = dirname
+					artifacts["stage3"] = find_file_compressed_or_not("%s/stage3*.tar*" % ipath)
+					if artifacts["stage3"]is not None:
+						# if we just have a stage3, we consider it "complete" for our purposes, for now
+						complete = True
+					artifacts["openvz"] = find_file_compressed_or_not("%s/funtoo-*-openvz-*.tar*" % ipath)
+					artifacts["lxd"] = find_file_compressed_or_not("%s/lxd-*.tar*" % ipath)
+					artifacts["gnome"] = find_file_compressed_or_not("%s/gnome-*.tar*" % ipath)
+				except ValueError:
+					# didn't work? Use old date on purpose to force cleaning:
+					bdir.date = datetime.datetime(1980,1,1)
+					bdir.date_str = "1980-01-01"
+				bdir.path = ipath
+				bdir.build = build
+				bdir.arch = arch
+				bdir.subarch = subarch
+				bdir.complete = complete
+
+				if complete:
+					for match in glob.glob("%s/stage1*.tar.*" % ipath):
+						bdir.full = True
+						break
 				with db.get_session() as session:
-					session.add(sa)
+					session.add(bdir)
 					session.flush()
-					for artifact_keyword, artifact_path in artifacts.items():
-						if artifact_path is None:
-							continue
-						art = db.Artifact()
-						art.subarch_id = sa.id
-						art.flavor = artifact_keyword
-						art.path = artifact_path
-						session.add(art)
-						session.flush()
-					session.commit()
+				if complete and ( most_recent == None or most_recent < bdir.date ):
+					most_recent = bdir.date
+					most_recent_str = bdir.date_str
+					if bdir.full:
+						most_recent_full = bdir.date
+						most_recent_full_str = bdir.date_str
+
+			sa = db.SubArch()
+			sa.build = build
+			sa.arch = arch
+			sa.subarch = subarch
+			sa.date = most_recent
+			sa.date_str = most_recent_str
+			sa.full_date = most_recent_full
+			sa.full_date_str = most_recent_full_str
+			sa.failcount = failcount
+			sa.path = path
+			# is subarch in our list of things to build, or just to maintain (ie. clean, for main repo)?
+			if build in builds and arch in arches and subarch in subarches:
+				sa.do_build = True
+			else:
+				sa.do_build = False
+			with db.get_session() as session:
+				session.add(sa)
+				session.flush()
+				for artifact_keyword, artifact_path in artifacts.items():
+					if artifact_path is None:
+						continue
+					art = db.Artifact()
+					art.subarch_id = sa.id
+					art.flavor = artifact_keyword
+					art.path = artifact_path
+					session.add(art)
+					session.flush()
+			session.commit()
+
 now = datetime.datetime.now()
 # more than 3 fails and we remove the build from our rotation:
 def find_build(q,min_age=stale_days,max_age=None):
