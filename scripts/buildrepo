@@ -676,8 +676,7 @@ elif sys.argv[1] == "digestgen":
 			if entry.is_file():
 				ending = entry.name.split('.')
 				if len(ending) and ending[-1] in [ "gz", "bz2", "xz" ]:
-					without_compress = entry.name[:-(len(ending)+1)]
-					if without_compress.endswith(".tar"):
+					if len(ending) >= 2 and ending[-2] == "tar":
 						yield entry
 			elif entry.is_dir():
 				yield from get_all_relevant_files(entry.path)
