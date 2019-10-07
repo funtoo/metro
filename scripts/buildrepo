@@ -185,46 +185,74 @@ class Database(object):
 class MetroRepositoryDatabase(Database):
 
 	def initialize(self):
+
 		class SubArch(self.Base):
 
+			"""
+			This class represents a subarch of a particular release. It also includes some date-specific information.
+			"""
+
 			__tablename__ = "subarches"
+
 			id = Column(Integer, primary_key = True)
-			date = Column(DateTime, index=True)
-			date_str = Column(String, index=True)
+
 			path = Column(String, index=True)
-			build = Column(String, index=True)
+			release = Column(String, index=True)
 			arch = Column(String, index=True)
 			subarch = Column(String, index=True)
 			failcount = Column(Integer, index=True)
-			full_date = Column(DateTime, index=True)
-			full_date_str = Column(String, index=True)
+
 			do_build = Column(Boolean, index=True)
 
-		class Artifact(self.Base):
-			__tablename__ = "artifacts"
-			id = Column(Integer, primary_key=True)
-			subarch_id = Column(Integer, ForeignKey('subarches.id'))
-			flavor = Column(String)
-			path = Column(String, index=True)
-			subarch = relationship(SubArch, backref=backref("artifacts", order_by="Artifact.flavor"))
+			# de-normalized crap, status info about the subarch:
+			date = Column(DateTime, index=True)
+			date_str = Column(String, index=True)
+			full_date = Column(DateTime, index=True)
+			full_date_str = Column(String, index=True)
+
 
 		class BuildDir(self.Base):
+
+			"""
+			This class represents a specific build directory for a subarch, like "2019-10-15".
+			"""
+
 			__tablename__ = "build_dirs"
+
 			id = Column(Integer, primary_key = True)
+			subarch_id = Column(Integer, ForeignKey('subarches.id'))
 			date = Column(DateTime, index=True)
 			path = Column(String, index=True)
-			build = Column(String, index=True)
+			release = Column(String, index=True)
 			arch = Column(String, index=True)
-			subarch = Column(String, index=True)
+			subarch_name = Column(String, index=True)
 			date_str = Column(String, index=True)
 			complete = Column(Boolean, index=True)
 			full = Column(Boolean, index=True)
+			subarch = relationship(SubArch, backref=backref("build_dir", order_by="BuildDir.date_str"))
+
+		class Artifact(self.Base):
+
+			"""
+			This class represents a specific artifact of a build directory, such as a stage3, lxd image, or gnome
+			image.
+			"""
+
+			__tablename__ = "artifacts"
+
+			id = Column(Integer, primary_key=True)
+			build_dir_id = Column(Integer, ForeignKey('build_dirs.id'))
+			flavor = Column(String)
+			path = Column(String, index=True)
+			build_dir = relationship(BuildDir, backref=backref("artifacts", order_by="Artifact.flavor"))
 
 		class Snapshot(self.Base):
+
 			__tablename__ = "snapshots"
+
 			id = Column(Integer, primary_key = True)
 			path = Column(String, index=True)
-			build = Column(String, index=True)
+			release = Column(String, index=True)
 
 		self.orm_register(BuildDir, Snapshot, SubArch, Artifact)
 
@@ -246,10 +274,10 @@ def find_file_compressed_or_not(glob_pattern):
 if os.path.exists("cleaner.db"):
 	os.unlink("cleaner.db")
 db = MetroRepositoryDatabase()
-for build in all_builds:
-	if not os.path.exists("%s/%s" % (initial_path, build)):
+for release in all_builds:
+	if not os.path.exists("%s/%s" % (initial_path, release)):
 		continue
-	snapdir = "%s/%s/snapshots" % ( initial_path, build )
+	snapdir = "%s/%s/snapshots" % ( initial_path, release )
 	if os.path.isdir(snapdir) and not os.path.islink(snapdir):
 		for match in glob.glob("%s/portage-*.tar.xz" % snapdir):
 			basename = os.path.basename(match)
@@ -257,17 +285,17 @@ for build in all_builds:
 				continue
 			sna = db.Snapshot()
 			sna.path = match
-			sna.build = build
+			sna.release = release
 			with db.get_session() as session:
 				session.add(sna)
 				session.commit()
 	for arch in all_arches:
-		funky_path = "%s/%s/%s" % ( initial_path, build, arch )
+		funky_path = "%s/%s/%s" % ( initial_path, release, arch )
 		if not os.path.exists(funky_path):
 			print("Path not found: %s" % funky_path)
 			continue
 		for subarch in all_subarches:
-			path = "%s/%s/%s/%s" % (initial_path, build, arch, subarch)
+			path = "%s/%s/%s/%s" % (initial_path, release, arch, subarch)
 			if not os.path.exists(path):
 				continue
 
@@ -282,6 +310,18 @@ for build in all_builds:
 			else:
 				fc = countFile(failpath)
 				failcount = fc.count
+
+			# LET'S CREATE A SEMI-POPULATED SUBARCH. WE WILL FILL OUT DATE FIELDS LATER:
+
+			with db.get_session() as session:
+				sa = db.SubArch()
+				sa.release = release
+				sa.arch = arch
+				sa.subarch = subarch
+				sa.path = path
+				session.add(sa)
+				session.flush()
+
 			for dirname in os.listdir(path):
 				if dirname == ".control":
 					continue
@@ -291,10 +331,13 @@ for build in all_builds:
 				complete = False
 				# artifacts: map 'extra' name like 'gnome' build to full path of artifact:
 				artifacts = {}
+
+				# CREATE NEW BUILD DIR DB ENTRY:
+
 				bdir = db.BuildDir()
 				spath = ipath + "/status"
 				if os.path.exists(spath):
-					with open(spath,"r") as sfile:
+					with open(spath, "r") as sfile:
 						sdata = sfile.read().strip()
 						if sdata == "ok":
 							complete = True
@@ -303,7 +346,7 @@ for build in all_builds:
 						# use that to generate date string:
 						bdir.date_str = bdir.date.strftime("%Y-%m-%d")
 				else:
-					# build is in progress, so skip cleaning:
+					# build is in progress, so skip:
 					continue
 				# datestamped build dir -- let's try to parse it:
 				try:
@@ -320,11 +363,13 @@ for build in all_builds:
 				artifacts["openvz"] = find_file_compressed_or_not("%s/funtoo-*-openvz-*.tar*" % ipath)
 				artifacts["lxd"] = find_file_compressed_or_not("%s/lxd-*.tar*" % ipath)
 				artifacts["gnome"] = find_file_compressed_or_not("%s/gnome-*.tar*" % ipath)
+
 				bdir.path = ipath
-				bdir.build = build
+				bdir.release = release
 				bdir.arch = arch
-				bdir.subarch = subarch
+				bdir.subarch_name = subarch
 				bdir.complete = complete
+				bdir.subarch_id = sa.id
 
 				if complete:
 					for match in glob.glob("%s/stage1*.tar.*" % ipath):
@@ -333,51 +378,54 @@ for build in all_builds:
 				with db.get_session() as session:
 					session.add(bdir)
 					session.flush()
-				if complete and ( most_recent == None or most_recent < bdir.date ):
+
+				# NOW: CREATE ARTIFACTS, LINK TO BUILD DIR
+
+				for artifact_keyword, artifact_path in artifacts.items():
+					if artifact_path is None:
+						continue
+					art = db.Artifact()
+					art.build_dir_id = bdir.id
+					art.flavor = artifact_keyword
+					art.path = artifact_path
+					session.add(art)
+					session.flush()
+
+				if complete and (most_recent is None or most_recent < bdir.date):
 					most_recent = bdir.date
 					most_recent_str = bdir.date_str
 					if bdir.full:
 						most_recent_full = bdir.date
 						most_recent_full_str = bdir.date_str
 
-			sa = db.SubArch()
-			sa.build = build
-			sa.arch = arch
-			sa.subarch = subarch
-			sa.date = most_recent
-			sa.date_str = most_recent_str
-			sa.full_date = most_recent_full
-			sa.full_date_str = most_recent_full_str
-			sa.failcount = failcount
-			sa.path = path
-			# is subarch in our list of things to build, or just to maintain (ie. clean, for main repo)?
-			if build in builds and arch in arches and subarch in subarches:
-				sa.do_build = True
-			else:
-				sa.do_build = False
+			# NOW, UPDATE SUBARCH OBJECT TO INCLUDE DATE INFORMATION:
+
 			with db.get_session() as session:
-				session.add(sa)
-				session.flush()
-				for artifact_keyword, artifact_path in artifacts.items():
-					if artifact_path is None:
-						continue
-					art = db.Artifact()
-					art.subarch_id = sa.id
-					art.flavor = artifact_keyword
-					art.path = artifact_path
-					session.add(art)
-					session.flush()
+				sa = session.query(db.SubArch).filter(db.SubArch.id == sa.id).first()
+				sa.date = most_recent
+				sa.date_str = most_recent_str
+				sa.full_date = most_recent_full
+				sa.full_date_str = most_recent_full_str
+				sa.failcount = failcount
+
+				# is subarch in our list of things to build, or just to maintain (ie. clean, for main repo)?
+				if release in builds and arch in arches and subarch in subarches:
+					sa.do_build = True
+				else:
+					sa.do_build = False
+
 			session.commit()
 
 now = datetime.datetime.now()
-# more than 3 fails and we remove the build from our rotation:
+
+
 def find_build(q,min_age=stale_days,max_age=None):
 	for x in q:
-		if min_age != None:
-			if x.date != None and now - x.date < datetime.timedelta(days=min_age):
+		if min_age is not None:
+			if x.date is not None and now - x.date < datetime.timedelta(days=min_age):
 				continue	
-		if max_age != None:
-			if x.date == None:
+		if max_age is not None:
+			if x.date is None:
 				continue
 			elif now - x.date > datetime.timedelta(days=max_age):
 				continue	
@@ -390,13 +438,13 @@ def find_build(q,min_age=stale_days,max_age=None):
 				sys.stderr.write("# Build at %s in progress, skipping...\n" % x.path)
 				continue
 		# output: build subarch was-last-build-full(had-a-stage-1)(boolean) date
-		print("build=%s" % x.build)
+		print("release=%s" % x.release)
 		print("arch_desc=%s" % x.arch)
 		print("subarch=%s" % x.subarch)
 		print("fulldate=%s" % x.full_date_str)
 		print("nextdate=%s" % datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d"))
 		print("failcount=%s" % x.failcount)
-		mb = map_build(x.build, x.subarch, x.full_date == x.date and x.date != None, x.full_date_str)
+		mb = map_build(x.release, x.subarch, x.full_date == x.date and x.date != None, x.full_date_str)
 		# handle case where map_build returns "full+openvz":
 		if type(mb) == str:
 			mb = mb.split("+")
@@ -409,17 +457,17 @@ def find_build(q,min_age=stale_days,max_age=None):
 		sys.exit(0)
 if sys.argv[1] == "clean":
 	with db.get_session() as session:
-		for build in all_builds:
+		for release in all_builds:
 			# first -- remove any more than 3 complete builds, starting with oldest, of course:
 			for arch in all_arches:
 				for subarch in all_subarches:
-					out = session.query(db.BuildDir).filter_by(build=build).filter_by(arch=arch).filter_by(subarch=subarch).order_by(db.BuildDir.date_str).all()
+					out = session.query(db.BuildDir).filter_by(release=release).filter_by(arch=arch).filter_by(subarch_name=subarch).order_by(db.BuildDir.date_str).all()
 					for x in out[0:-keep_num]:
 						print(("rm -rf %s" % x.path))
 					for x in out[-keep_num:]:
 						print(("# keeping %s" % x.path))
 			# next, remove any more than 2 snapshots:
-			sna = session.query(db.Snapshot).filter_by(build=build).order_by(db.Snapshot.path).all()
+			sna = session.query(db.Snapshot).filter_by(release=release).order_by(db.Snapshot.path).all()
 			for x in sna[0:-keep_num]:
 				print(("rm %s*" % x.path))
 			for x in sna[-(keep_num-1):]:
@@ -427,7 +475,7 @@ if sys.argv[1] == "clean":
 		# Now, look at incomplete builds. Clean them out when they're stale and not the most recent build.
 		for x in session.query(db.BuildDir).filter_by(complete=False):
 			# ignore non-stale builds for cleaning -- they could be in-progress...
-			y = session.query(db.SubArch).filter_by(subarch=x.subarch).filter_by(arch=x.arch).filter_by(build=x.build).first()
+			y = session.query(db.SubArch).filter_by(subarch=x.subarch).filter_by(arch=x.arch).filter_by(release=x.release).first()
 			if x.date != None and now - x.date > datetime.timedelta(days=stale_days) and y.date != x.date:
 				# don't zap most recent...
 				print(("rm -rf %s* # not complete and stale, not most recent build" % x.path))
@@ -439,15 +487,15 @@ elif sys.argv[1] == "nextbuild":
 		myfail = 0
 		while myfail < max_failcount:
 			# we start with failcount of zero, and prioritize not-yet-built stages:
-			empties = sa.filter(db.SubArch.do_build == True).filter(db.SubArch.date == None).filter(db.SubArch.build.in_(builds)).filter_by(failcount=myfail)
+			empties = sa.filter(db.SubArch.do_build == True).filter(db.SubArch.date == None).filter(db.SubArch.release.in_(builds)).filter_by(failcount=myfail)
 			find_build(empties)
 			# next, we look for builds with a failcount of "myfail+1", but haven't been built in at least stale_days * 2. 
 			# This prevents them from being pushed out of the build rotation if we aren't building *every* stale stage (if we always have some builds queued at any given time.)
 			if myfail + 1 < max_failcount:
-				baddies = sa.filter(db.SubArch.do_build == True).filter(db.SubArch.build.in_(builds)).filter_by(failcount=myfail+1).order_by(db.SubArch.date)
+				baddies = sa.filter(db.SubArch.do_build == True).filter(db.SubArch.release.in_(builds)).filter_by(failcount=myfail+1).order_by(db.SubArch.date)
 				find_build(baddies,min_age=stale_days*2)
 			# if we can't find one, we look for a failcount of zero, but prioritize by date:
-			oldies = sa.filter(db.SubArch.do_build == True).filter(db.SubArch.date != None).filter(db.SubArch.build.in_(builds)).filter_by(failcount=myfail).order_by(db.SubArch.date)
+			oldies = sa.filter(db.SubArch.do_build == True).filter(db.SubArch.date != None).filter(db.SubArch.release.in_(builds)).filter_by(failcount=myfail).order_by(db.SubArch.date)
 			find_build(oldies)
 			myfail += 1
 			# if no builds are found, we increment failcount, and try again:
@@ -458,7 +506,7 @@ elif sys.argv[1] == "nextbuild":
 		sys.exit(1)
 elif sys.argv[1] == "empties":
 	with db.get_session() as session:
-		empties = session.query(db.SubArch).filter(db.SubArch.do_build == True).filter(db.SubArch.date == None).filter(db.SubArch.build.in_(builds))
+		empties = session.query(db.SubArch).filter(db.SubArch.do_build == True).filter(db.SubArch.date == None).filter(db.SubArch.release.in_(builds))
 		for x in empties:
 			print(x.path)
 elif sys.argv[1] == "fails":
@@ -466,7 +514,9 @@ elif sys.argv[1] == "fails":
 		fails = session.query(db.SubArch).filter(db.SubArch.failcount > 0).order_by(db.SubArch.failcount.desc())
 		goods = session.query(db.SubArch).filter(db.SubArch.failcount == 0)
 		for x in list(fails) + list(goods):
-			art_list = [art.flavor for art in x.artifacts]
+			# some stuff is not cached in the subarch db entry, so we need to grab the associated most recent build directory entry for the subarch:
+			bdir = session.query(db.BuildDir).filter(db.BuildDir.date_str == x.date_str).first()
+			art_list = [art.flavor for art in bdir.artifacts]
 			print(str(x.failcount).rjust(4), "None".rjust(12) if not x.date else datetime.datetime.strftime(x.date, "%Y-%m-%d").rjust(12), x.path, "(%s)" % ",".join(art_list))
 elif sys.argv[1] == "index.xml":
 	from lxml import etree
@@ -504,29 +554,23 @@ elif sys.argv[1] == "index.xml":
 			count = 1
 			info_json_path = None
 			for b in subarch_builds[s]:
-				if b.build in index_ignore_builds:
+				if b.release in index_ignore_builds:
 					continue
 				# variant
 				v = []
 				if b.subarch[-7:] == "-pure64":
 					# "variant"
 					v.append("pure64")
-				if b.build[-5:] == "-next":
-					continue
-				elif b.build[-9:] == "-hardened":
-					v.append("hardened")
-					build = b.build[:-9]
-					continue
 				else:
-					build = b.build
+					release = b.release
 				build_xml = etree.Element("build")
 				build_xml.attrib["id"] = str(count)
 				build_xml.attrib["variant"] = '+'.join(v)
-				build_xml.attrib["build"] = build
+				build_xml.attrib["release"] = release
 				build_xml.attrib["path"] = b.path[len(initial_path):]
 				build_xml.attrib["latest"] = "None" if not b.date else datetime.datetime.strftime(b.date, "%Y-%m-%d") 
 				if b.date:
-					build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.build + "-" + build_xml.attrib["latest"] + ".tar.xz"
+					build_xml.attrib["download"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/stage3-" + b.subarch + "-" + b.release + "-" + build_xml.attrib["latest"] + ".tar.xz"
 					#if "openvz" in b.extras.split(","):
 					#	build_xml.attrib["openvz"] = b.path[len(initial_path):] + "/" + build_xml.attrib["latest"] + "/" + b.build + "-" + b.subarch + "-openvz-" + build_xml.attrib["latest"] + ".tar.xz"
 					if not info_json_path:
