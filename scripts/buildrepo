@@ -229,7 +229,7 @@ class MetroRepositoryDatabase(Database):
 			date_str = Column(String, index=True)
 			complete = Column(Boolean, index=True)
 			full = Column(Boolean, index=True)
-			subarch = relationship(SubArch, backref=backref("build_dir", order_by="BuildDir.date_str"))
+			subarch = relationship(SubArch, backref=backref("build_dirs", order_by="BuildDir.date_str"))
 
 		class Artifact(self.Base):
 
