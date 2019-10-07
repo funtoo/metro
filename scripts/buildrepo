@@ -551,10 +551,10 @@ elif sys.argv[1] == "index.xml":
 				build_xml = etree.Element("build")
 				build_xml.attrib["id"] = str(count)
 				build_xml.attrib["variant"] = artifact.flavor
-				build_xml.attrib["release"] = artifact.release
-				build_xml.attrib["path"] = artifact.path[len(initial_path):]
+				build_xml.attrib["release"] = subarch.release
+				build_xml.attrib["path"] = subarch.path[len(initial_path):]
 				build_xml.attrib["latest"] = "None" if not artifact.date else datetime.datetime.strftime(artifact.date_str, "%Y-%m-%d")
-				build_xml.attrib["download"] = artifact.path
+				build_xml.attrib["download"] = artifact.path[len(initial_path):]
 				if not info_json_path:
 					bifn = os.path.join(subarch.path, artifact.date_str, "build-info.json")
 					if os.path.exists(bifn):
@@ -670,7 +670,7 @@ elif sys.argv[1] == "digestgen":
 			print(link + " dead; cleaning up")
 		if dead:
 			os.unlink(link)
-		for ext in [ '.hash.txt', '.gpg' ]:
+		for ext in ['.hash.txt', '.gpg']:
 			extlink = link + ext
 			# if link to hash or gpg exists...
 			if dead and os.path.lexists(extlink):
