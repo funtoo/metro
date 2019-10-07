@@ -309,17 +309,17 @@ for build in all_builds:
 				try:
 					bdir.date = datetime.datetime.strptime(dirname,"%Y-%m-%d")
 					bdir.date_str = dirname
-					artifacts["stage3"] = find_file_compressed_or_not("%s/stage3*.tar*" % ipath)
-					if artifacts["stage3"]is not None:
-						# if we just have a stage3, we consider it "complete" for our purposes, for now
-						complete = True
-					artifacts["openvz"] = find_file_compressed_or_not("%s/funtoo-*-openvz-*.tar*" % ipath)
-					artifacts["lxd"] = find_file_compressed_or_not("%s/lxd-*.tar*" % ipath)
-					artifacts["gnome"] = find_file_compressed_or_not("%s/gnome-*.tar*" % ipath)
 				except ValueError:
 					# didn't work? Use old date on purpose to force cleaning:
 					bdir.date = datetime.datetime(1980,1,1)
 					bdir.date_str = "1980-01-01"
+				artifacts["stage3"] = find_file_compressed_or_not("%s/stage3*.tar*" % ipath)
+				if artifacts["stage3"]is not None:
+					# if we just have a stage3, we consider it "complete" for our purposes, for now
+					complete = True
+				artifacts["openvz"] = find_file_compressed_or_not("%s/funtoo-*-openvz-*.tar*" % ipath)
+				artifacts["lxd"] = find_file_compressed_or_not("%s/lxd-*.tar*" % ipath)
+				artifacts["gnome"] = find_file_compressed_or_not("%s/gnome-*.tar*" % ipath)
 				bdir.path = ipath
 				bdir.build = build
 				bdir.arch = arch
