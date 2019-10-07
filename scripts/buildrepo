@@ -206,8 +206,8 @@ class MetroRepositoryDatabase(Database):
 
 			# latest_full_build is destined to replace the de-normalized crap below it eventually:
 
-			latest_full_build_id = Column(Integer, ForeignKey("build_dir.id"))
-			latest_full_build = relationship("BuildDir", ForeignKey("build_dir.id"), uselist=False, primaryjoin="latest_build_id == BuildDir.id")
+			latest_full_build_id = Column(Integer, ForeignKey("build_dirs.id"))
+			latest_full_build = relationship("BuildDir", foreign_keys=[latest_full_build_id])
 			# de-normalized crap, status info about the subarch:
 			date = Column(DateTime, index=True)
 			date_str = Column(String, index=True)
@@ -233,7 +233,7 @@ class MetroRepositoryDatabase(Database):
 			date_str = Column(String, index=True)
 			complete = Column(Boolean, index=True)
 			full = Column(Boolean, index=True)
-			subarch = relationship(SubArch, backref=backref("build_dirs", order_by="BuildDir.date_str"))
+			subarch = relationship(SubArch, backref=backref("build_dirs", order_by="BuildDir.date_str"), primaryjoin="SubArch.id == BuildDir.subarch_id")
 
 		class Artifact(self.Base):
 
