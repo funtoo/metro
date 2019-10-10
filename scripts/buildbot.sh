@@ -22,8 +22,8 @@ if [ "$a" = "" ]; then
 else
 	# evaluate output of buildrepo to get things defined as env vars:
 	eval $a
-	if [ -z "$build" ]; then
-		echo "build not defined. Call to buildrepo probably failed. Exiting."
+	if [ -z "$release" ]; then
+		echo "release not defined. Call to buildrepo probably failed. Exiting."
 		exit 1
 	fi
 	if [ "$1" == "--pretend" ]; then
@@ -31,7 +31,7 @@ else
 	else
 		cmd="../metro"
 	fi
-	echo -n "Building $build for $subarch ($target) with date $nextdate"
+	echo -n "Building $release for $subarch ($target) with date $nextdate"
 	if [ -n "$extras" ]; then
 		# convert into metro argument:
 		extras="multi/extras: $extras"
@@ -39,6 +39,6 @@ else
 	else
 		echo
 	fi
-	$cmd -d multi: yes target/build: $build target/arch_desc: $arch_desc target/subarch: $subarch target/version: $nextdate multi/mode: $target $extras
+	$cmd -d multi: yes target/build: $release target/arch_desc: $arch_desc target/subarch: $subarch target/version: $nextdate multi/mode: $target $extras
 	exit $?
 fi
