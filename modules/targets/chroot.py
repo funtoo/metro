@@ -19,7 +19,7 @@ class ChrootTarget(BaseTarget):
 		self.mounts = { }
 
 		if "target/class" not in self.settings:
-			return
+			raise MetroError("target/class not set -- caching can't be enabled!")
 
 		okey = "metro/options/"+self.settings["target/class"]
 
