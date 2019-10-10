@@ -462,7 +462,7 @@ def find_build(q, min_age=stale_days, max_age=None):
 		# handle case where map_build returns ("full", "openvz"):
 		print("target=%s" % mb[0])
 		if len(mb) > 1:
-			print("extras='%s'" % " ".join(mb[1:]))
+			print("extras='%s'" % "+".join(mb[1:]))
 		else:
 			print("extras=''")
 		sys.exit(0)
