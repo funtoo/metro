@@ -9,7 +9,6 @@ target/name: vserver
 
 [section target]
 
-class: vserver
 sys: vserver
 
 [section steps]

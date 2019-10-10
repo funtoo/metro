@@ -3,10 +3,6 @@
 [collect ./steps/container-lxd.spec]
 [collect ./steps/capture/lxd-tar.spec]
 
-[section target]
-
-class: lxd
-
 [section stage4]
 
 target/name: lxd

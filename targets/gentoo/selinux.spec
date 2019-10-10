@@ -2,10 +2,6 @@
 [collect ./target/stage4.spec]
 [collect ./steps/capture/tar.spec]
 
-[section target]
-
-class: selinux
-
 [section stage4]
 
 target/name: selinux-stage3

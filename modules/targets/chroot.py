@@ -18,20 +18,11 @@ class ChrootTarget(BaseTarget):
 		# define general linux mount points
 		self.mounts = { }
 
-		if "target/class" not in self.settings:
-			raise MetroError("target/class not set -- caching can't be enabled!")
-
-		okey = "metro/options/"+self.settings["target/class"]
-
-		if okey not in self.settings:
-			return
-
-		options = self.settings[okey].split()
+		options = ["cache/package"]
 
 		# define various mount points for our cache support (ccache, binpkgs,
 		# genkernel, etc).
 		caches = [
-			[ "path/cache/compiler", "cache/compiler", "/var/tmp/cache/compiler" ] ,
 			[ "path/cache/package", "cache/package", "/var/tmp/cache/package" ] ,
 			[ "path/cache/kernel", "cache/kernel", "/var/tmp/cache/kernel" ] ,
 			[ "path/cache/probe", "probe", "/var/tmp/cache/probe" ],

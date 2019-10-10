@@ -3,10 +3,6 @@
 [collect ./steps/container.spec]
 [collect ./steps/capture/tar.spec]
 
-[section target]
-
-class: lxc
-
 [section stage4]
 
 target/name: lxc
