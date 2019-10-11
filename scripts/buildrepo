@@ -364,7 +364,7 @@ for release in all_builds:
 					bdir.date = datetime.datetime(1980,1,1)
 					bdir.date_str = "1980-01-01"
 				artifacts["stage3"] = find_file_compressed_or_not("%s/stage3*.tar*" % ipath)
-				if artifacts["stage3"]is not None:
+				if artifacts["stage3"] is not None:
 					# if we just have a stage3, we consider it "complete" for our purposes, for now
 					complete = True
 				artifacts["openvz"] = find_file_compressed_or_not("%s/funtoo-*-openvz-*.tar*" % ipath)
