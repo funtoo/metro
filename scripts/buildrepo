@@ -544,6 +544,8 @@ elif sys.argv[1] == "index.xml":
 			subarch_xml.attrib["name"] = subarch.subarch
 			count: int = 1
 			info_json_path: str = None
+			if subarch.latest_full_build is None:
+				continue
 			for artifact in subarch.latest_full_build.artifacts:
 				build_xml = etree.Element("build")
 				build_xml.attrib["id"] = str(count)
