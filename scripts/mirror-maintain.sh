@@ -12,5 +12,12 @@ if [ -z "$mp" ]; then
 	exit 1
 fi
 $buildrepo clean | tee /tmp/foo.sh
+echo
+echo "About to perform the above clean actions in 5 seconds... (^C to abort...)"
+for x in 5 4 3 2 1; do
+	echo -n "$x "
+	sleep 1
+done
+echo
 sh /tmp/foo.sh
 $buildrepo digestgen
