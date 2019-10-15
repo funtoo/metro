@@ -30,7 +30,7 @@ if [ "$[target/arch_desc]" == "x86-64bit" ]; then
 fi
 epro flavor desktop || exit 2
 emerge $eopts -uDN @world || exit 3
-for pkg in gnome metalog vim firefox linux-firmware; do
+for pkg in gnome metalog vim firefox linux-firmware nvidia-kernel-modules nss-mdns; do
 	emerge $eopts $pkg || exit 4
 done
 if [ -d /tmp/fsroot ]; then
