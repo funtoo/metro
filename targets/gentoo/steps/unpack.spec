@@ -47,6 +47,28 @@ fi
 if [ -n "$(ls $[path/chroot]/lib.backup.* 2>/dev/null)" ]; then
 	rm -rf $[path/chroot]/lib.backup.* || exit 26
 fi
+
+# let's fix /usr/lib if it is a problematic state. Note that this is NOT multilib-compatible.
+if [ -d $[path/chroot]/usr/lib ] && [ -d $[path/chroot]/usr/lib64 ] && [ ! -h $[path/chroot]/usr/lib ]; then
+	echo "Attempting to fix split /lib..."
+	# we have both /lib and /lib64 as regular directories. Need to fix. Sync everything to /lib.
+	rsync -av $[path/chroot]/usr/lib64/ $[path/chroot]/usr/lib/ || exit 23
+	# Now, remove lib64.
+	rm -rf $[path/chroot]/usr/lib64 || exit 24
+	# Next, create a lib64 symlink pointing to /lib 
+	ln -s /usr/lib $[path/chroot]/usr/lib64 || exit 25
+	# we are done, but we are left with a wonky lib setup. This is actually backwards. It's easier to fix separately, below.
+fi
+if [ -h $[path/chroot]/usr/lib64 ] && [ -d $[path/chroot]/usr/lib ]; then
+	# wonky lib setup. Let's fix. This can happen from previous step, or maybe we're just wonky.
+	echo "Fixing wonky lib setup..."
+	rm $[path/chroot]/usr/lib64 || exit 29
+	mv $[path/chroot]/usr/lib $[path/chroot]/usr/lib64 || exit 30
+	ln -s lib64 $[path/chroot]/usr/lib || exit 31
+fi
+if [ -n "$(ls $[path/chroot]/usr/lib.backup.* 2>/dev/null)" ]; then
+	rm -rf $[path/chroot]/usr/lib.backup.* || exit 26
+fi
 ]
 
 snapshot: [
