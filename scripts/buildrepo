@@ -487,7 +487,7 @@ if sys.argv[1] == "clean":
 		for x in session.query(db.BuildDir).filter_by(complete=False):
 			# ignore non-stale builds for cleaning -- they could be in-progress...
 			y = session.query(db.SubArch).filter_by(subarch=x.subarch_name).filter_by(arch=x.arch)
-			y = y.filter_by(release=x.release).order_by(db.BuildDir.date_str).first()
+			y = y.filter_by(release=x.release).order_by(db.SubArch.date_str).first()
 			if x.date is not None and now - x.date > datetime.timedelta(days=stale_days) and y.date != x.date:
 				# don't zap most recent...
 				print(("rm -rf %s* # not complete and stale, not most recent build" % x.path))
