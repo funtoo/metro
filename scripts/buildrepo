@@ -16,6 +16,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime, Boolean
 from sqlalchemy.pool import NullPool
 from contextlib import contextmanager
+from pathlib import Path
 
 os.chdir(os.path.join(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append("../modules")
@@ -232,8 +233,8 @@ class MetroRepositoryDatabase(Database):
 			arch = Column(String, index=True)
 			subarch_name = Column(String, index=True)
 			date_str = Column(String, index=True)
-			complete = Column(Boolean, index=True)
-			full = Column(Boolean, index=True)
+			complete = Column(Boolean, index=True)      # complete currently means: stage3 exists.
+			full = Column(Boolean, index=True)          # full build means: stage 1, 2, 3
 			subarch = relationship(SubArch, backref=backref("build_dirs", order_by="BuildDir.date_str"), primaryjoin="SubArch.id == BuildDir.subarch_id")
 
 		class Artifact(self.Base):
@@ -462,18 +463,21 @@ def find_build(q, min_age=stale_days, max_age=None):
 		else:
 			print("extras=''")
 		sys.exit(0)
+
+
 if sys.argv[1] == "clean":
 	with db.get_session() as session:
 		for release in all_builds:
-			# first -- remove any more than 3 complete builds, starting with oldest, of course:
+			# first -- remove any more than keep_num complete builds, starting with oldest, of course:
 			for arch in all_arches:
 				for subarch in all_subarches:
-					out = session.query(db.BuildDir).filter_by(release=release).filter_by(arch=arch).filter_by(subarch_name=subarch).order_by(db.BuildDir.date_str).all()
+					out = session.query(db.BuildDir).filter_by(release=release).filter_by(arch=arch)
+					out = out.filter_by(subarch_name=subarch).filter_by(complete=True).order_by(db.BuildDir.date_str).all()
 					for x in out[0:-keep_num]:
 						print(("rm -rf %s" % x.path))
 					for x in out[-keep_num:]:
 						print(("# keeping %s" % x.path))
-			# next, remove any more than 2 snapshots:
+			# next, remove any more than keep_num snapshots:
 			sna = session.query(db.Snapshot).filter_by(release=release).order_by(db.Snapshot.path).all()
 			for x in sna[0:-keep_num]:
 				print(("rm %s*" % x.path))
@@ -482,8 +486,9 @@ if sys.argv[1] == "clean":
 		# Now, look at incomplete builds. Clean them out when they're stale and not the most recent build.
 		for x in session.query(db.BuildDir).filter_by(complete=False):
 			# ignore non-stale builds for cleaning -- they could be in-progress...
-			y = session.query(db.SubArch).filter_by(subarch=x.subarch_name).filter_by(arch=x.arch).filter_by(release=x.release).first()
-			if x.date != None and now - x.date > datetime.timedelta(days=stale_days) and y.date != x.date:
+			y = session.query(db.SubArch).filter_by(subarch=x.subarch_name).filter_by(arch=x.arch)
+			y = y.filter_by(release=x.release).order_by(db.SubArch.date_str).first()
+			if x.date is not None and now - x.date > datetime.timedelta(days=stale_days) and y.date != x.date:
 				# don't zap most recent...
 				print(("rm -rf %s* # not complete and stale, not most recent build" % x.path))
 			else:
@@ -513,7 +518,7 @@ elif sys.argv[1] == "nextbuild":
 		sys.exit(1)
 elif sys.argv[1] == "empties":
 	with db.get_session() as session:
-		empties = session.query(db.SubArch).filter(db.SubArch.do_build == True).filter(db.SubArch.date == None).filter(db.SubArch.release.in_(builds))
+		empties = session.query(db.SubArch).filter(db.SubArch.do_build is True).filter(db.SubArch.date is None).filter(db.SubArch.release.in_(builds))
 		for x in empties:
 			print(x.path)
 elif sys.argv[1] == "fails":
@@ -544,6 +549,8 @@ elif sys.argv[1] == "index.xml":
 			subarch_xml.attrib["name"] = subarch.subarch
 			count: int = 1
 			info_json_path: str = None
+			if subarch.latest_full_build is None:
+				continue
 			for artifact in subarch.latest_full_build.artifacts:
 				build_xml = etree.Element("build")
 				build_xml.attrib["id"] = str(count)
@@ -600,15 +607,23 @@ elif sys.argv[1] == "compress":
 		# done compressing. And we also exclude them from mirrors.
 		tarfile = entry.path[:-4]
 		if os.path.exists(tarfile):
+			if os.path.exists(entry.path+".run"):
+				print("Compression in progress, skipping...")
+				continue
 			comp = settings["target/compression"]
 			if comp in [ "bz2", "xz", "gz" ]:
 				print("Compressing file %s..." % tarfile)
+				Path(entry.path+".run").touch()
 				if comp == "bz2":
 					call("PATH=/bin/:/usr/bin bzip2 -9 " + tarfile, shell=True)
 				elif comp == "xz":
 					call("PATH=/bin/:/usr/bin xz -9e --threads=0 " + tarfile, shell=True)
 				elif comp == "gz":
 					call("PATH=/bin/:/usr/bin gzip -9 " + tarfile, shell=True)
+				try:
+					os.unlink(entry.path+".run")
+				except:
+					pass
 			# remove .cme file, and set p to the new compressed file.
 			os.unlink(entry.path)
 		else:
