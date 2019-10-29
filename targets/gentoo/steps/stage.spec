@@ -81,10 +81,6 @@ else
 	eopts="$[emerge/options]"
 fi
 install -d /etc/portage
-# the quotes below prevent variable expansion of anything inside make.conf
-cat > $mkconf << "EOF"
-$[[files/make.conf.subarchprofile]]
-EOF
 if [ "$[portage/files/package.use?]" = "yes" ]
 then
 cat > /etc/portage/package.use << "EOF"
