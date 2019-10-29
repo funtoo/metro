@@ -75,8 +75,7 @@ then
 	if [ -n "$toolchain_version" ]; then
 		export PKGDIR="$PKGDIR/$toolchain_version"
 	fi
-	eopts="$[emerge/options] --usepkg"
-	export FEATURES="$FEATURES buildpkg"
+	eopts="$[emerge/options] --usepkg --buildpkg"
 else
 	eopts="$[emerge/options]"
 fi
