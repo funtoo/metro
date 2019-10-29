@@ -1,10 +1,5 @@
 [section files]
 
-make.conf.subarchprofile: [
-FEATURES="$[portage/FEATURES:zap]"
-USE="$[portage/USE:zap]"
-]
-
 locale.gen: [
 # /etc/locale.gen: list all of the locales you want to have on your system
 #
@@ -36,8 +31,6 @@ for x in ["http_proxy","ftp_proxy","RSYNC_PROXY"]:
 		print("# "+x+" is not set")
 ?>
 ]
-
-[section files]
 
 motd: [
 $[[files/motd/extra:lax]]

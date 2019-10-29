@@ -128,9 +128,6 @@ $[[steps/ego/prep]]
 
 env: [
 install -d $[path/chroot]/etc/portage
-cat << "EOF" > $[path/chroot]/etc/portage/make.conf || exit 5
-$[[files/make.conf.subarchprofile]]
-EOF
 cat << "EOF" > $[path/chroot]/etc/env.d/99zzmetro || exit 6
 $[[files/proxyenv]]
 EOF
