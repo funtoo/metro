@@ -17,7 +17,6 @@ if [ "$[snapshot/source/ego.conf?]" = "yes" ]; then
 		cat >> $ego_out_dir/ego.conf << EOF
 $[[snapshot/source/ego.conf:lax]]
 EOF
-	fi
 fi
 export EGO_CONFIG=$ego_out_dir/ego.conf
 ]
