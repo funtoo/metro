@@ -5,17 +5,14 @@
 
 prep: [
 ego_out_dir=$[path/work]/etc
-install -d $ego_out_dir
-if [ -e /etc/metro/chroot/etc/ego.conf ]; then
-	cp /etc/metro/chroot/etc/ego.conf $ego_out_dir/ego.conf
-	echo "Using custom ego configuration at /etc/metro/chroot/etc/ego.conf."
-else 
-	cat > $ego_out_dir/ego.conf << EOF
+
+cat > $ego_out_dir/ego.conf << EOF
 [global]
 sync_base_url = $[snapshot/source/sync_base_url]
 release = $[profile/release]
+
 EOF
-	if [ "$[snapshot/source/ego.conf?]" = "yes" ]; then
+if [ "$[snapshot/source/ego.conf?]" = "yes" ]; then
 		echo "Installing /etc/ego.conf..."
 		cat >> $ego_out_dir/ego.conf << EOF
 $[[snapshot/source/ego.conf:lax]]
